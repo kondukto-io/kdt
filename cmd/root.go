@@ -23,7 +23,7 @@ var rootCmd = &cobra.Command{
 	Long:  `Kondukto-CLI is the command line interface of Kondukto for starting scans and setting release criterias. It is made to ease integration of Kondukto to DevSevOps pipelines.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	//	Run: func(cmd *cobra.Command, args []string) {},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -42,11 +42,15 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cli.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kondukto.yaml)")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "more logs")
+	rootCmd.PersistentFlags().Bool("async",  false, "does not block build process")
+	rootCmd.PersistentFlags().String("host", "", "Kondukto server host")
+	rootCmd.PersistentFlags().String("token", "", "Kondukto API token")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//rootCmd.Flags().BoolP("toggle", "t", false, "help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -64,7 +68,10 @@ func initConfig() {
 
 		// Search config in home directory with name ".cli" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".cli")
+		viper.AddConfigPath(".")
+		viper.SetConfigName(".kondukto")
+		viper.SetConfigType("yaml")
+		viper.SetEnvPrefix("kondukto")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

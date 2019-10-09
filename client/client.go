@@ -26,10 +26,6 @@ func New() *Client {
 
 	httpClient := http.DefaultClient
 
-	if viper.GetString("host") == "" {
-		panic("")
-	}
-
 	if viper.GetBool("insecure") {
 		tp := http.DefaultTransport.(*http.Transport)
 		tp.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}

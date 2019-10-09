@@ -21,10 +21,16 @@ type Client struct {
 	BaseURL *url.URL
 }
 
-func New() *Client {
+func New() (*Client, error) {
 	client := new(Client)
 
 	httpClient := http.DefaultClient
+
+	u, err := url.Parse(viper.GetString("host"))
+	if err != nil {
+		return client, err
+	}
+	client.BaseURL = u
 
 	if viper.GetBool("insecure") {
 		tp := http.DefaultTransport.(*http.Transport)
@@ -34,7 +40,7 @@ func New() *Client {
 
 	client.httpClient = httpClient
 
-	return client
+	return client, nil
 }
 
 func (c *Client) newRequest(method string, path string, body interface{}) (*http.Request, error) {

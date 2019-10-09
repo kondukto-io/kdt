@@ -10,8 +10,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
+)
+
+const (
+	repoURL = "https://github.com/kondukto-io/cli"
 )
 
 var cfgFile string
@@ -42,15 +46,30 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kondukto.yaml)")
-	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "more logs")
-	rootCmd.PersistentFlags().Bool("async",  false, "does not block build process")
-	rootCmd.PersistentFlags().String("host", "", "Kondukto server host")
-	rootCmd.PersistentFlags().String("token", "", "Kondukto API token")
+	var insecure, async, verbose bool
+	var host, token string
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	//rootCmd.Flags().BoolP("toggle", "t", false, "help message for toggle")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kondukto.yaml)")
+	rootCmd.PersistentFlags().StringVar(&host, "host", "", "Kondukto server host")
+	rootCmd.PersistentFlags().StringVar(&token, "token", "", "Kondukto API token")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "more logs")
+	rootCmd.PersistentFlags().BoolVar(&async, "async", false, "does not block build process")
+	rootCmd.PersistentFlags().BoolVar(&insecure, "insecure", false, "skip TLS verification and use insecure http client")
+
+	if host != "" {
+		viper.Set("host", host)
+	}
+	if token != "" {
+		viper.Set("token", token)
+	}
+	if viper.GetString("host") == "" || viper.GetString("token") == "" {
+		fmt.Printf("Host and token configuration is required. Provide them via a config file, environment variables or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL)
+		os.Exit(1)
+	}
+
+	viper.Set("verbose", verbose)
+	viper.Set("insecure", insecure)
+	viper.Set("async", async)
 }
 
 // initConfig reads in config file and ENV variables if set.

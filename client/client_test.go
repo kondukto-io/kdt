@@ -114,6 +114,7 @@ func TestDo(t *testing.T) {
   }
 }`
 
+	// Converting the expected string to compact JSON to ease comparison
 	buf := new(bytes.Buffer)
 	if err := json.Compact(buf, []byte(expected)); err != nil {
 		t.Error()

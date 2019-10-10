@@ -30,24 +30,20 @@ to quickly create a Cobra application.`,
 		c, err := client.New()
 		if err != nil {
 			fmt.Println(errors.Wrap(err, "could not initialize Kondukto client"))
-			//fmt.Errorf("unable to initialize Kondukto client: %w", err)
 			os.Exit(1)
 		}
 
 		projects, err := c.ListProjects()
 		if err != nil {
 			fmt.Println(errors.Wrap(err, "could not retrieve projects"))
-			//fmt.Errorf("unable to retrieve projects: %w", err)
 			os.Exit(1)
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 10, 8, 4, '\t', 0)
+		w := tabwriter.NewWriter(os.Stdout, 12, 8, 4, '\t', 0)
 		defer w.Flush()
 
-		//format := "%-30s%-30s\n"
 		fmt.Fprintln(w, "NAME\tID")
 		fmt.Fprintln(w, "---\t---")
-		//fmt.Fprintf(w, format, "NAME", "ID")
 		for _, project := range projects {
 			fmt.Fprintf(w, "%s\t%s\n", project.Name, project.ID)
 		}

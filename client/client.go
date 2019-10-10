@@ -67,6 +67,7 @@ func (c *Client) newRequest(method string, path string, body interface{}) (*http
 
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("X-Cookie", viper.GetString("token"))
 
 	return req, nil
 }

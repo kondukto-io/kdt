@@ -6,13 +6,17 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
+	"github.com/kondukto-io/cli/client"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
 // listProjectsCmd represents the listProjects command
 var listProjectsCmd = &cobra.Command{
-	Use:   "listProjects",
+	Use:   "projects",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -22,6 +26,31 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("listProjects called")
+
+		c, err := client.New()
+		if err != nil {
+			fmt.Println(errors.Wrap(err, "could not initialize Kondukto client"))
+			//fmt.Errorf("unable to initialize Kondukto client: %w", err)
+			os.Exit(1)
+		}
+
+		projects, err := c.ListProjects()
+		if err != nil {
+			fmt.Println(errors.Wrap(err, "could not retrieve projects"))
+			//fmt.Errorf("unable to retrieve projects: %w", err)
+			os.Exit(1)
+		}
+
+		w := tabwriter.NewWriter(os.Stdout, 10, 8, 4, '\t', 0)
+		defer w.Flush()
+
+		//format := "%-30s%-30s\n"
+		fmt.Fprintln(w, "NAME\tID")
+		fmt.Fprintln(w, "---\t---")
+		//fmt.Fprintf(w, format, "NAME", "ID")
+		for _, project := range projects {
+			fmt.Fprintf(w, "%s\t%s\n", project.Name, project.ID)
+		}
 	},
 }
 

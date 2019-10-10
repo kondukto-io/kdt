@@ -11,42 +11,42 @@ import (
 func TestNewRequestPath(t *testing.T) {
 	client, err := New()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	u, err := url.Parse("http://localhost:8080")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	client.BaseURL = u
 
 	req, err := client.newRequest("GET", "/test/path", nil)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	got := req.URL.String()
 	expected := "http://localhost:8080/test/path"
 	if got != expected {
-		t.Errorf("wrong request url: expected: %s got: %s", expected, got)
+		t.Fatalf("wrong request url: expected: %s got: %s", expected, got)
 	}
 }
 
 func TestDo(t *testing.T) {
 	client, err := New()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	u, err := url.Parse("https://jsonplaceholder.typicode.com")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	client.BaseURL = u
 
 	req, err := client.newRequest("GET", "/users/1", nil)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	type user struct {
@@ -77,16 +77,16 @@ func TestDo(t *testing.T) {
 
 	resp, err := client.do(req, &someone)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		t.Error("http response not ok")
+		t.Fatal("http response not ok")
 	}
 
 	j, err := json.Marshal(&someone)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	got := string(j)
@@ -117,11 +117,11 @@ func TestDo(t *testing.T) {
 	// Converting the expected string to compact JSON to ease comparison
 	buf := new(bytes.Buffer)
 	if err := json.Compact(buf, []byte(expected)); err != nil {
-		t.Error()
+		t.Fatal()
 	}
 	expectedCompact := buf.String()
 
 	if got != expectedCompact {
-		t.Error("incorrect response body")
+		t.Fatal("incorrect response body")
 	}
 }

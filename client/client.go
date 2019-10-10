@@ -74,7 +74,7 @@ func (c *Client) newRequest(method string, path string, body interface{}) (*http
 func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 	defer resp.Body.Close()
 

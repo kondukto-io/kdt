@@ -22,7 +22,6 @@ func (c *Client) ListProjects() ([]Project, error) {
 		Projects []Project `json:"data"`
 		Total    int       `json:"total"`
 	}
-	//ps := new(getProjectsResponse)
 	var ps getProjectsResponse
 
 	resp, err := c.do(req, &ps)
@@ -31,7 +30,7 @@ func (c *Client) ListProjects() ([]Project, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return projects, errors.New("request not ok")
+		return projects, errors.New("response not ok")
 	}
 
 	return ps.Projects, nil

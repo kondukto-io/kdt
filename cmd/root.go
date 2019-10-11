@@ -24,7 +24,7 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Use:   "kondukto-cli",
 	Short: "Command line interface to interact with Kondukto",
-	Long:  `Kondukto-CLI is the command line interface of Kondukto for starting scans and setting release criterias. It is made to ease integration of Kondukto to DevSevOps pipelines.`,
+	Long:  `Kondukto-CLI is the command line interface of Kondukto for starting scans and setting release criteria. It is made to ease integration of Kondukto to DevSecOps pipelines.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) {},
@@ -62,10 +62,6 @@ func init() {
 	if token != "" {
 		viper.Set("token", token)
 	}
-	if viper.GetString("host") == "" || viper.GetString("token") == "" {
-		fmt.Printf("Host and token configuration is required. Provide them via a config file, environment variables or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL)
-		os.Exit(1)
-	}
 
 	viper.Set("verbose", verbose)
 	viper.Set("insecure", insecure)
@@ -87,7 +83,6 @@ func initConfig() {
 
 		// Search config in home directory with name ".cli" (without extension).
 		viper.AddConfigPath(home)
-		viper.AddConfigPath(".")
 		viper.SetConfigName(".kondukto")
 		viper.SetConfigType("yaml")
 		viper.SetEnvPrefix("kondukto")
@@ -98,5 +93,10 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+
+	if viper.GetString("host") == "" || viper.GetString("token") == "" {
+		fmt.Printf("Host and token configuration is required. Provide them via a config file, environment variables or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL)
+		os.Exit(1)
 	}
 }

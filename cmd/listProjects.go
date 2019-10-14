@@ -39,7 +39,7 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 12, 8, 4, '\t', 0)
+		w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
 		defer w.Flush()
 
 		fmt.Fprintln(w, "NAME\tID")

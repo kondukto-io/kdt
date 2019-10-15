@@ -33,7 +33,7 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		var pid string
+		pid := cmd.Flag("project").Value.String()
 		scans, err := c.ListScans(pid)
 		if err != nil {
 			fmt.Println(errors.Wrap(err, "could not retrieve scans of the project"))

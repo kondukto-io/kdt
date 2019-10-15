@@ -6,7 +6,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/kondukto-io/cli/client"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -22,9 +25,50 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("scan called")
+
+		byScanId := cmd.Flag("scan-id").Value.String() != ""
+		byProjectAndTool := cmd.Flag("project").Value.String() != "" &&
+			cmd.Flag("tool").Value.String() != ""
+
+		c, err := client.New()
+		if err != nil {
+			fmt.Println(errors.Wrap(err, "could not initialize Kondukto client"))
+			os.Exit(1)
+		}
+
+		var newScanId string
+		if byScanId {
+			id := cmd.Flag("scan-id").Value.String()
+
+			i, err := c.ScanByScanId(id)
+			if err != nil {
+				fmt.Println(errors.Wrap(err, "could not start scan"))
+				os.Exit(1)
+			}
+			newScanId = i
+		} else if byProjectAndTool {
+			project := cmd.Flag("project").Value.String()
+			tool := cmd.Flag("tool").Value.String()
+
+			i, err := c.ScanByProjectAndTool(project, tool)
+			if err != nil {
+				fmt.Println(errors.Wrap(err, "could not start scan"))
+				os.Exit(1)
+			}
+			newScanId = i
+		} else {
+			fmt.Println("to start a scan, you must provide a scan id or a project identifier with a tool name. project identifier might be id or name of the project.")
+			os.Exit(1)
+		}
+
+		fmt.Println(newScanId)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(scanCmd)
+
+	scanCmd.Flags().StringP("project", "p", "", "project name or id")
+	scanCmd.Flags().StringP("tool", "t", "", "tool name")
+	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
 }

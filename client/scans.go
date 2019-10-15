@@ -22,12 +22,10 @@ type Scan struct {
 	} `json:"summary"`
 }
 
-func (c *Client) ListScans(pid string) ([]Scan, error) {
+func (c *Client) ListScans(project string) ([]Scan, error) {
 	scans := make([]Scan, 0)
 
-	pid = "5d7f40fd42375449acaa9f1a"
-
-	path := fmt.Sprintf("/api/v1/projects/%s/scans", pid)
+	path := fmt.Sprintf("/api/v1/projects/%s/scans", project)
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return scans, err

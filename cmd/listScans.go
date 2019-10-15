@@ -54,8 +54,8 @@ to quickly create a Cobra application.`,
 func init() {
 	listCmd.AddCommand(listScansCmd)
 
-	listScansCmd.PersistentFlags().StringP("project-id", "p", "", "project id")
-	listScansCmd.MarkFlagRequired("project-id")
+	listScansCmd.Flags().StringP("project", "p", "", "project name or id")
+	listScansCmd.MarkFlagRequired("project")
 
 	// Here you will define your flags and configuration settings.
 

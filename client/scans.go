@@ -48,3 +48,17 @@ func (c *Client) ListScans(project string) ([]Scan, error) {
 
 	return ps.Scans, nil
 }
+
+func (c *Client) ScanByScanId(id string) (string, error) {
+	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
+	req, err := c.newRequest("GET", path, nil)
+	if err != nil {
+		return "", err
+	}
+
+	panic("not implemented")
+}
+
+func (c *Client) ScanByProjectAndTool(project string, tool string) (string, error) {
+	panic("not implemented")
+}

@@ -119,8 +119,8 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
+		// Block process to wait for scan to finish if async set to true
 		async, _ := strconv.ParseBool(cmd.Flag("async").Value.String())
-		// Block process to wait for scan to finish
 		if async {
 			fmt.Println("scan has been started with async parameter, exiting.")
 		} else {

@@ -42,42 +42,92 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("scan called")
 
+		// Check scan method
 		byScanId := cmd.Flag("scan-id").Value.String() != ""
 		byProjectAndTool := cmd.Flag("project").Value.String() != "" &&
 			cmd.Flag("tool").Value.String() != ""
 
+		// Initialize Kondukto client
 		c, err := client.New()
 		if err != nil {
 			fmt.Println(errors.Wrap(err, "could not initialize Kondukto client"))
 			os.Exit(1)
 		}
 
-		var newScanId string
+		var newEventId string
 		if byScanId {
 			id := cmd.Flag("scan-id").Value.String()
 
-			i, err := c.ScanByScanId(id)
+			eventId, err := c.StartScanByScanId(id)
 			if err != nil {
 				fmt.Println(errors.Wrap(err, "could not start scan"))
 				os.Exit(1)
 			}
-			newScanId = i
+			newEventId = eventId
 		} else if byProjectAndTool {
 			project := cmd.Flag("project").Value.String()
 			tool := cmd.Flag("tool").Value.String()
 
-			i, err := c.ScanByProjectAndTool(project, tool)
+			eventId, err := c.ScanByProjectAndTool(project, tool)
 			if err != nil {
 				fmt.Println(errors.Wrap(err, "could not start scan"))
 				os.Exit(1)
 			}
-			newScanId = i
+			newEventId = eventId
 		} else {
 			fmt.Println("to start a scan, you must provide a scan id or a project identifier with a tool name. project identifier might be id or name of the project.")
 			os.Exit(1)
 		}
 
-		fmt.Println(newScanId)
+		async, _ := strconv.ParseBool(cmd.Flag("async").Value.String())
+		// Block process to wait for scan to finish
+		if async {
+			fmt.Println("scan has been started with async parameter, exiting.")
+		} else {
+			lastStatus := -1
+			for {
+				status, active, err := c.GetScanStatus(newEventId)
+				if err != nil {
+					fmt.Println(errors.Wrap(err, "could not get scan status"))
+					os.Exit(1)
+				}
+
+				switch active {
+				case eventFailed:
+					fmt.Println("scan failed")
+					os.Exit(1)
+				case eventInactive:
+					if status == jobFinished {
+						fmt.Println("scan finished successfully")
+						break
+					}
+				case eventActive:
+					if status != lastStatus {
+						statusStr := func(s int) string {
+							switch status {
+							case jobStarting:
+								return "starting scan"
+							case jobRunning:
+								return "scan running"
+							case jobAnalyzing:
+								return "analyzing scan results"
+							case jobNotifying:
+								return "setting notifications"
+							default:
+								return "unknown"
+							}
+						}(status)
+						fmt.Println(statusStr)
+						lastStatus = status
+					}
+					time.Sleep(10 * time.Second)
+				default:
+					fmt.Println("invalid event status")
+					os.Exit(1)
+				}
+			}
+		}
+		fmt.Println(newEventId)
 	},
 }
 

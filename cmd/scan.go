@@ -7,10 +7,26 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/kondukto-io/cli/client"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+)
+
+const (
+	jobStarting = iota
+	jobRunning
+	jobAnalyzing
+	jobNotifying
+	jobFinished
+)
+
+const (
+	eventFailed = iota - 1
+	eventInactive
+	eventActive
 )
 
 // scanCmd represents the scan command

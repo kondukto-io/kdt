@@ -180,3 +180,12 @@ func init() {
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
 }
+
+func validTool(tool string) bool {
+	switch tool {
+	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker, toolZap:
+		return true
+	default:
+		return false
+	}
+}

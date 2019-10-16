@@ -29,6 +29,15 @@ const (
 	eventActive
 )
 
+const (
+	toolFindSecBugs = "findsecbugs"
+	toolNetsparker  = "netsparker"
+	toolCheckmarx   = "checkmarx"
+	toolAppSpider   = "appspider"
+	toolBandit      = "bandit"
+	toolZap         = "owaspzap"
+)
+
 // scanCmd represents the scan command
 var scanCmd = &cobra.Command{
 	Use:   "scan",

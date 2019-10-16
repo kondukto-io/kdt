@@ -153,6 +153,8 @@ to quickly create a Cobra application.`,
 								return "analyzing scan results"
 							case jobNotifying:
 								return "setting notifications"
+							case jobFinished:
+								return "scan finished"
 							default:
 								return "unknown"
 							}

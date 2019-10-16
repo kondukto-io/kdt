@@ -99,7 +99,7 @@ to quickly create a Cobra application.`,
 				case eventInactive:
 					if status == jobFinished {
 						fmt.Println("scan finished successfully")
-						break
+						os.Exit(0)
 					}
 				case eventActive:
 					if status != lastStatus {

@@ -78,9 +78,39 @@ to quickly create a Cobra application.`,
 			project := cmd.Flag("project").Value.String()
 			tool := cmd.Flag("tool").Value.String()
 
-			eventId, err := c.ScanByProjectAndTool(project, tool)
+			if !validTool(tool) {
+				fmt.Println("invalid tool name")
+				os.Exit(1)
+			}
+
+			scans, err := c.ListScans(project)
 			if err != nil {
-				fmt.Println(errors.Wrap(err, "could not start scan"))
+				fmt.Println(fmt.Errorf("could not get scans of project: %w", err))
+				os.Exit(1)
+			}
+
+			if len(scans) == 0 {
+				fmt.Println("no scans found for the project")
+				os.Exit(1)
+			}
+
+			var lastScan client.Scan
+			var found bool
+			for i := len(scans) - 1; i > -1; i-- {
+				if scans[i].Tool == tool {
+					lastScan = scans[i]
+					found = true
+				}
+			}
+
+			if !found {
+				fmt.Println("no scans found with given tool")
+				os.Exit(1)
+			}
+
+			eventId, err := c.StartScanByScanId(lastScan.ID)
+			if err != nil {
+				fmt.Println(fmt.Errorf("could not start scan: %w", err))
 				os.Exit(1)
 			}
 			newEventId = eventId

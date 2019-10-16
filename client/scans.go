@@ -48,3 +48,61 @@ func (c *Client) ListScans(project string) ([]Scan, error) {
 
 	return ps.Scans, nil
 }
+
+func (c *Client) StartScanByScanId(id string) (string, error) {
+	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
+	req, err := c.newRequest("GET", path, nil)
+	if err != nil {
+		return "", err
+	}
+
+	type restartScanResponse struct {
+		Event   string `json:"event"`
+		Message string `json:"message"`
+	}
+	var rsr restartScanResponse
+	resp, err := c.do(req, &rsr)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", errors.New("response not ok")
+	}
+
+	if rsr.Event == "" {
+		return "", errors.New("")
+	}
+
+	return rsr.Event, nil
+}
+
+func (c *Client) GetScanStatus(eventId string) (int, int, error) {
+	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
+	req, err := c.newRequest("GET", path, nil)
+	if err != nil {
+		return -1, -1, err
+	}
+
+	type eventStatusResponse struct {
+		Status  int    `json:"status"`
+		Active  int    `json:"active"`
+		Message string `json:"message"`
+	}
+
+	var esr eventStatusResponse
+	resp, err := c.do(req, &esr)
+	if err != nil {
+		return -1, -1, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return -1, -1, errors.New("response not ok")
+	}
+
+	return esr.Status, esr.Active, nil
+}
+
+func (c *Client) ScanByProjectAndTool(project string, tool string) (string, error) {
+	panic("not implemented")
+}

@@ -65,7 +65,7 @@ func init() {
 
 	viper.Set("verbose", verbose)
 	viper.Set("insecure", insecure)
-	viper.Set("async", async)
+	//viper.Set("async", async)
 }
 
 // initConfig reads in config file and ENV variables if set.

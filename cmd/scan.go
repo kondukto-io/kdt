@@ -63,6 +63,7 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
+		// Start scan by scan method
 		var newEventId string
 		if byScanId {
 			id := cmd.Flag("scan-id").Value.String()

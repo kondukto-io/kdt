@@ -6,12 +6,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/kondukto-io/cli/client"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 

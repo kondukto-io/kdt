@@ -64,16 +64,9 @@ to quickly create a Cobra application.`,
 		}
 
 		// Start scan by scan method
-		var newEventId string
+		var newEventId, oldScanId string
 		if byScanId {
-			id := cmd.Flag("scan-id").Value.String()
-
-			eventId, err := c.StartScanByScanId(id)
-			if err != nil {
-				fmt.Println(errors.Wrap(err, "could not start scan"))
-				os.Exit(1)
-			}
-			newEventId = eventId
+			oldScanId = cmd.Flag("scan-id").Value.String()
 		} else if byProjectAndTool {
 			project := cmd.Flag("project").Value.String()
 			tool := cmd.Flag("tool").Value.String()
@@ -108,16 +101,18 @@ to quickly create a Cobra application.`,
 				os.Exit(1)
 			}
 
-			eventId, err := c.StartScanByScanId(lastScan.ID)
-			if err != nil {
-				fmt.Println(fmt.Errorf("could not start scan: %w", err))
-				os.Exit(1)
-			}
-			newEventId = eventId
+			oldScanId = lastScan.ID
 		} else {
 			fmt.Println("to start a scan, you must provide a scan id or a project identifier with a tool name. project identifier might be id or name of the project.")
 			os.Exit(1)
 		}
+
+		eventId, err := c.StartScanByScanId(oldScanId)
+		if err != nil {
+			fmt.Println(errors.Wrap(err, "could not start scan"))
+			os.Exit(1)
+		}
+		newEventId = eventId
 
 		// Block process to wait for scan to finish if async set to true
 		async, _ := strconv.ParseBool(cmd.Flag("async").Value.String())

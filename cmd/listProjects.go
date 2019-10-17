@@ -28,19 +28,16 @@ to quickly create a Cobra application.`,
 
 		c, err := client.New()
 		if err != nil {
-			fmt.Println(errors.Wrap(err, "could not initialize Kondukto client"))
-			os.Exit(1)
+			qwe(1, err, "could not initialize Kondukto client")
 		}
 
 		projects, err := c.ListProjects()
 		if err != nil {
-			fmt.Println(errors.Wrap(err, "could not retrieve projects"))
-			os.Exit(1)
+			qwe(1, err, "could not retrieve projects")
 		}
 
 		if len(projects) < 1 {
-			fmt.Println("no projects found")
-			os.Exit(1)
+			qwm(1, "no projects found")
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)

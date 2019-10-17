@@ -29,20 +29,17 @@ to quickly create a Cobra application.`,
 
 		c, err := client.New()
 		if err != nil {
-			fmt.Println(errors.Wrap(err, "could not initialize Kondukto client"))
-			os.Exit(1)
+			qwe(1, err, "could not initialize Kondukto client")
 		}
 
 		pid := cmd.Flag("project").Value.String()
 		scans, err := c.ListScans(pid)
 		if err != nil {
-			fmt.Println(errors.Wrap(err, "could not retrieve scans of the project"))
-			os.Exit(1)
+			qwe(1, err, "could not retrieve scans of the project")
 		}
 
 		if len(scans) < 1 {
-			fmt.Println("no scans found with the project id/name")
-			os.Exit(1)
+			qwm(1, "no scans found with the project id/name")
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)

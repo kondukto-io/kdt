@@ -34,8 +34,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		qwe(1, err)
 	}
 }
 
@@ -77,8 +76,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			qwe(1, err)
 		}
 
 		// Search config in home directory with name ".cli" (without extension).
@@ -96,7 +94,6 @@ func initConfig() {
 	}
 
 	if viper.GetString("host") == "" || viper.GetString("token") == "" {
-		fmt.Printf("Host and token configuration is required. Provide them via a config file, environment variables or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL)
-		os.Exit(1)
+		qwm(1, fmt.Sprintf("Host and token configuration is required. Provide them via a config file, environment variables or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL))
 	}
 }

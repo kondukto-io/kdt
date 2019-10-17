@@ -179,3 +179,20 @@ func validTool(tool string) bool {
 		return false
 	}
 }
+
+func statusMsg(s int) string {
+	switch s {
+	case jobStarting:
+		return "starting scan"
+	case jobRunning:
+		return "scan running"
+	case jobAnalyzing:
+		return "analyzing scan results"
+	case jobNotifying:
+		return "setting notifications"
+	case jobFinished:
+		return "scan finished"
+	default:
+		return "unknown scan status"
+	}
+}

@@ -85,30 +85,24 @@ func (c *Client) StartScanByScanId(id string) (string, error) {
 	return rsr.Event, nil
 }
 
-func (c *Client) GetScanStatus(eventId string) (int, int, error) {
+func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
-		return -1, -1, err
+		return nil, err
 	}
 
-	type eventStatusResponse struct {
-		Status  int    `json:"status"`
-		Active  int    `json:"active"`
-		Message string `json:"message"`
-	}
-
-	var esr eventStatusResponse
-	resp, err := c.do(req, &esr)
+	e := &Event{}
+	resp, err := c.do(req, &e)
 	if err != nil {
-		return -1, -1, err
+		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return -1, -1, errors.New("response not ok")
+		return nil, errors.New("response not ok")
 	}
 
-	return esr.Status, esr.Active, nil
+	return e, nil
 }
 
 func (c *Client) ScanByProjectAndTool(project string, tool string) (string, error) {

@@ -6,12 +6,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/kondukto-io/cli/client"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -49,49 +46,47 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("scan called")
-
 		// Check scan method
-		byScanId := cmd.Flag("scan-id").Value.String() != ""
-		byProjectAndTool := cmd.Flag("project").Value.String() != "" &&
-			cmd.Flag("tool").Value.String() != ""
+		byScanId := cmd.Flag("scan-id").Changed
+		byProjectAndTool := cmd.Flag("project").Changed &&
+			cmd.Flag("tool").Changed
 
 		// Initialize Kondukto client
 		c, err := client.New()
 		if err != nil {
-			fmt.Println(errors.Wrap(err, "could not initialize Kondukto client"))
-			os.Exit(1)
+			qwe(1, err, "could not initialize Kondukto client")
 		}
 
 		// Start scan by scan method
-		var newEventId string
+		var newEventId, oldScanId string
 		if byScanId {
-			id := cmd.Flag("scan-id").Value.String()
-
-			eventId, err := c.StartScanByScanId(id)
+			oldScanId, err = cmd.Flags().GetString("scan-id")
 			if err != nil {
-				fmt.Println(errors.Wrap(err, "could not start scan"))
-				os.Exit(1)
+				qwe(1, err, "failed to parse scan-id flag")
 			}
-			newEventId = eventId
 		} else if byProjectAndTool {
-			project := cmd.Flag("project").Value.String()
-			tool := cmd.Flag("tool").Value.String()
+			// Parse command line flags
+			project, err := cmd.Flags().GetString("project")
+			if err != nil {
+				qwe(1, err, "failed to parse project flag")
+			}
+			tool, err := cmd.Flags().GetString("tool")
+			if err != nil {
+				qwe(1, err, "failed to parse tool flag")
+			}
 
 			if !validTool(tool) {
-				fmt.Println("invalid tool name")
-				os.Exit(1)
+				qwm(1, "invalid tool name")
 			}
 
+			// List project scans to get id of last scan
 			scans, err := c.ListScans(project)
 			if err != nil {
-				fmt.Println(fmt.Errorf("could not get scans of project: %w", err))
-				os.Exit(1)
+				qwe(1, err, "could not get scans of the project")
 			}
 
 			if len(scans) == 0 {
-				fmt.Println("no scans found for the project")
-				os.Exit(1)
+				qwm(1, "no scans found for the project")
 			}
 
 			var lastScan client.Scan
@@ -104,72 +99,54 @@ to quickly create a Cobra application.`,
 			}
 
 			if !found {
-				fmt.Println("no scans found with given tool")
-				os.Exit(1)
+				qwm(1, "no scans found with given tool")
 			}
 
-			eventId, err := c.StartScanByScanId(lastScan.ID)
-			if err != nil {
-				fmt.Println(fmt.Errorf("could not start scan: %w", err))
-				os.Exit(1)
-			}
-			newEventId = eventId
+			oldScanId = lastScan.ID
 		} else {
-			fmt.Println("to start a scan, you must provide a scan id or a project identifier with a tool name. project identifier might be id or name of the project.")
-			os.Exit(1)
+			qwm(1, "to start a scan, you must provide a scan id or a project identifier with a tool name. project identifier might be id or name of the project.")
 		}
 
-		// Block process to wait for scan to finish if async set to true
-		async, _ := strconv.ParseBool(cmd.Flag("async").Value.String())
+		eventId, err := c.StartScanByScanId(oldScanId)
+		if err != nil {
+			qwe(1, err, "could not start scan")
+		}
+		newEventId = eventId
+
+		async, err := cmd.Flags().GetBool("async")
+		if err != nil {
+			qwe(1, err, "failed to parse async flag")
+		}
+
+		// Do not wait for scan to finish if async set to true
 		if async {
-			fmt.Println("scan has been started with async parameter, exiting.")
+			qwm(1, "scan has been started with async parameter, exiting.")
 		} else {
 			lastStatus := -1
 			for {
-				status, active, err := c.GetScanStatus(newEventId)
+				event, err := c.GetScanStatus(newEventId)
 				if err != nil {
-					fmt.Println(errors.Wrap(err, "could not get scan status"))
-					os.Exit(1)
+					qwe(1, err, "could not get scan status")
 				}
 
-				switch active {
+				switch event.Active {
 				case eventFailed:
-					fmt.Println("scan failed")
-					os.Exit(1)
+					qwm(1, "scan failed")
 				case eventInactive:
-					if status == jobFinished {
-						fmt.Println("scan finished successfully")
-						os.Exit(0)
+					if event.Status == jobFinished {
+						qwm(0, "scan finished successfully")
 					}
 				case eventActive:
-					if status != lastStatus {
-						statusStr := func(s int) string {
-							switch status {
-							case jobStarting:
-								return "starting scan"
-							case jobRunning:
-								return "scan running"
-							case jobAnalyzing:
-								return "analyzing scan results"
-							case jobNotifying:
-								return "setting notifications"
-							case jobFinished:
-								return "scan finished"
-							default:
-								return "unknown"
-							}
-						}(status)
-						fmt.Println(statusStr)
-						lastStatus = status
+					if event.Status != lastStatus {
+						fmt.Println(statusMsg(event.Status))
+						lastStatus = event.Status
 					}
 					time.Sleep(10 * time.Second)
 				default:
-					fmt.Println("invalid event status")
-					os.Exit(1)
+					qwm(1, "invalid event status")
 				}
 			}
 		}
-		fmt.Println(newEventId)
 	},
 }
 
@@ -187,5 +164,22 @@ func validTool(tool string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func statusMsg(s int) string {
+	switch s {
+	case jobStarting:
+		return "starting scan"
+	case jobRunning:
+		return "scan running"
+	case jobAnalyzing:
+		return "analyzing scan results"
+	case jobNotifying:
+		return "setting notifications"
+	case jobFinished:
+		return "scan finished"
+	default:
+		return "unknown scan status"
 	}
 }

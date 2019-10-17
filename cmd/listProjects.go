@@ -10,7 +10,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/kondukto-io/cli/client"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -25,23 +24,18 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("listProjects called")
-
 		c, err := client.New()
 		if err != nil {
-			fmt.Println(errors.Wrap(err, "could not initialize Kondukto client"))
-			os.Exit(1)
+			qwe(1, err, "could not initialize Kondukto client")
 		}
 
 		projects, err := c.ListProjects()
 		if err != nil {
-			fmt.Println(errors.Wrap(err, "could not retrieve projects"))
-			os.Exit(1)
+			qwe(1, err, "could not retrieve projects")
 		}
 
 		if len(projects) < 1 {
-			fmt.Println("no projects found")
-			os.Exit(1)
+			qwm(1, "no projects found")
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)

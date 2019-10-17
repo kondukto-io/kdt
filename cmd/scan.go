@@ -52,9 +52,9 @@ to quickly create a Cobra application.`,
 		fmt.Println("scan called")
 
 		// Check scan method
-		byScanId := cmd.Flag("scan-id").Value.String() != ""
-		byProjectAndTool := cmd.Flag("project").Value.String() != "" &&
-			cmd.Flag("tool").Value.String() != ""
+		byScanId := cmd.Flag("scan-id").Changed
+		byProjectAndTool := cmd.Flag("project").Changed &&
+			cmd.Flag("tool").Changed
 
 		// Initialize Kondukto client
 		c, err := client.New()

@@ -22,6 +22,14 @@ type Scan struct {
 	} `json:"summary"`
 }
 
+type Event struct {
+	ID      string `json:"id"`
+	Status  int    `json:"status"`
+	Active  int    `json:"active"`
+	ScanId  string `json:"scan_id"`
+	Message string `json:"message"`
+}
+
 func (c *Client) ListScans(project string) ([]Scan, error) {
 	scans := make([]Scan, 0)
 

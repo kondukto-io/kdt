@@ -39,6 +39,11 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
+		if len(projects) < 1 {
+			fmt.Println("no projects found")
+			os.Exit(1)
+		}
+
 		w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
 		defer w.Flush()
 

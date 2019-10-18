@@ -62,9 +62,9 @@ Following flags are valid for all commands of KDT.
 
 `--async`: Starts an asynchronous scan that won't block process to wait for scan to finish. KDT will exit gracefully when scan get started successfully.
 
-`--insecure`: Uses an insecure HTTP client to skip verification of TLS to let self-signed certificates work.
+`--insecure`: If provided, client skips verification of server's certificates and host name. In this mode, TLS is susceptible to man-in-the-middle attacks. Not recommended unless you really know what you are doing!
 
-`-v` or `--verbose`: Prints more and detailed logs
+`-v` or `--verbose`: Prints more and detailed logs. Useful for debugging.
 
 #### Scan Commands Flags
 Following flags are only valid for scan commands.

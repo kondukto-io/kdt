@@ -95,6 +95,7 @@ Following flags are only valid for scan commands.
 
 These flags represent maximum number of vulnerabilities with specified severity to ignore. If these threshold are crossed, KDT will exit with non-zero status code.
 
+
 `--threshold-crit` 
 
 `--threshold-high` 
@@ -102,6 +103,12 @@ These flags represent maximum number of vulnerabilities with specified severity 
 `--threshold-med` 
 
 `--threshold-low` 
+
+*Threshold flags don't work with `--async` flag since KDT will exit when scan gets started, and won't be able to check scan results*
+
+Example Usage:
+
+`kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10`
 
 
 ## Contributing to KDT

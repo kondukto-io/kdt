@@ -13,6 +13,7 @@ type Scan struct {
 	MetaData string     `json:"meta_data"`
 	Tool     string     `json:"tool"`
 	Date     *time.Time `json:"date"`
+	Score    int        `json:"score"`
 	Summary  struct {
 		Critical int `json:"critical"`
 		High     int `json:"high"`

@@ -4,7 +4,7 @@ KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go]
 With KDT, you can list projects and their scans in **Kondukto**, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD pipelines to trigger scans and break releases if a scan fails or scan results don't met specified release criteria. 
 
 ### What is Kondukto?
-[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be easily integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease. 
+[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be easily integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
 
 ## Installation
 If you just wish to download and run a portable binary, you can get one of pre-compiled binaries for your system from Github releases page.

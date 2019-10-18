@@ -21,9 +21,9 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "kondukto-cli",
+	Use:   "kdt",
 	Short: "Command line interface to interact with Kondukto",
-	Long:  `Kondukto-CLI is the command line interface of Kondukto for starting scans and setting release criteria. It is made to ease integration of Kondukto to DevSecOps pipelines.`,
+	Long:  `KDT is the command line interface of Kondukto for starting scans and setting release criteria. It is made to ease integration of Kondukto to DevSecOps pipelines.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) {},

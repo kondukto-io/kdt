@@ -49,9 +49,9 @@ To list scans of a project: `kdt list scans -p ExampleProject`
 
 To restart a scan, you can use of the following:
 
-- using id of the scan: `kdt scan -s 5da6cafa5ab6e436faf643dc`
+- id of the scan: `kdt scan -s 5da6cafa5ab6e436faf643dc`
 
-- using the project's name and one of scan tools: `kdt scan -p ExampleProject -t ExampleTool`
+- project and tool names: `kdt scan -p ExampleProject -t ExampleTool`
 
 ## Command Line Flags
 KDT has several helpful flags to manage scans.

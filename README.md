@@ -1,21 +1,77 @@
 # KDT
 KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go](https://golang.org). It interacts with Kondukto engine through public API. 
 
-With KDT, you can list projects and their scans in Kondukto, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD processes to trigger scans and breaking releases if a scan fails or scan results doesn't met specified release criteria. 
+With KDT, you can list projects and their scans in **Kondukto**, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD pipelines to trigger scans and break releases if a scan fails or scan results doesn't met specified release criteria. 
+
+## Installation
+If you just wish to download and run, you can get one of pre-compiled binaries for your system from Github releases page. You can also simply run the following if you have an existing [Go](https://golang.org) environment:
+```
+go install github.com/kondukto-io/kdt
+```
+If you want to build it yourself, download the source files using Github, unzip the files, cd into the `kdt` directory and run:
+```
+go build
+```
 
 ## Configuration
-KDT needs Kondukto host and an API token for authentication. You can provide these with 3 methods. API tokens can be created under Integrations/API Tokens menu.
+KDT needs Kondukto host and an API token for authentication. API tokens can be created under Integrations/API Tokens menu.
 
-1. Setting environment variables: (example is for BASH shell)
+You can provide configuration by:
+
+##### 1) Setting environment variables: 
+
+*(example is for BASH shell)*
 ```
 $ export KONDUKTO_HOST=http://localhost:8080
 $ export KONDUKTO_TOKEN=WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
 ```
-
-2. Providing a configuration file.
-
+It is always better to set environment variables in shell profile files(`~/.bashrc`, `~/.zshrc`, `~/profile` etc.)
+##### 2) Providing a configuration file.
 
 Default path for config file is `$HOME/.kdt.yaml`. Another file can be provided with `--config` command line flag.
 ```
-// $HOME.kdt.yaml 
+// $HOME/.kdt.yaml 
+host: http://localhost:8088
+token: WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
 ```
+
+##### 3) Using command line flags
+```
+kdt list projects --host http://localhost:8088 --token WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
+```
+
+## Running
+Most KDT commands are straightforward.
+
+To list projects: `kdt list project`
+
+To list scans of a project: `kdt list scans -p ExampleProject`
+
+To restart a scan, you can use of the following:
+
+- using id of the scan: `kdt scan -s 5da6cafa5ab6e436faf643dc`
+
+- using the project's name and one of scan tools: `kdt scan -p ExampleProject -t ExampleTool`
+
+## Command Line Flags
+KDT has several helpful flags to manage scans.
+
+#### Global flags
+
+Following flags are valid for all commands of KDT.
+
+`--async`: Starts an asynchronous scan that won't block process to wait for scan to finish. KDT will exit gracefully when scan get started successfully.
+
+`--insecure`: Uses an insecure HTTP client to skip verification of TLS to let self-signed certificates work.
+
+`-v` or `--verbose`: Prints more and detailed logs
+
+#### Scan Commands Flags
+Following flags are only valid for scan commands.
+
+`-p` or `--project` for providing project name or id
+
+`-t` or `--tool` for providing tool name
+
+`-s` or `--scan-id` for providing scan id
+

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	userAgent = "Kondukto-CLI"
+	userAgent = "KDT"
 )
 
 type Client struct {

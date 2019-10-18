@@ -5,6 +5,7 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -123,6 +124,7 @@ to quickly create a Cobra application.`,
 			qwm(1, "scan has been started with async parameter, exiting.")
 		} else {
 			lastStatus := -1
+			var newScanID string
 			for {
 				event, err := c.GetScanStatus(newEventId)
 				if err != nil {
@@ -134,12 +136,21 @@ to quickly create a Cobra application.`,
 					qwm(1, "scan failed")
 				case eventInactive:
 					if event.Status == jobFinished {
-						qwm(0, "scan finished successfully")
+						fmt.Println("scan finished successfully")
+						if err := passTests(newScanID, cmd); err != nil {
+							qwe(1, err, "scan could not pass security tests")
+						} else {
+							qwm(0, "scan passed security tests successfully")
+						}
 					}
 				case eventActive:
 					if event.Status != lastStatus {
 						fmt.Println(statusMsg(event.Status))
 						lastStatus = event.Status
+						// Get new scans scan id
+						if event.ScanId != "" {
+							newScanID = event.ScanId
+						}
 					}
 					time.Sleep(10 * time.Second)
 				default:
@@ -156,6 +167,11 @@ func init() {
 	scanCmd.Flags().StringP("project", "p", "", "project name or id")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
+
+	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
+	scanCmd.Flags().Int("threshold-high", 0, "threshold for number of vulnerabilities with high severity")
+	scanCmd.Flags().Int("threshold-med", 0, "threshold for number of vulnerabilities with medium severity")
+	scanCmd.Flags().Int("threshold-low", 0, "threshold for number of vulnerabilities with low severity")
 }
 
 func validTool(tool string) bool {
@@ -182,4 +198,58 @@ func statusMsg(s int) string {
 	default:
 		return "unknown scan status"
 	}
+}
+
+func passTests(id string, cmd *cobra.Command) error {
+	c, err := client.New()
+	if err != nil {
+		return err
+	}
+
+	scan, err := c.GetScanSummary(id)
+	if err != nil {
+		return err
+	}
+
+	if cmd.Flag("threshold-crit").Changed {
+		crit, err := cmd.Flags().GetInt("threshold-crit")
+		if err != nil {
+			return err
+		}
+		if scan.Summary.Critical > crit {
+			return errors.New("number of vulnerabilities with critical severity is higher than threshold")
+		}
+	}
+
+	if cmd.Flag("threshold-high").Changed {
+		high, err := cmd.Flags().GetInt("threshold-high")
+		if err != nil {
+			return err
+		}
+		if scan.Summary.High > high {
+			return errors.New("number of vulnerabilities with high severity is higher than threshold")
+		}
+	}
+
+	if cmd.Flag("threshold-med").Changed {
+		med, err := cmd.Flags().GetInt("threshold-med")
+		if err != nil {
+			return err
+		}
+		if scan.Summary.Medium > med {
+			return errors.New("number of vulnerabilities with medium severity is higher than threshold")
+		}
+	}
+
+	if cmd.Flag("threshold-low").Changed {
+		low, err := cmd.Flags().GetInt("threshold-low")
+		if err != nil {
+			return err
+		}
+		if scan.Summary.Low > low {
+			return errors.New("number of vulnerabilities with low severity is higher than threshold")
+		}
+	}
+
+	return nil
 }

@@ -11,7 +11,7 @@ You can also simply run the following if you have an existing [Go](https://golan
 go install github.com/kondukto-io/kdt
 ```
 
-If you want to build it yourself, clone the source files using Github, unzip the files, cd into the `kdt` directory and run:
+If you want to build it yourself, clone the source files using Github, change into the `kdt` directory and run:
 ```
 git clone https://github.com/kondukto-io/kdt.git
 cd kdt

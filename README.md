@@ -4,13 +4,18 @@ KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go]
 With KDT, you can list projects and their scans in **Kondukto**, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD pipelines to trigger scans and break releases if a scan fails or scan results doesn't met specified release criteria. 
 
 ## Installation
-If you just wish to download and run, you can get one of pre-compiled binaries for your system from Github releases page. You can also simply run the following if you have an existing [Go](https://golang.org) environment:
+If you just wish to download and run a portable binary, you can get one of pre-compiled binaries for your system from Github releases page.
+
+You can also simply run the following if you have an existing [Go](https://golang.org) environment:
 ```
 go install github.com/kondukto-io/kdt
 ```
-If you want to build it yourself, download the source files using Github, unzip the files, cd into the `kdt` directory and run:
+
+If you want to build it yourself, clone the source files using Github, unzip the files, cd into the `kdt` directory and run:
 ```
-go build
+git clone https://github.com/kondukto-io/kdt.git
+cd kdt
+go install
 ```
 
 ## Configuration

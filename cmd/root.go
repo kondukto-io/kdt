@@ -76,7 +76,7 @@ func initConfig() {
 
 		// Search config in home directory with name ".cli" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".kondukto")
+		viper.SetConfigName(".kdt")
 		viper.SetConfigType("yaml")
 		viper.SetEnvPrefix("kondukto")
 	}

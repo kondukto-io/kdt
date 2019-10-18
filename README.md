@@ -80,3 +80,17 @@ Following flags are only valid for scan commands.
 
 `-s` or `--scan-id` for providing scan id
 
+
+## Contributing to KDT
+If you wish to get involved in KDT development, create issues for problems and missing features or fork the repository and create pull requests to help the development directly.
+
+Before sending your PRs:
+- Create and name your branches according to [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/) methodology.
+
+    For new features: `feature/example-feature-branch`
+
+    For bug fixes: `bugfix/example-bugfix-branch`
+
+- Properly document your code following idiomatic [Go](https://golang.org) practices. Exported functions should always be commented.
+
+- Write detailed PR descriptions and comments

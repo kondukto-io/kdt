@@ -1,4 +1,4 @@
-module github.com/kondukto-io/cli
+module github.com/kondukto-io/kdt
 
 go 1.13
 

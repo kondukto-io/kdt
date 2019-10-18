@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	repoURL = "https://github.com/kondukto-io/cli"
+	repoURL = "https://github.com/kondukto-io/kdt"
 )
 
 var cfgFile string

@@ -9,7 +9,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/kondukto-io/cli/client"
+	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
 )
 

@@ -13,6 +13,7 @@ type Scan struct {
 	MetaData string     `json:"meta_data"`
 	Tool     string     `json:"tool"`
 	Date     *time.Time `json:"date"`
+	Score    int        `json:"score"`
 	Summary  struct {
 		Critical int `json:"critical"`
 		High     int `json:"high"`
@@ -105,6 +106,22 @@ func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 	return e, nil
 }
 
-func (c *Client) ScanByProjectAndTool(project string, tool string) (string, error) {
-	panic("not implemented")
+func (c *Client) GetScanSummary(id string) (*Scan, error) {
+	path := fmt.Sprintf("/api/v1/scans/%s/summary", id)
+	req, err := c.newRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	scan := &Scan{}
+	resp, err := c.do(req, &scan)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("response not ok")
+	}
+
+	return scan, nil
 }

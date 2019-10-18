@@ -52,7 +52,7 @@ To list projects: `kdt list project`
 
 To list scans of a project: `kdt list scans -p ExampleProject`
 
-To restart a scan, you can use of the following:
+To restart a scan, you can use one of the following:
 
 - id of the scan: `kdt scan -s 5da6cafa5ab6e436faf643dc`
 

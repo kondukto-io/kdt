@@ -13,7 +13,7 @@ If you just wish to download and run a portable binary, you can get one of pre-c
 
 You can also simply run the following if you have an existing [Go](https://golang.org) environment:
 ```
-go install github.com/kondukto-io/kdt
+go get github.com/kondukto-io/kdt
 ```
 
 If you want to build it yourself, clone the source files using Github, change into the `kdt` directory and run:

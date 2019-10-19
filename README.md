@@ -6,14 +6,14 @@ KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go]
 With KDT, you can list projects and their scans in **Kondukto**, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD pipelines to trigger scans and break releases if a scan fails or scan results don't met specified release criteria. 
 
 ### What is Kondukto?
-[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be easily integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
+[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
 
 ## Installation
 If you just wish to download and run a portable binary, you can get one of pre-compiled binaries for your system from Github releases page.
 
 You can also simply run the following if you have an existing [Go](https://golang.org) environment:
 ```
-go install github.com/kondukto-io/kdt
+go get github.com/kondukto-io/kdt
 ```
 
 If you want to build it yourself, clone the source files using Github, change into the `kdt` directory and run:
@@ -35,7 +35,7 @@ You can provide configuration by:
 $ export KONDUKTO_HOST=http://localhost:8080
 $ export KONDUKTO_TOKEN=WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
 ```
-It is always better to set environment variables in shell profile files(`~/.bashrc`, `~/.zshrc`, `~/profile` etc.)
+It is always better to set environment variables in shell profile files(`~/.bashrc`, `~/.zshrc`, `~/.profile` etc.)
 ##### 2) Providing a configuration file.
 
 Default path for config file is `$HOME/.kdt.yaml`. Another file can be provided with `--config` command line flag.
@@ -53,7 +53,7 @@ kdt list projects --host http://localhost:8088 --token WmQ2eHFDRzE3elplN0ZRbUVsR
 ## Running
 Most KDT commands are straightforward.
 
-To list projects: `kdt list project`
+To list projects: `kdt list projects`
 
 To list scans of a project: `kdt list scans -p ExampleProject`
 

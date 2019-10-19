@@ -35,7 +35,7 @@ You can provide configuration by:
 $ export KONDUKTO_HOST=http://localhost:8080
 $ export KONDUKTO_TOKEN=WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
 ```
-It is always better to set environment variables in shell profile files(`~/.bashrc`, `~/.zshrc`, `~/profile` etc.)
+It is always better to set environment variables in shell profile files(`~/.bashrc`, `~/.zshrc`, `~/.profile` etc.)
 ##### 2) Providing a configuration file.
 
 Default path for config file is `$HOME/.kdt.yaml`. Another file can be provided with `--config` command line flag.

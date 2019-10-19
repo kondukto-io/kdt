@@ -1,3 +1,7 @@
+/*
+Copyright © 2019 Kondukto
+
+*/
 package client
 
 import (

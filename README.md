@@ -53,7 +53,7 @@ kdt list projects --host http://localhost:8088 --token WmQ2eHFDRzE3elplN0ZRbUVsR
 ## Running
 Most KDT commands are straightforward.
 
-To list projects: `kdt list project`
+To list projects: `kdt list projects`
 
 To list scans of a project: `kdt list scans -p ExampleProject`
 

@@ -104,11 +104,15 @@ These flags represent maximum number of vulnerabilities with specified severity 
 
 `--threshold-low` 
 
+`--threshold-risk` to fail tests if the scan causes a higher risk score than the last scan's risk score. Useful for keeping a project's security level under control. If used with every scan in DevOps pipelines, you will make sure that the project will never get more vulnerable.
+
+*Risk threshold considers only the last two scans with the same tool. If the project does not have a scan with the tool, KDT will fail since it will not be able to compare risk scores.*
+
 *Threshold flags don't work with `--async` flag since KDT will exit when scan gets started, and won't be able to check scan results*
 
 Example Usage:
 
-`kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10`
+`kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10 --threshold-risk`
 
 
 ## Contributing to KDT

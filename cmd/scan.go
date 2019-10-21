@@ -206,6 +206,21 @@ func passTests(id string, cmd *cobra.Command) error {
 		return err
 	}
 
+	if cmd.Flag("threshold-risk").Changed {
+		m, err := c.GetLastResults(id)
+		if err != nil {
+			return err
+		}
+
+		if m["last"] == nil || m["previous"] == nil {
+			return errors.New("missing score records")
+		}
+
+		if m["last"].Score > m["previous"].Score {
+			return errors.New("risk score of the scan is higher than last scan's")
+		}
+	}
+
 	if cmd.Flag("threshold-crit").Changed {
 		crit, err := cmd.Flags().GetInt("threshold-crit")
 		if err != nil {

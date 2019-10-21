@@ -138,3 +138,23 @@ func (c *Client) GetScanSummary(id string) (*Scan, error) {
 
 	return scan, nil
 }
+
+func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
+	path := fmt.Sprintf("/api/v1/scans/%s/lastResults", id)
+	req, err := c.newRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]*ResultSet)
+	resp, err := c.do(req, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("response not ok")
+	}
+
+	return m, err
+}

@@ -11,29 +11,38 @@ import (
 	"time"
 )
 
-type Scan struct {
-	ID       string     `json:"id"`
-	Name     string     `json:"name"`
-	MetaData string     `json:"meta_data"`
-	Tool     string     `json:"tool"`
-	Date     *time.Time `json:"date"`
-	Score    int        `json:"score"`
-	Summary  struct {
+type (
+	Scan struct {
+		ID       string     `json:"id"`
+		Name     string     `json:"name"`
+		MetaData string     `json:"meta_data"`
+		Tool     string     `json:"tool"`
+		Date     *time.Time `json:"date"`
+		Score    int        `json:"score"`
+		Summary  *Summary   `json:"summary"`
+	}
+
+	ResultSet struct {
+		Score   int      `json:"score"`
+		Summary *Summary `json:"summary"`
+	}
+
+	Summary struct {
 		Critical int `json:"critical"`
 		High     int `json:"high"`
 		Medium   int `json:"medium"`
 		Low      int `json:"low"`
 		Info     int `json:"info"`
-	} `json:"summary"`
-}
+	}
 
-type Event struct {
-	ID      string `json:"id"`
-	Status  int    `json:"status"`
-	Active  int    `json:"active"`
-	ScanId  string `json:"scan_id"`
-	Message string `json:"message"`
-}
+	Event struct {
+		ID      string `json:"id"`
+		Status  int    `json:"status"`
+		Active  int    `json:"active"`
+		ScanId  string `json:"scan_id"`
+		Message string `json:"message"`
+	}
+)
 
 func (c *Client) ListScans(project string) ([]Scan, error) {
 	scans := make([]Scan, 0)

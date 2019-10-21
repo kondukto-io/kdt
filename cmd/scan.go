@@ -115,7 +115,7 @@ var scanCmd = &cobra.Command{
 
 		// Do not wait for scan to finish if async set to true
 		if async {
-			qwm(1, "scan has been started with async parameter, exiting.")
+			qwm(0, "scan has been started with async parameter, exiting.")
 		} else {
 			lastStatus := -1
 			var newScanID string

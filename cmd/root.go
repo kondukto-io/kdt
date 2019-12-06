@@ -50,16 +50,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&async, "async", false, "does not block build process")
 	rootCmd.PersistentFlags().BoolVar(&insecure, "insecure", false, "skip TLS verification and use insecure http client")
 
-	if host != "" {
-		viper.Set("host", host)
-	}
-	if token != "" {
-		viper.Set("token", token)
-	}
-
-	viper.Set("verbose", verbose)
-	viper.Set("insecure", insecure)
-	//viper.Set("async", async)
+	viper.BindPFlag("insecure", rootCmd.PersistentFlags().Lookup("insecure"))
+	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
+	viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
+	viper.BindPFlag("token", rootCmd.PersistentFlags().Lookup("token"))
 }
 
 // initConfig reads in config file and ENV variables if set.

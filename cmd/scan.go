@@ -115,7 +115,7 @@ var scanCmd = &cobra.Command{
 
 		// Do not wait for scan to finish if async set to true
 		if async {
-			qwm(1, "scan has been started with async parameter, exiting.")
+			qwm(0, "scan has been started with async parameter, exiting.")
 		} else {
 			lastStatus := -1
 			var newScanID string
@@ -162,6 +162,7 @@ func init() {
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
 
+	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
 	scanCmd.Flags().Int("threshold-high", 0, "threshold for number of vulnerabilities with high severity")
 	scanCmd.Flags().Int("threshold-med", 0, "threshold for number of vulnerabilities with medium severity")
@@ -203,6 +204,21 @@ func passTests(id string, cmd *cobra.Command) error {
 	scan, err := c.GetScanSummary(id)
 	if err != nil {
 		return err
+	}
+
+	if cmd.Flag("threshold-risk").Changed {
+		m, err := c.GetLastResults(id)
+		if err != nil {
+			return err
+		}
+
+		if m["last"] == nil || m["previous"] == nil {
+			return errors.New("missing score records")
+		}
+
+		if m["last"].Score > m["previous"].Score {
+			return errors.New("risk score of the scan is higher than last scan's")
+		}
 	}
 
 	if cmd.Flag("threshold-crit").Changed {

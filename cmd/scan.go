@@ -7,6 +7,8 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
+	"text/tabwriter"
 	"time"
 
 	"github.com/kondukto-io/kdt/client"
@@ -131,7 +133,19 @@ var scanCmd = &cobra.Command{
 				case eventInactive:
 					if event.Status == jobFinished {
 						fmt.Println("scan finished successfully")
-						if err := passTests(newScanID, cmd); err != nil {
+						scan, err := c.GetScanSummary(newScanID)
+						if err != nil {
+							qwe(1, err, "failed to fetch scan summary")
+						}
+
+						// Printing scan results
+						w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
+						defer w.Flush()
+						_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
+						_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
+						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
+
+						if err := passTests(newScanID, scan, cmd); err != nil {
 							qwe(1, err, "scan could not pass security tests")
 						} else {
 							qwm(0, "scan passed security tests successfully")
@@ -195,19 +209,14 @@ func statusMsg(s int) string {
 	}
 }
 
-func passTests(id string, cmd *cobra.Command) error {
+func passTests(scan *client.Scan, cmd *cobra.Command) error {
 	c, err := client.New()
 	if err != nil {
 		return err
 	}
 
-	scan, err := c.GetScanSummary(id)
-	if err != nil {
-		return err
-	}
-
 	if cmd.Flag("threshold-risk").Changed {
-		m, err := c.GetLastResults(id)
+		m, err := c.GetLastResults(scan.ID)
 		if err != nil {
 			return err
 		}

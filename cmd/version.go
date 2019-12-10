@@ -15,7 +15,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "prints version number of KDT",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("KDT Kondukto Client v1.0.1")
+		fmt.Println("KDT Kondukto Client v1.0.3")
 	},
 }
 

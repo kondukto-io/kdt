@@ -11,5 +11,6 @@ release: $(PLATFORMS)
 $(PLATFORMS):
 	mkdir -p release
 	GOOS=$(os) GOARCH=$(arch) CGO_ENABLED=0 go build -o release/$(BINARY)-$(VERSION)-$(os)
+	echo `cat release/$(BINARY)-$(VERSION)-$(os)|sha1sum` > release/$(BINARY)-$(VERSION)-$(os).sha1
 
 .PHONY: release $(PLATFORMS)

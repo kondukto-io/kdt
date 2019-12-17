@@ -14,8 +14,8 @@ install: true
 env:
   global:
     - GO111MODULE=on
-    - GOFLAGS='-mod vendor'
     - PATH=${TRAVIS_BUILD_DIR}/bin:${PATH}
+      #- GOFLAGS='-mod vendor'
 
 before_install:
   - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.17.1

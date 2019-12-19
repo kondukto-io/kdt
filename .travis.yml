@@ -1,0 +1,24 @@
+language: go
+go:
+  - 1.13.x
+
+script:
+  - export GO111MODULE=on
+  - GOOS=linux GOARCH=amd64 go build -o kdt-linux
+  - sha256sum kdt-linux > kdt-linux.sha256 
+  - GOOS=windows GOARCH=amd64 go build -o kdt-windows.exe
+  - sha256sum kdt-windows.exe > kdt-windows.exe.sha256 
+
+deploy:
+  provider: releases
+  api_key:
+    secure: $GITHUB_TOKEN
+  file:
+    - kdt-linux
+    - kdt-linux.sha256
+    - kdt-windows.exe
+    - kdt-windows.exe.sha256
+  skip_cleanup: true
+  on:
+    tags: true
+

@@ -1,28 +1,23 @@
-sudo: false
-dist: trusty
-
 language: go
-
-os:
-  - linux
-
 go:
-  - "1.11.x"
-
-install: true
-
-env:
-  global:
-    - GO111MODULE=on
-    - PATH=${TRAVIS_BUILD_DIR}/bin:${PATH}
-      #- GOFLAGS='-mod vendor'
-
-before_install:
-  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.17.1
+  - 1.13.x
 
 script:
-  - golangci-lint run
-  - make
+  - export GO111MODULE=on
+  - GOOS=linux GOARCH=amd64 go build -o kdt
+  - sha256sum kdt > kdt.sha256 
+  - GOOS=windows GOARCH=amd64 go build -o kdt.exe
+  - sha256sum kdt.exe > kdt.exe.sha256 
 
-    #after_success:
-    #  - bash <(curl -s https://codecov.io/bash)
+deploy:
+  provider: releases
+  api_key:
+    secure: $GITHUB_TOKEN
+  file:
+    - kdt
+    - kdt.sha256
+    - kdt.exe
+    - kdt.exe.sha256
+  skip_cleanup: true
+  on:
+    tags: true

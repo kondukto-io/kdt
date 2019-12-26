@@ -15,7 +15,6 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-#RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kdt .
 RUN CGO_ENABLED=0 GOOS=linux go build -o kdt .
 
 ## Start a new stage from scratch
@@ -28,4 +27,4 @@ WORKDIR /root/
 COPY --from=builder /app/kdt .
 
 # Command to run the executable
-CMD ["./kdt"]
+ENTRYPOINT ["./kdt"]

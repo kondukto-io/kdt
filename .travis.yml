@@ -19,5 +19,6 @@ deploy:
     - kdt.exe
     - kdt.exe.sha256
   skip_cleanup: true
+  draft: true
   on:
-    tags: true
+    branch: master

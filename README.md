@@ -19,7 +19,7 @@ $ curl -sSL https://cli.kondukto.io | sudo sh
 
 Non-root with curl:
 ```
-$ curl -sSL https://cli.kondukto.io | sudo sh
+$ curl -sSL https://cli.kondukto.io | sh
 ```
 
 ### Windows 

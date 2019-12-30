@@ -1,24 +1,44 @@
+sudo: required
 language: go
 go:
   - 1.13.x
 
+services:
+  - docker 
+
+before_script:
+  - curl -sSlf https://get.docker.com | sed s/sleep\ 20/sleep\ 0/g| sudo -E sh
+
 script:
   - export GO111MODULE=on
-  - GOOS=linux GOARCH=amd64 go build -o kdt-linux
-  - sha256sum kdt-linux > kdt-linux.sha256 
-  - GOOS=windows GOARCH=amd64 go build -o kdt-windows.exe
-  - sha256sum kdt-windows.exe > kdt-windows.exe.sha256 
+  - GOOS=linux GOARCH=amd64 go build -o kdt
+  - sha256sum kdt > kdt.sha256 
+  - GOOS=windows GOARCH=amd64 go build -o kdt.exe
+  - sha256sum kdt.exe > kdt.exe.sha256
+  - docker build -t kondukto/kondukto-cli:$TRAVIS_TAG -f Dockerfile . 
+
+after_success:
+  - if [ ! -z "$TRAVIS_TAG" ]; then 
+        if [ -z "$DOCKER_NS" ]; then
+          export DOCKER_NS=kondukto;
+        fi
+
+        docker tag $DOCKER_NS/kondukto-cli:latest $DOCKER_NS/kondukto-cli:$TRAVIS_TAG 
+        echo $DOCKER_PASSWORD | docker login -u=$DOCKER_USERNAME --password-stdin;
+        docker push $DOCKER_NS/kondukto-cli:$TRAVIS_TAG
+
+    fi;
 
 deploy:
-  provider: releases
-  api_key:
-    secure: $GITHUB_TOKEN
-  file:
-    - kdt-linux
-    - kdt-linux.sha256
-    - kdt-windows.exe
-    - kdt-windows.exe.sha256
-  skip_cleanup: true
-  on:
-    tags: true
-
+  if: branch = master
+    provider: releases
+    api_key:
+      secure: $GITHUB_TOKEN
+    file:
+      - kdt
+      - kdt.sha256
+      - kdt.exe
+      - kdt.exe.sha256
+    skip_cleanup: true
+    on:
+      tags: true

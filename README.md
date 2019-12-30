@@ -9,9 +9,24 @@ With KDT, you can list projects and their scans in **Kondukto**, and restart a s
 [Kondukto](https://kondukto.io) is an Application Security Testing Orchestration platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
 
 ## Installation
-If you just wish to download and run a portable binary, you can get one of pre-compiled binaries for your system from Github releases page.
+You can install the CLI with a `curl` utility script or by downloading the pre-compiled binary from the Github release page.
+Once installed youl'll get the `kdt-cli` command and `kdt` alias.
 
-You can also simply run the following if you have an existing [Go](https://golang.org) environment:
+Utility script with `curl`:
+```
+$ curl -sSL https://cli.kondukto.io | sudo sh
+```
+
+Non-root with curl:
+```
+$ curl -sSL https://cli.kondukto.io | sudo sh
+```
+
+### Windows 
+To install the kdt-cli on Windows go to [Releases](https://github.com/kondukto-io/kdt/releases) and download the latest kdt-cli.exe.
+
+
+Or you can also simply run the following if you have an existing [Go](https://golang.org) environment:
 ```
 go get github.com/kondukto-io/kdt
 ```

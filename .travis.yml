@@ -31,14 +31,14 @@ after_success:
 
 deploy:
   if: branch = master
-    provider: releases
-    api_key:
-      secure: $GITHUB_TOKEN
-    file:
-      - kdt
-      - kdt.sha256
-      - kdt.exe
-      - kdt.exe.sha256
-    skip_cleanup: true
-    on:
-      tags: true
+  provider: releases
+  api_key:
+   secure: $GITHUB_TOKEN
+  file:
+   - kdt
+   - kdt.sha256
+   - kdt.exe
+   - kdt.exe.sha256
+  skip_cleanup: true
+  on:
+   tags: true

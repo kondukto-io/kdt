@@ -5,9 +5,15 @@ Copyright © 2019 Kondukto
 package client
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -157,4 +163,51 @@ func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
 	}
 
 	return m, err
+}
+
+func (c *Client) ImportScanResult(project, branch, tool, file string) error {
+	path := "/api/v1/scans/import"
+	rel := &url.URL{Path: path}
+	u := c.BaseURL.ResolveReference(rel)
+
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return fmt.Errorf("failed to import scan results: %w", err)
+	}
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("files", filepath.Base(f.Name()))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(part, f)
+	if err != nil {
+		return err
+	}
+	writer.Close()
+
+	req, err := http.NewRequest("POST", u.String(), body)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+
+	type importScanResultResponse struct {
+		Message string `json:"message"`
+	}
+	var isrr importScanResultResponse
+	resp, err := c.do(req, &isrr)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New()
+	}
+
+	return isrr.Event, nil
 }

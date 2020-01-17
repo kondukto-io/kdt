@@ -15,6 +15,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 type (
@@ -165,27 +167,40 @@ func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
 	return m, err
 }
 
-func (c *Client) ImportScanResult(project, branch, tool, file string) error {
+func (c *Client) ImportScanResult(project, branch, tool string, files []string) error {
 	path := "/api/v1/scans/import"
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)
 
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return fmt.Errorf("failed to import scan results: %w", err)
-	}
-	f, err := os.Open(file)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("files", filepath.Base(f.Name()))
-	if err != nil {
+
+	for _, file := range files {
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			return err
+		}
+		f, err := os.Open(file)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		part, err := writer.CreateFormFile("files", filepath.Base(f.Name()))
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(part, f)
+		if err != nil {
+			return err
+		}
+
+	}
+	if err := writer.WriteField("project", project); err != nil {
 		return err
 	}
-	_, err = io.Copy(part, f)
-	if err != nil {
+	if err := writer.WriteField("branch", branch); err != nil {
+		return err
+	}
+	if err := writer.WriteField("tool", tool); err != nil {
 		return err
 	}
 	writer.Close()
@@ -195,6 +210,10 @@ func (c *Client) ImportScanResult(project, branch, tool, file string) error {
 		return err
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("X-Cookie", viper.GetString("token"))
 
 	type importScanResultResponse struct {
 		Message string `json:"message"`
@@ -206,8 +225,8 @@ func (c *Client) ImportScanResult(project, branch, tool, file string) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New()
+		return errors.New("failed to import scan results")
 	}
 
-	return isrr.Event, nil
+	return nil
 }

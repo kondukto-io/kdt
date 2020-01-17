@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"text/tabwriter"
 	"time"
 
@@ -47,6 +48,7 @@ var scanCmd = &cobra.Command{
 		byScanId := cmd.Flag("scan-id").Changed
 		byProjectAndTool := cmd.Flag("project").Changed &&
 			cmd.Flag("tool").Changed
+		byFile := cmd.Flag("file").Changed
 
 		// Initialize Kondukto client
 		c, err := client.New()
@@ -62,6 +64,17 @@ var scanCmd = &cobra.Command{
 				qwe(1, err, "failed to parse scan-id flag")
 			}
 		} else if byProjectAndTool {
+			if byFile {
+				pathToFile, err := cmd.Flags().GetString("file")
+				if err != nil {
+					qwe(1, err, "failed to parse file path")
+				}
+				absolutePath, err := filepath.Abs(pathToFile)
+				if err != nil {
+					qwe(1, err, "failed to parse absolute path")
+				}
+
+			}
 			// Parse command line flags
 			project, err := cmd.Flags().GetString("project")
 			if err != nil {
@@ -175,6 +188,7 @@ func init() {
 	scanCmd.Flags().StringP("project", "p", "", "project name or id")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
+	scanCmd.Flags().StringP("file", "f", "", "scan file")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")

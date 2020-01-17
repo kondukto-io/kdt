@@ -185,6 +185,8 @@ var scanCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(scanCmd)
 
+	scanCmd.Flags().Bool("async", false, "does not block build process")
+
 	scanCmd.Flags().StringP("project", "p", "", "project name or id")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")

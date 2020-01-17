@@ -43,7 +43,7 @@ func init() {
 	var insecure, async, verbose bool
 	var host, token string
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kondukto.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kdt.yaml)")
 	rootCmd.PersistentFlags().StringVar(&host, "host", "", "Kondukto server host")
 	rootCmd.PersistentFlags().StringVar(&token, "token", "", "Kondukto API token")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "more logs")

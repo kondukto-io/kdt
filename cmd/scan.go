@@ -205,6 +205,9 @@ func init() {
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
+	scanCmd.Flags().StringP("branch", "b", "", "branch")
+
+	scanCmd.MarkFlagRequired("branch")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")

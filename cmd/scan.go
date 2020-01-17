@@ -65,17 +65,6 @@ var scanCmd = &cobra.Command{
 				qwe(1, err, "failed to parse scan-id flag")
 			}
 		} else if byProjectAndTool {
-			if byFile {
-				pathToFile, err := cmd.Flags().GetString("file")
-				if err != nil {
-					qwe(1, err, "failed to parse file path")
-				}
-				absolutePath, err := filepath.Abs(pathToFile)
-				if err != nil {
-					qwe(1, err, "failed to parse absolute path")
-				}
-
-			}
 			// Parse command line flags
 			project, err := cmd.Flags().GetString("project")
 			if err != nil {
@@ -88,6 +77,30 @@ var scanCmd = &cobra.Command{
 
 			if !validTool(tool) {
 				qwm(1, "invalid tool name")
+			}
+
+			if byFile {
+				pathToFile, err := cmd.Flags().GetString("file")
+				if err != nil {
+					qwe(1, err, "failed to parse file path")
+				}
+				absolutePath, err := filepath.Abs(pathToFile)
+				if err != nil {
+					qwe(1, err, "failed to parse absolute path")
+				}
+
+				branch, err := cmd.Flags().GetString("branch")
+				if err != nil {
+					qwe(1, err, "failed to parse branch flag")
+				}
+
+				fileList := []string{absolutePath}
+
+				if err := c.ImportScanResult(project, branch, tool, fileList); err != nil {
+					qwe(1, err, "failed to import scan results")
+				}
+
+				qwm(0, "scan results imported")
 			}
 
 			// List project scans to get id of last scan

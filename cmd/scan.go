@@ -221,7 +221,7 @@ func init() {
 
 func validTool(tool string) bool {
 	switch tool {
-	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker, toolZap, toolFortify:
+	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker, toolZap, toolFortify, toolGosec:
 		return true
 	default:
 		return false

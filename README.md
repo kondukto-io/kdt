@@ -108,6 +108,8 @@ Following flags are only valid for scan commands.
 
 `-s` or `--scan-id` for providing scan id
 
+`-b` or `--branch` for providing branch to scan
+
 ##### Threshold flags
 
 These flags represent maximum number of vulnerabilities with specified severity to ignore. If these threshold are crossed, KDT will exit with non-zero status code.

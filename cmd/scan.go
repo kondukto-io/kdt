@@ -81,6 +81,10 @@ var scanCmd = &cobra.Command{
 			}
 
 			if byFile {
+				if !cmd.Flag("branch").Changed {
+					qwm(1, "branch parameter is required to import scan results")
+				}
+
 				pathToFile, err := cmd.Flags().GetString("file")
 				if err != nil {
 					qwe(1, err, "failed to parse file path")
@@ -207,8 +211,6 @@ func init() {
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
-
-	scanCmd.MarkFlagRequired("branch")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")

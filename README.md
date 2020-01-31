@@ -78,6 +78,8 @@ To restart a scan, you can use one of the following:
 
 - project and tool names: `kdt scan -p ExampleProject -t ExampleTool`
 
+To import scan results as a file: `kdt scan -p ExampleProject -t ExampleTool -b master`
+
 ## Command Line Flags
 KDT has several helpful flags to manage scans.
 

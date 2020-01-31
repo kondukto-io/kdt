@@ -40,14 +40,13 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	var insecure, async, verbose bool
+	var insecure, verbose bool
 	var host, token string
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kondukto.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kdt.yaml)")
 	rootCmd.PersistentFlags().StringVar(&host, "host", "", "Kondukto server host")
 	rootCmd.PersistentFlags().StringVar(&token, "token", "", "Kondukto API token")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "more logs")
-	rootCmd.PersistentFlags().BoolVar(&async, "async", false, "does not block build process")
 	rootCmd.PersistentFlags().BoolVar(&insecure, "insecure", false, "skip TLS verification and use insecure http client")
 
 	viper.BindPFlag("insecure", rootCmd.PersistentFlags().Lookup("insecure"))

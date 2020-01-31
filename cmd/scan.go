@@ -38,6 +38,7 @@ const (
 	toolBandit      = "bandit"
 	toolZap         = "owaspzap"
 	toolFortify     = "fortify"
+	toolGosec       = "gosec"
 )
 
 // scanCmd represents the scan command

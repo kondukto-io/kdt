@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"text/tabwriter"
 	"time"
 
@@ -36,6 +37,8 @@ const (
 	toolAppSpider   = "appspider"
 	toolBandit      = "bandit"
 	toolZap         = "owaspzap"
+	toolFortify     = "fortify"
+	toolGosec       = "gosec"
 )
 
 // scanCmd represents the scan command
@@ -47,6 +50,7 @@ var scanCmd = &cobra.Command{
 		byScanId := cmd.Flag("scan-id").Changed
 		byProjectAndTool := cmd.Flag("project").Changed &&
 			cmd.Flag("tool").Changed
+		byFile := cmd.Flag("file").Changed
 
 		// Initialize Kondukto client
 		c, err := client.New()
@@ -74,6 +78,34 @@ var scanCmd = &cobra.Command{
 
 			if !validTool(tool) {
 				qwm(1, "invalid tool name")
+			}
+
+			if byFile {
+				if !cmd.Flag("branch").Changed {
+					qwm(1, "branch parameter is required to import scan results")
+				}
+
+				pathToFile, err := cmd.Flags().GetString("file")
+				if err != nil {
+					qwe(1, err, "failed to parse file path")
+				}
+				absolutePath, err := filepath.Abs(pathToFile)
+				if err != nil {
+					qwe(1, err, "failed to parse absolute path")
+				}
+
+				branch, err := cmd.Flags().GetString("branch")
+				if err != nil {
+					qwe(1, err, "failed to parse branch flag")
+				}
+
+				fileList := []string{absolutePath}
+
+				if err := c.ImportScanResult(project, branch, tool, fileList); err != nil {
+					qwe(1, err, "failed to import scan results")
+				}
+
+				qwm(0, "scan results imported")
 			}
 
 			// List project scans to get id of last scan
@@ -172,9 +204,13 @@ var scanCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(scanCmd)
 
+	scanCmd.Flags().Bool("async", false, "does not block build process")
+
 	scanCmd.Flags().StringP("project", "p", "", "project name or id")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
+	scanCmd.Flags().StringP("file", "f", "", "scan file")
+	scanCmd.Flags().StringP("branch", "b", "", "branch")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -185,7 +221,7 @@ func init() {
 
 func validTool(tool string) bool {
 	switch tool {
-	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker, toolZap:
+	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker, toolZap, toolFortify, toolGosec:
 		return true
 	default:
 		return false

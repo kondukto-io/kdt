@@ -31,14 +31,16 @@ const (
 )
 
 const (
-	toolFindSecBugs = "findsecbugs"
-	toolNetsparker  = "netsparker"
-	toolCheckmarx   = "checkmarx"
-	toolAppSpider   = "appspider"
-	toolBandit      = "bandit"
-	toolZap         = "owaspzap"
-	toolFortify     = "fortify"
-	toolGosec       = "gosec"
+	toolFindSecBugs     = "findsecbugs"
+	toolNetsparker      = "netsparker"
+	toolCheckmarx       = "checkmarx"
+	toolAppSpider       = "appspider"
+	toolBandit          = "bandit"
+	toolZap             = "owaspzap"
+	toolFortify         = "fortify"
+	toolGosec           = "gosec"
+	toolDependencyCheck = "dependencycheck"
+	toolBrakeman        = "brakeman"
 )
 
 // scanCmd represents the scan command
@@ -221,7 +223,7 @@ func init() {
 
 func validTool(tool string) bool {
 	switch tool {
-	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker, toolZap, toolFortify, toolGosec:
+	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker, toolZap, toolFortify, toolGosec, toolDependencyCheck, toolBrakeman:
 		return true
 	default:
 		return false

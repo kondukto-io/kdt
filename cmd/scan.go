@@ -220,6 +220,8 @@ func init() {
 	scanCmd.Flags().Int("threshold-high", 0, "threshold for number of vulnerabilities with high severity")
 	scanCmd.Flags().Int("threshold-med", 0, "threshold for number of vulnerabilities with medium severity")
 	scanCmd.Flags().Int("threshold-low", 0, "threshold for number of vulnerabilities with low severity")
+
+	scanCmd.Flags().IntP("duration", "d", 0, "minutes to wait for scan to finish. scan will go async if duration exceeds limit")
 }
 
 func validTool(tool string) bool {

@@ -145,6 +145,14 @@ var scanCmd = &cobra.Command{
 		}
 		newEventId = eventId
 
+		start := time.Now()
+		timeoutFlag, err := cmd.Flags().GetInt("timeout")
+		if err != nil {
+			qwe(1,err,"failed to parse timeout flag")
+		}
+		duration := time.Duration(timeoutFlag)*time.Minute
+
+
 		async, err := cmd.Flags().GetBool("async")
 		if err != nil {
 			qwe(1, err, "failed to parse async flag")
@@ -187,6 +195,9 @@ var scanCmd = &cobra.Command{
 						}
 					}
 				case eventActive:
+					if time.Now().Sub(start) > duration {
+						qwm(0, "scan duration exceeds timeout, it will continue running async in the background")
+					}
 					if event.Status != lastStatus {
 						fmt.Println(statusMsg(event.Status))
 						lastStatus = event.Status
@@ -221,7 +232,7 @@ func init() {
 	scanCmd.Flags().Int("threshold-med", 0, "threshold for number of vulnerabilities with medium severity")
 	scanCmd.Flags().Int("threshold-low", 0, "threshold for number of vulnerabilities with low severity")
 
-	scanCmd.Flags().IntP("duration", "d", 0, "minutes to wait for scan to finish. scan will go async if duration exceeds limit")
+	scanCmd.Flags().Int("timeout",  0, "minutes to wait for scan to finish. scan will continue async if duration exceeds limit")
 }
 
 func validTool(tool string) bool {

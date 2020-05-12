@@ -127,6 +127,7 @@ var scanCmd = &cobra.Command{
 				if scans[i].Tool == tool {
 					lastScan = scans[i]
 					found = true
+					break
 				}
 			}
 
@@ -163,7 +164,6 @@ var scanCmd = &cobra.Command{
 			qwm(0, "scan has been started with async parameter, exiting.")
 		} else {
 			lastStatus := -1
-			var newScanID string
 			for {
 				event, err := c.GetScanStatus(newEventId)
 				if err != nil {
@@ -176,7 +176,7 @@ var scanCmd = &cobra.Command{
 				case eventInactive:
 					if event.Status == jobFinished {
 						fmt.Println("scan finished successfully")
-						scan, err := c.GetScanSummary(newScanID)
+						scan, err := c.GetScanSummary(event.ScanId)
 						if err != nil {
 							qwe(1, err, "failed to fetch scan summary")
 						}
@@ -195,16 +195,13 @@ var scanCmd = &cobra.Command{
 						}
 					}
 				case eventActive:
-					if time.Now().Sub(start) > duration {
+					if duration != 0 && time.Now().Sub(start) > duration {
 						qwm(0, "scan duration exceeds timeout, it will continue running async in the background")
 					}
 					if event.Status != lastStatus {
 						fmt.Println(statusMsg(event.Status))
 						lastStatus = event.Status
 						// Get new scans scan id
-						if event.ScanId != "" {
-							newScanID = event.ScanId
-						}
 					}
 					time.Sleep(10 * time.Second)
 				default:

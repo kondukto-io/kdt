@@ -183,10 +183,10 @@ var scanCmd = &cobra.Command{
 
 						// Printing scan results
 						w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-						defer w.Flush()
 						_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
 						_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
 						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
+						w.Flush()
 
 						if err := passTests(scan, cmd); err != nil {
 							qwe(1, err, "scan could not pass security tests")

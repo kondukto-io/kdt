@@ -6,9 +6,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/kondukto-io/kdt/client"
 	"os"
 	"text/tabwriter"
+
+	"github.com/kondukto-io/kdt/client"
 
 	"github.com/spf13/cobra"
 )
@@ -25,14 +26,15 @@ var releaseCmd = &cobra.Command{
 
 		project, err := cmd.Flags().GetString("project")
 		if err != nil {
-			qwe (1, err, "failed to parse project flag")
+			qwe(1, err, "failed to parse project flag")
 		}
 
-		rs, err :=c.ReleaseStatus(project)
+		rs, err := c.ReleaseStatus(project)
 		if err != nil {
 			qwe(1, fmt.Errorf("failed to get release status: %w", err))
 		}
 		const statusUndefined = "undefined"
+		const statusFail = "fail"
 
 		if rs.Status == statusUndefined {
 			qwm(1, "project has no release criteria")
@@ -40,13 +42,45 @@ var releaseCmd = &cobra.Command{
 
 		// Printing scan results
 		w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-		defer w.Flush()
-		//_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
-		//_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
-		//_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
-		fmt.Fprintf(w, "STATUS\n")
-		fmt.Fprintf(w, "---\n")
-		fmt.Fprintf(w, "%s\n", rs.Status)
+		fmt.Fprintf(w, "STATUS\tSAST\tDAST\tSCA\n")
+		fmt.Fprintf(w, "---\t---\t---\t---\n")
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n\n", rs.Status, rs.SAST.Status, rs.DAST.Status, rs.SCA.Status)
+		w.Flush()
+
+		sast, err := cmd.Flags().GetBool("sast")
+		if err != nil {
+			qwm(1, "failed to parse sast flag")
+		}
+
+		dast, err := cmd.Flags().GetBool("dast")
+		if err != nil {
+			qwm(1, "failed to parse sast flag")
+		}
+
+		sca, err := cmd.Flags().GetBool("sca")
+		if err != nil {
+			qwm(1, "failed to parse sast flag")
+		}
+
+		specific := sast || dast || sca
+
+		if !specific && rs.Status == statusFail {
+			qwm(1, "project does not pass release criteria")
+		}
+
+		if sast && rs.SAST.Status == statusFail {
+			qwm(1, "project does not pass SAST release criteria")
+		}
+
+		if dast && rs.DAST.Status == statusFail {
+			qwm(1, "project does not pass DAST release criteria")
+		}
+
+		if sca && rs.SCA.Status == statusFail {
+			qwm(1, "project does not pass SCA release criteria")
+		}
+
+		qwm(0, "project passes release criteria")
 	},
 }
 
@@ -54,15 +88,8 @@ func init() {
 	rootCmd.AddCommand(releaseCmd)
 
 	releaseCmd.Flags().StringP("project", "p", "", "project name or id")
+	releaseCmd.Flags().Bool("sast", false, "sast criteria status")
+	releaseCmd.Flags().Bool("dast", false, "dast criteria status")
+	releaseCmd.Flags().Bool("sca", false, "sca criteria status")
 	releaseCmd.MarkFlagRequired("project")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// releaseCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// releaseCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

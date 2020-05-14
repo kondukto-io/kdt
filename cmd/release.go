@@ -23,9 +23,19 @@ var releaseCmd = &cobra.Command{
 			qwe(1, err, "could not initialize Kondukto client")
 		}
 
-		rs, err :=c.ReleaseStatus()
+		project, err := cmd.Flags().GetString("project")
+		if err != nil {
+			qwe (1, err, "failed to parse project flag")
+		}
+
+		rs, err :=c.ReleaseStatus(project)
 		if err != nil {
 			qwe(1, fmt.Errorf("failed to get release status: %w", err))
+		}
+		const statusUndefined = "undefined"
+
+		if rs.Status == statusUndefined {
+			qwm(1, "project has no release criteria")
 		}
 
 		// Printing scan results
@@ -34,14 +44,17 @@ var releaseCmd = &cobra.Command{
 		//_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
 		//_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
 		//_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
-		fmt.Fprintf(w, "STATUS")
-		fmt.Fprintf(w, "---")
-		fmt.Fprintf(w, "%s", rs.Status)
+		fmt.Fprintf(w, "STATUS\n")
+		fmt.Fprintf(w, "---\n")
+		fmt.Fprintf(w, "%s\n", rs.Status)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(releaseCmd)
+
+	releaseCmd.Flags().StringP("project", "p", "", "project name or id")
+	releaseCmd.MarkFlagRequired("project")
 
 	// Here you will define your flags and configuration settings.
 

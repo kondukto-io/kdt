@@ -6,6 +6,7 @@ package client
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -60,7 +61,13 @@ type ReleaseStatus struct {
 }
 
 func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error){
-	req, err := c.newRequest("GET", "/api/v1/release", nil)
+	if project == "" {
+		return nil, errors.New("invalid project id or name")
+	}
+
+	path := fmt.Sprintf("/api/v1/release/%s", project)
+
+	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}

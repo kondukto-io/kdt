@@ -37,7 +37,7 @@ var releaseCmd = &cobra.Command{
 		const statusFail = "fail"
 
 		if rs.Status == statusUndefined {
-			qwm(1, "project has no release criteria")
+			qwm(0, "project has no release criteria")
 		}
 
 		// Printing scan results

@@ -41,7 +41,7 @@ const (
 	toolGosec           = "gosec"
 	toolDependencyCheck = "dependencycheck"
 	toolBrakeman        = "brakeman"
-	toolSCS        		= "securitycodescan"
+	toolSCS             = "securitycodescan"
 )
 
 // scanCmd represents the scan command
@@ -183,7 +183,7 @@ var scanCmd = &cobra.Command{
 						if err := passTests(scan, cmd); err != nil {
 							qwe(1, err, "scan could not pass security tests")
 						} else if err := checkRelease(scan, cmd); err != nil {
-							qwm(0, "scan passed security tests successfully")
+							qwe(1, err, "scan failed to pass release criteria")
 						}
 						qwm(0, "scan passed security tests successfully")
 					}

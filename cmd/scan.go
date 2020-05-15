@@ -313,7 +313,7 @@ func passTests(scan *client.Scan, cmd *cobra.Command) error {
 	return nil
 }
 
-func checkRelease(scan *client.Scan, cmd *cobra.Command) error {
+func checkRelease(cmd *cobra.Command) error {
 	c, err := client.New()
 	if err != nil {
 		return err

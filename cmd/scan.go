@@ -41,7 +41,7 @@ const (
 	toolGosec           = "gosec"
 	toolDependencyCheck = "dependencycheck"
 	toolBrakeman        = "brakeman"
-	toolSCS        		= "securitycodescan"
+	toolSCS             = "securitycodescan"
 )
 
 // scanCmd represents the scan command
@@ -182,9 +182,10 @@ var scanCmd = &cobra.Command{
 
 						if err := passTests(scan, cmd); err != nil {
 							qwe(1, err, "scan could not pass security tests")
-						} else {
-							qwm(0, "scan passed security tests successfully")
+						} else if err := checkRelease(cmd); err != nil {
+							qwe(1, err, "scan failed to pass release criteria")
 						}
+						qwm(0, "scan passed security tests successfully")
 					}
 				case eventActive:
 					if event.Status != lastStatus {
@@ -307,6 +308,30 @@ func passTests(scan *client.Scan, cmd *cobra.Command) error {
 		if scan.Summary.Low > low {
 			return errors.New("number of vulnerabilities with low severity is higher than threshold")
 		}
+	}
+
+	return nil
+}
+
+func checkRelease(cmd *cobra.Command) error {
+	c, err := client.New()
+	if err != nil {
+		return err
+	}
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return fmt.Errorf("project flag parsing error: %v", err)
+	}
+
+	rs, err := c.ReleaseStatus(project)
+	if err != nil {
+		return fmt.Errorf("failed to get release status: %w", err)
+	}
+
+	const statusFail = "fail"
+
+	if rs.Status == statusFail {
+		return errors.New("project does not pass release criteria")
 	}
 
 	return nil

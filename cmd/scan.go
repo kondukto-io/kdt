@@ -182,9 +182,10 @@ var scanCmd = &cobra.Command{
 
 						if err := passTests(scan, cmd); err != nil {
 							qwe(1, err, "scan could not pass security tests")
-						} else {
+						} else if err := checkRelease(scan, cmd); err != nil {
 							qwm(0, "scan passed security tests successfully")
 						}
+						qwm(0, "scan passed security tests successfully")
 					}
 				case eventActive:
 					if event.Status != lastStatus {
@@ -307,6 +308,30 @@ func passTests(scan *client.Scan, cmd *cobra.Command) error {
 		if scan.Summary.Low > low {
 			return errors.New("number of vulnerabilities with low severity is higher than threshold")
 		}
+	}
+
+	return nil
+}
+
+func checkRelease(scan *client.Scan, cmd *cobra.Command) error {
+	c, err := client.New()
+	if err != nil {
+		return err
+	}
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return fmt.Errorf("project flag parsing error: %v", err)
+	}
+
+	rs, err := c.ReleaseStatus(project)
+	if err != nil {
+		return fmt.Errorf("failed to get release status: %w", err)
+	}
+
+	const statusFail = "fail"
+
+	if rs.Status == statusFail {
+		return errors.New("project does not pass release criteria")
 	}
 
 	return nil

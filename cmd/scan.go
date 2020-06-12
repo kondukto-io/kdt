@@ -41,7 +41,7 @@ const (
 	toolGosec           = "gosec"
 	toolDependencyCheck = "dependencycheck"
 	toolBrakeman        = "brakeman"
-	toolSCS        		= "securitycodescan"
+	toolSCS             = "securitycodescan"
 )
 
 // scanCmd represents the scan command
@@ -127,6 +127,7 @@ var scanCmd = &cobra.Command{
 				if scans[i].Tool == tool {
 					lastScan = scans[i]
 					found = true
+					break
 				}
 			}
 
@@ -145,6 +146,14 @@ var scanCmd = &cobra.Command{
 		}
 		newEventId = eventId
 
+		start := time.Now()
+		timeoutFlag, err := cmd.Flags().GetInt("timeout")
+		if err != nil {
+			qwe(1,err,"failed to parse timeout flag")
+		}
+		duration := time.Duration(timeoutFlag)*time.Minute
+
+
 		async, err := cmd.Flags().GetBool("async")
 		if err != nil {
 			qwe(1, err, "failed to parse async flag")
@@ -155,7 +164,6 @@ var scanCmd = &cobra.Command{
 			qwm(0, "scan has been started with async parameter, exiting.")
 		} else {
 			lastStatus := -1
-			var newScanID string
 			for {
 				event, err := c.GetScanStatus(newEventId)
 				if err != nil {
@@ -168,32 +176,33 @@ var scanCmd = &cobra.Command{
 				case eventInactive:
 					if event.Status == jobFinished {
 						fmt.Println("scan finished successfully")
-						scan, err := c.GetScanSummary(newScanID)
+						scan, err := c.GetScanSummary(event.ScanId)
 						if err != nil {
 							qwe(1, err, "failed to fetch scan summary")
 						}
 
 						// Printing scan results
 						w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-						defer w.Flush()
 						_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
 						_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
 						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
+						w.Flush()
 
 						if err := passTests(scan, cmd); err != nil {
 							qwe(1, err, "scan could not pass security tests")
-						} else {
-							qwm(0, "scan passed security tests successfully")
+						} else if err := checkRelease(cmd); err != nil {
+							qwe(1, err, "scan failed to pass release criteria")
 						}
+						qwm(0, "scan passed security tests successfully")
 					}
 				case eventActive:
+					if duration != 0 && time.Now().Sub(start) > duration {
+						qwm(0, "scan duration exceeds timeout, it will continue running async in the background")
+					}
 					if event.Status != lastStatus {
 						fmt.Println(statusMsg(event.Status))
 						lastStatus = event.Status
 						// Get new scans scan id
-						if event.ScanId != "" {
-							newScanID = event.ScanId
-						}
 					}
 					time.Sleep(10 * time.Second)
 				default:
@@ -220,6 +229,8 @@ func init() {
 	scanCmd.Flags().Int("threshold-high", 0, "threshold for number of vulnerabilities with high severity")
 	scanCmd.Flags().Int("threshold-med", 0, "threshold for number of vulnerabilities with medium severity")
 	scanCmd.Flags().Int("threshold-low", 0, "threshold for number of vulnerabilities with low severity")
+
+	scanCmd.Flags().Int("timeout",  0, "minutes to wait for scan to finish. scan will continue async if duration exceeds limit")
 }
 
 func validTool(tool string) bool {
@@ -307,6 +318,30 @@ func passTests(scan *client.Scan, cmd *cobra.Command) error {
 		if scan.Summary.Low > low {
 			return errors.New("number of vulnerabilities with low severity is higher than threshold")
 		}
+	}
+
+	return nil
+}
+
+func checkRelease(cmd *cobra.Command) error {
+	c, err := client.New()
+	if err != nil {
+		return err
+	}
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return fmt.Errorf("project flag parsing error: %v", err)
+	}
+
+	rs, err := c.ReleaseStatus(project)
+	if err != nil {
+		return fmt.Errorf("failed to get release status: %w", err)
+	}
+
+	const statusFail = "fail"
+
+	if rs.Status == statusFail {
+		return errors.New("project does not pass release criteria")
 	}
 
 	return nil

@@ -50,10 +50,11 @@ var scanCmd = &cobra.Command{
 	Short: "base command for starting scans",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check scan method
-		byScanId := cmd.Flag("scan-id").Changed
-		byProjectAndTool := cmd.Flag("project").Changed &&
-			cmd.Flag("tool").Changed
 		byFile := cmd.Flag("file").Changed
+		byScanId := cmd.Flag("scan-id").Changed
+		byMetaData := cmd.Flag("meta").Changed
+		byProjectAndTool := cmd.Flag("project").Changed && cmd.Flag("tool").Changed
+		byProjectAndToolAndMeta := byProjectAndTool && byMetaData
 
 		// Initialize Kondukto client
 		c, err := client.New()
@@ -96,7 +97,6 @@ var scanCmd = &cobra.Command{
 				if err != nil {
 					qwe(1, err, "failed to parse absolute path")
 				}
-
 				branch, err := cmd.Flags().GetString("branch")
 				if err != nil {
 					qwe(1, err, "failed to parse branch flag")
@@ -121,21 +121,28 @@ var scanCmd = &cobra.Command{
 				qwm(1, "no scans found for the project")
 			}
 
-			var lastScan client.Scan
 			var found bool
-			for i := len(scans) - 1; i > -1; i-- {
-				if scans[i].Tool == tool {
-					lastScan = scans[i]
-					found = true
-					break
+			var lastScan string
+			if byProjectAndToolAndMeta {
+				meta, err := cmd.Flags().GetString("meta")
+				if err != nil {
+					qwe(1, err, "failed to parse meta flag")
 				}
+				lastScan, found = findScanByMeta(scans, tool, meta)
+				if !found {
+					qwm(1, "no scans found with given tool or meta data")
+				}
+			}
+
+			if !byMetaData {
+				lastScan, found = findScanByTool(scans, tool)
 			}
 
 			if !found {
 				qwm(1, "no scans found with given tool")
 			}
 
-			oldScanId = lastScan.ID
+			oldScanId = lastScan
 		} else {
 			qwm(1, "to start a scan, you must provide a scan id or a project identifier with a tool name. project identifier might be id or name of the project.")
 		}
@@ -149,10 +156,9 @@ var scanCmd = &cobra.Command{
 		start := time.Now()
 		timeoutFlag, err := cmd.Flags().GetInt("timeout")
 		if err != nil {
-			qwe(1,err,"failed to parse timeout flag")
+			qwe(1, err, "failed to parse timeout flag")
 		}
-		duration := time.Duration(timeoutFlag)*time.Minute
-
+		duration := time.Duration(timeoutFlag) * time.Minute
 
 		async, err := cmd.Flags().GetBool("async")
 		if err != nil {
@@ -182,11 +188,7 @@ var scanCmd = &cobra.Command{
 						}
 
 						// Printing scan results
-						w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-						_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
-						_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
-						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
-						w.Flush()
+						printScanSummary(scan)
 
 						if err := passTests(scan, cmd); err != nil {
 							qwe(1, err, "scan could not pass security tests")
@@ -221,6 +223,7 @@ func init() {
 	scanCmd.Flags().StringP("project", "p", "", "project name or id")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
+	scanCmd.Flags().StringP("meta", "m", "", "meta data")
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 
@@ -230,12 +233,13 @@ func init() {
 	scanCmd.Flags().Int("threshold-med", 0, "threshold for number of vulnerabilities with medium severity")
 	scanCmd.Flags().Int("threshold-low", 0, "threshold for number of vulnerabilities with low severity")
 
-	scanCmd.Flags().Int("timeout",  0, "minutes to wait for scan to finish. scan will continue async if duration exceeds limit")
+	scanCmd.Flags().Int("timeout", 0, "minutes to wait for scan to finish. scan will continue async if duration exceeds limit")
 }
 
 func validTool(tool string) bool {
 	switch tool {
-	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker, toolZap, toolFortify, toolGosec, toolDependencyCheck, toolBrakeman, toolSCS:
+	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetsparker,
+		toolZap, toolFortify, toolGosec, toolDependencyCheck, toolBrakeman, toolSCS:
 		return true
 	default:
 		return false
@@ -345,4 +349,37 @@ func checkRelease(cmd *cobra.Command) error {
 	}
 
 	return nil
+}
+
+func findScanByMeta(scans []client.Scan, tool, meta string) (string, bool) {
+	if len(scans) == 0 || tool == "" || meta == "" {
+		return "", false
+	}
+	for i := len(scans) - 1; i > -1; i-- {
+		if scans[i].Tool == tool && scans[i].MetaData == meta {
+			return scans[i].ID, true
+		}
+	}
+	return "", false
+}
+
+func findScanByTool(scans []client.Scan, tool string) (string, bool) {
+	if len(scans) == 0 || tool == "" {
+		return "", false
+	}
+	for i := len(scans) - 1; i > -1; i-- {
+		if scans[i].Tool == tool {
+			return scans[i].ID, true
+		}
+	}
+	return "", false
+}
+
+func printScanSummary(scan *client.Scan) {
+	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
+	_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
+	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
+	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool,
+		scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
+	_ = w.Flush()
 }

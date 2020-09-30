@@ -12,6 +12,7 @@ script:
 deploy:
   provider: releases
   api_key: $GITHUB_DEPLOY_TOKEN
+  skip_cleanup: true
   file:
     - kdt
     - kdt.sha256

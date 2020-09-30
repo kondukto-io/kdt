@@ -11,14 +11,13 @@ script:
 
 deploy:
   provider: releases
-  api_key:
-    secure: "hUN9TRt3LIKeZCTezNdEHsOyWHv+4aPLDfRuFG4r8QkWblChRiFdTBmemzWQn7pq+2Y7D7Oow7o4H1IJOoHeBldNsvF66M0ee+4l2xbKzdoreVArZNz+ZpBUUZx/a3FZ/zZZp2WToLAT7Cs7xU/dLgaGb+JPuZUrf3IdAalQaVjdicmTeEkBDyttPxSd5vPVGAHMZOCgpmrqhcETEbqV21Z4O4uGGCpcFwImuKW+vzuanSTsicSAL3yjXAYaA5zxHFhM/lGQrWCN+xKU6fgomqEtzGUH3f3Alxa18AGViflHa5lIvZur/7viJRq/szme/OnG8LWoiCd1T5bkhqevuoVtRZQ8TQZFkIxCvyzCu0SVZHNqjvm4mf5J/zZtUwuwxxmOXI020Z5G9o9RXYPPdP7AFG4upAae8OHxZtzG5WDqHMgwZzdN58j4PYQEa5+NYZCpKG5Eg0z+kYMKjYd3iZIb18sVpqScm6JqjcyBOa2yCld2vQ2/e5kJsYvqpsV2kXj8+7h2U+dt2E/SjkA/BZPYHcHj/szwrc8/tPlWwE9iRB9NREnDuK4XqujR5+6e6NotAhX8j+ibsLIIJA2dGbb6b6zlHWcD9ptDKOUVbHYUOV5o0BCdlEwvY6e834WepcIRR7WY2qufg1pc1EtNAh7l2hpob0ZKcsEyDY7TbVg="
+  api_key: $GITHUB_DEPLOY_TOKEN
+  skip_cleanup: true
   file:
     - kdt
     - kdt.sha256
     - kdt.exe
     - kdt.exe.sha256
-  skip_cleanup: true
   draft: true
   on:
     branch: master

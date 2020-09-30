@@ -23,6 +23,7 @@ type (
 	Scan struct {
 		ID       string     `json:"id"`
 		Name     string     `json:"name"`
+		Branch   string     `json:"branch"`
 		MetaData string     `json:"meta_data"`
 		Tool     string     `json:"tool"`
 		Date     *time.Time `json:"date"`

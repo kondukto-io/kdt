@@ -11,7 +11,8 @@ script:
 
 deploy:
   provider: releases
-  github_token: $GITHUB_DEPLOY_TOKEN
+  api_key:
+    secure: $GITHUB_DEPLOY_TOKEN
   file:
     - kdt
     - kdt.sha256

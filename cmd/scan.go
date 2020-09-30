@@ -129,6 +129,9 @@ var scanCmd = &cobra.Command{
 					qwe(1, err, "failed to parse meta flag")
 				}
 				lastScan, found = findScanByMeta(scans, tool, meta)
+				if !found {
+					qwm(1, "no scans found with given tool or meta data")
+				}
 			}
 
 			if !byMetaData {

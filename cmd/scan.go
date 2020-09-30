@@ -221,6 +221,7 @@ func init() {
 	scanCmd.Flags().StringP("project", "p", "", "project name or id")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
+	scanCmd.Flags().StringP("meta", "m", "", "meta data")
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 

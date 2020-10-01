@@ -1,4 +1,4 @@
-.PHONY: all build buildstatic help  
+.PHONY: all build help docker
 
 MODULE        = $(shell env GO111MODULE=on $(GO) list -m)
 VERSION       = $(shell git describe --tags)
@@ -25,6 +25,8 @@ build:
 			-ldflags '-s -w -X main.Version=$(VERSION) -extldflags=-static' \
 			-o $(OUT)-$(OS)
 
+docker:
+	docker build . -t $(IMAGE_NAME):$(IMAGE_VERSION)
 
 help:
 	@echo $(IMAGE_VERSION)

@@ -3,21 +3,19 @@ go:
   - 1.13.x
 
 script:
-  - export GO111MODULE=on
-  - GOOS=linux GOARCH=amd64 go build -o kdt
-  - sha256sum kdt > kdt.sha256 
-  - GOOS=windows GOARCH=amd64 go build -o kdt.exe
-  - sha256sum kdt.exe > kdt.exe.sha256 
+  - make all
 
 deploy:
   provider: releases
   api_key: $GITHUB_DEPLOY_TOKEN
   skip_cleanup: true
   file:
-    - kdt
-    - kdt.sha256
-    - kdt.exe
-    - kdt.exe.sha256
+    - release/kdt-linux
+    - release/kdt-windows
+    - release/kdt-darwin
+    - release/kdt-linux.sha256
+    - release/kdt-windows.sha256
+    - release/kdt-darwin.sha256
   draft: true
   on:
     branch: master

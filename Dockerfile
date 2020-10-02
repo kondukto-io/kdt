@@ -6,7 +6,8 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /app
 
-COPY .release/kdt-linux /app/kdt .
+#COPY release/kdt-linux /app/kdt .
+COPY release/kdt-linux /app/kdt
 
 # Command to run the executable
 ENTRYPOINT ["./kdt"]

@@ -8,7 +8,7 @@ PLATFORMS     := linux/amd64 windows/amd64 darwin/amd64
 TEMP 					= $(subst /, ,$@)
 OS 						= $(word 1, $(TEMP))
 ARCH 					= $(word 2, $(TEMP))
-IMAGE_NAME    = "kondukto-cli"
+IMAGE_NAME    = "kondukto/kondukto-cli"
 IMAGE_VERSION = $(shell echo $(VERSION)|cut -d "-" -f1)
 
 export GO111MODULE=on

@@ -19,14 +19,11 @@ endef
 
 default: help
 
-build:
-	CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build \
-			-tags prod \
-			-ldflags '-s -w -X main.Version=$(VERSION) -extldflags=-static' \
-			-o $(OUT)-$(OS)
-
 docker:
 	docker build . -t $(IMAGE_NAME):$(IMAGE_VERSION)
+
+publish:
+	docker push $(IMAGE_NAME):$(IMAGE_VERSION)
 
 help:
 	@echo $(IMAGE_VERSION)

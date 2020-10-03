@@ -19,14 +19,20 @@ endef
 
 default: help
 
-docker:
+image:
 	docker build . -t $(IMAGE_NAME):$(IMAGE_VERSION)
 
-publish:
+push-image:
 	docker push $(IMAGE_NAME):$(IMAGE_VERSION)
 
 help:
-	@echo $(IMAGE_VERSION)
+	@echo 
+	@echo "Available commands: all | image | help"
+	@echo " make all   -- to build kdt in all supported environments"
+	@echo " make image -- to build docker image"
+
+
+
 
 all: $(PLATFORMS)
 

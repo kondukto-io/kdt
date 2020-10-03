@@ -1,6 +1,11 @@
+sudo: 'required'
+
 language: go
 go:
   - 1.13.x
+
+service:
+  - 'docker'
 
 script:
   - make all
@@ -18,4 +23,11 @@ deploy:
     - release/kdt-darwin.sha256
   draft: true
   on:
+    tags: true
     branch: master
+
+after_success:
+  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
+    docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD;
+    make push-image;
+    fi

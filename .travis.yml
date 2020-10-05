@@ -1,23 +1,34 @@
+sudo: 'required'
+
 language: go
 go:
   - 1.13.x
 
+service:
+  - 'docker'
+
 script:
-  - export GO111MODULE=on
-  - GOOS=linux GOARCH=amd64 go build -o kdt
-  - sha256sum kdt > kdt.sha256 
-  - GOOS=windows GOARCH=amd64 go build -o kdt.exe
-  - sha256sum kdt.exe > kdt.exe.sha256 
+  - make all
+  - make image
 
 deploy:
   provider: releases
   api_key: $GITHUB_DEPLOY_TOKEN
   skip_cleanup: true
   file:
-    - kdt
-    - kdt.sha256
-    - kdt.exe
-    - kdt.exe.sha256
+    - release/kdt-linux
+    - release/kdt-windows
+    - release/kdt-darwin
+    - release/kdt-linux.sha256
+    - release/kdt-windows.sha256
+    - release/kdt-darwin.sha256
   draft: true
   on:
+    tags: true
     branch: master
+
+after_success:
+  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
+    docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD;
+    make push-image;
+    fi

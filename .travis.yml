@@ -24,7 +24,6 @@ deploy:
     - release/kdt-darwin.sha256
   draft: true
   on:
-    tags: true
     branch: master
 
 after_success:

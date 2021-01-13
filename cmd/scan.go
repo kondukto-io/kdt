@@ -61,8 +61,32 @@ var scanCmd = &cobra.Command{
 		byFile := cmd.Flag("file").Changed
 		byScanId := cmd.Flag("scan-id").Changed
 		byMetaData := cmd.Flag("meta").Changed
-		byProjectAndTool := cmd.Flag("project").Changed && cmd.Flag("tool").Changed
+		byProjectAndTool := cmd.Flag("project").Changed && cmd.Flag("tool").Changed && !byMetaData
 		byProjectAndToolAndMeta := byProjectAndTool && byMetaData
+		byProjectToolFile := byProjectAndTool && byFile && !byMetaData
+
+		const (
+			modeFile = iota
+			modeScanID
+			modeProjectTool
+			modeProjectToolMetadata
+		)
+
+		mode := func() uint {
+			if byProjectToolFile {
+				return modeFile
+			}
+			if byScanId {
+				return modeScanID
+			}
+			if byProjectAndTool {
+				return modeProjectTool
+			}
+			if byProjectAndToolAndMeta {
+				return modeProjectToolMetadata
+			}
+			return modeScanID
+		}()
 
 		// Initialize Kondukto client
 		c, err := client.New()
@@ -70,96 +94,35 @@ var scanCmd = &cobra.Command{
 			qwe(1, err, "could not initialize Kondukto client")
 		}
 
-		// Start scan by scan method
-		var newEventId, oldScanId string
-		if byScanId {
-			oldScanId, err = cmd.Flags().GetString("scan-id")
+		var scanID string // to keep id of the scan to be restarted
+		// TODO: all scanBy* functions might return a scan ID for ease
+
+		switch mode {
+		case modeScanID:
+			// scan mode to restart a scan with a known scan ID
+			scanID, err = cmd.Flags().GetString("scan-id")
 			if err != nil {
 				qwe(1, err, "failed to parse scan-id flag")
 			}
-		} else if byProjectAndTool {
-			// Parse command line flags
-			project, err := cmd.Flags().GetString("project")
-			if err != nil {
-				qwe(1, err, "failed to parse project flag")
-			}
-			tool, err := cmd.Flags().GetString("tool")
-			if err != nil {
-				qwe(1, err, "failed to parse tool flag")
-			}
-
-			if !validTool(tool) {
-				qwm(1, "invalid tool name")
-			}
-
-			if byFile {
-				if !cmd.Flag("branch").Changed {
-					qwm(1, "branch parameter is required to import scan results")
-				}
-
-				pathToFile, err := cmd.Flags().GetString("file")
-				if err != nil {
-					qwe(1, err, "failed to parse file path")
-				}
-				absolutePath, err := filepath.Abs(pathToFile)
-				if err != nil {
-					qwe(1, err, "failed to parse absolute path")
-				}
-				branch, err := cmd.Flags().GetString("branch")
-				if err != nil {
-					qwe(1, err, "failed to parse branch flag")
-				}
-
-				fileList := []string{absolutePath}
-
-				if err := c.ImportScanResult(project, branch, tool, fileList); err != nil {
-					qwe(1, err, "failed to import scan results")
-				}
-
-				qwm(0, "scan results imported")
-			}
-
-			// List project scans to get id of last scan
-			scans, err := c.ListScans(project)
-			if err != nil {
-				qwe(1, err, "could not get scans of the project")
-			}
-
-			if len(scans) == 0 {
-				qwm(1, "no scans found for the project")
-			}
-
-			var found bool
-			var lastScan string
-			if byProjectAndToolAndMeta {
-				meta, err := cmd.Flags().GetString("meta")
-				if err != nil {
-					qwe(1, err, "failed to parse meta flag")
-				}
-				lastScan, found = findScanByMeta(scans, tool, meta)
-				if !found {
-					qwm(1, "no scans found with given tool or meta data")
-				}
-			}
-
-			if !byMetaData {
-				lastScan, found = findScanByTool(scans, tool)
-			}
-
-			if !found {
-				qwm(1, "no scans found with given tool")
-			}
-
-			oldScanId = lastScan
-		} else {
-			qwm(1, "to start a scan, you must provide a scan id or a project identifier with a tool name. project identifier might be id or name of the project.")
+		case modeFile:
+			// scan mode to start a scan by importing a file
+			err = scanByFile(cmd, c)
+		case modeProjectTool:
+			err = scanByProjectTool(cmd, c)
+		case modeProjectToolMetadata:
+			// TODO: this function is not implemented yet. It's just a simple copy of the upper one, but with extra metadata parameter
+			err = scanByProjectToolMetadata(cmd, c)
+		default:
+			err = errors.New("invalid scan mode")
+		}
+		if err != nil {
+			qwe(1, err, "scan failed")
 		}
 
-		eventId, err := c.StartScanByScanId(oldScanId)
+		eventID, err := c.StartScanByScanId(scanID)
 		if err != nil {
 			qwe(1, err, "could not start scan")
 		}
-		newEventId = eventId
 
 		start := time.Now()
 		timeoutFlag, err := cmd.Flags().GetInt("timeout")
@@ -179,7 +142,7 @@ var scanCmd = &cobra.Command{
 		} else {
 			lastStatus := -1
 			for {
-				event, err := c.GetScanStatus(newEventId)
+				event, err := c.GetScanStatus(eventID)
 				if err != nil {
 					qwe(1, err, "could not get scan status")
 				}
@@ -331,6 +294,70 @@ func passTests(scan *client.Scan, cmd *cobra.Command) error {
 		if scan.Summary.Low > low {
 			return errors.New("number of vulnerabilities with low severity is higher than threshold")
 		}
+	}
+
+	return nil
+}
+
+func scanByFile(cmd *cobra.Command, c *client.Client) error {
+	// Parse command line flags needed for file uploads
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return fmt.Errorf("failed to parse project flag: %w", err)
+	}
+	tool, err := cmd.Flags().GetString("tool")
+	if err != nil {
+		return fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+	if !cmd.Flag("branch").Changed {
+		return errors.New("branch parameter is required to import scan results")
+	}
+
+	pathToFile, err := cmd.Flags().GetString("file")
+	if err != nil {
+		return fmt.Errorf("failed to parse file path: %w", err)
+	}
+	absolutePath, err := filepath.Abs(pathToFile)
+	if err != nil {
+		return fmt.Errorf("failed to parse absolute path: %w", err)
+	}
+	branch, err := cmd.Flags().GetString("branch")
+	if err != nil {
+		return fmt.Errorf("failed to parse branch flag: %w", err)
+	}
+
+	fileList := []string{absolutePath}
+
+	if err := c.ImportScanResult(project, branch, tool, fileList); err != nil {
+		return fmt.Errorf("failed to import scan results: %w", err)
+	}
+
+	return nil
+}
+
+func scanByProjectTool(cmd *cobra.Command, c *client.Client) error {
+	// Parse command line flags
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return fmt.Errorf("failed to parse project flag: %w", err)
+	}
+	tool, err := cmd.Flags().GetString("tool")
+	if err != nil {
+		return fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+
+	if !validTool(tool) {
+		return errors.New("invalid tool name")
+	}
+
+	// TODO: Updated ListScans call should include tool parameter
+	scans, err := c.ListScans(project)
+	if err != nil {
+		qwe(1, err, "could not get scans of the project")
+	}
+
+	if len(scans) == 0 {
+		qwm(1, "no scans found for the project")
 	}
 
 	return nil

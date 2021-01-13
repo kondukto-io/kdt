@@ -54,6 +54,7 @@ type (
 )
 
 func (c *Client) ListScans(project string) ([]Scan, error) {
+	// TODO: list scans call should be updated to take tool and metadata arguments
 	scans := make([]Scan, 0)
 
 	path := fmt.Sprintf("/api/v1/projects/%s/scans", project)
@@ -149,7 +150,7 @@ func (c *Client) GetScanSummary(id string) (*Scan, error) {
 }
 
 func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
-	path := fmt.Sprintf("/api/v1/scans/%s/lastResults", id)
+	path := fmt.Sprintf("/api/v1/scans/%s/last_results", id)
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return nil, err

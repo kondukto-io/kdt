@@ -74,14 +74,9 @@ func scanRootCommand(cmd *cobra.Command, args []string) {
 		qwe(1, err, "could not initialize Kondukto client")
 	}
 
-	scanID, err := getScanID(cmd, c)
+	eventID, err := startScan(cmd, c)
 	if err != nil {
 		qwe(1, err, "scan failed")
-	}
-
-	eventID, err := c.StartScanByScanId(scanID)
-	if err != nil {
-		qwe(1, err, "could not start scan")
 	}
 
 	async, err := cmd.Flags().GetBool("async")
@@ -118,29 +113,46 @@ func init() {
 	scanCmd.Flags().Int("timeout", 0, "minutes to wait for scan to finish. scan will continue async if duration exceeds limit")
 }
 
-func getScanID(cmd *cobra.Command, c *client.Client) (string, error) {
+func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
+	var err error
+	var scanID string
 	switch getScanMode(cmd) {
 	case modeByScanID:
 		// scan mode to restart a scan with a known scan ID
-		return cmd.Flags().GetString("scan-id")
+		scanID, err = cmd.Flags().GetString("scan-id")
+		if err != nil {
+			return "", err
+		}
 	case modeByFile:
 		// scan mode to start a scan by importing a file
-		// needs event id
-		if err := scanByFile(cmd, c); err != nil {
-			qwe(1, err, "failed to import scan results")
+		eventID, err := scanByFile(cmd, c)
+		if err != nil {
+			return "", err
 		}
-		qwm(0, "scan results imported successfully")
-		return "", nil
+		return eventID, nil
 
 	case modeByProjectTool:
 		// scan mode to restart a scan with the given tool param
-		return getScanIDByProjectTool(cmd, c)
+		scanID, err = getScanIDByProjectTool(cmd, c)
+		if err != nil {
+			return "", err
+		}
 	case modeByProjectToolAndMetadata:
 		// scan mode to restart a scan with the given tool and meta params
-		return getScanIDByProjectToolAndMeta(cmd, c)
+		scanID, err = getScanIDByProjectToolAndMeta(cmd, c)
+		if err != nil {
+			return "", err
+		}
 	default:
 		return "", errors.New("invalid scan mode")
 	}
+
+	eventID, err := c.StartScanByScanId(scanID)
+	if err != nil {
+		qwe(1, err, "could not start scan")
+	}
+
+	return eventID, err
 }
 
 func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
@@ -287,40 +299,39 @@ func passTests(scan *client.Scan, cmd *cobra.Command) error {
 	return nil
 }
 
-func scanByFile(cmd *cobra.Command, c *client.Client) error {
+func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	// Parse command line flags needed for file uploads
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
-		return fmt.Errorf("failed to parse project flag: %w", err)
+		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
 	tool, err := cmd.Flags().GetString("tool")
 	if err != nil {
-		return fmt.Errorf("failed to parse tool flag: %w", err)
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
 	if !cmd.Flag("branch").Changed {
-		return errors.New("branch parameter is required to import scan results")
+		return "", errors.New("branch parameter is required to import scan results")
 	}
 
 	pathToFile, err := cmd.Flags().GetString("file")
 	if err != nil {
-		return fmt.Errorf("failed to parse file path: %w", err)
+		return "", fmt.Errorf("failed to parse file path: %w", err)
 	}
-	absolutePath, err := filepath.Abs(pathToFile)
+	absoluteFilePath, err := filepath.Abs(pathToFile)
 	if err != nil {
-		return fmt.Errorf("failed to parse absolute path: %w", err)
+		return "", fmt.Errorf("failed to parse absolute path: %w", err)
 	}
 	branch, err := cmd.Flags().GetString("branch")
 	if err != nil {
-		return fmt.Errorf("failed to parse branch flag: %w", err)
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 
-	fileList := []string{absolutePath}
-
-	if err := c.ImportScanResult(project, branch, tool, fileList); err != nil {
-		return fmt.Errorf("failed to import scan results: %w", err)
+	eventID, err := c.ImportScanResult(project, branch, tool, absoluteFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to import scan results: %w", err)
 	}
 
-	return nil
+	return eventID, nil
 }
 
 func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error) {

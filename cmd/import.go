@@ -5,7 +5,10 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
+	"text/tabwriter"
 
 	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
@@ -32,6 +35,10 @@ func init() {
 }
 
 func importRootCommand(cmd *cobra.Command, args []string) {
+	if len(args) == 0 {
+		qwm(1, "missing file path argument")
+	}
+
 	// Initialize Kondukto client
 	c, err := client.New()
 	if err != nil {
@@ -56,21 +63,21 @@ func importRootCommand(cmd *cobra.Command, args []string) {
 		qwm(1, "invalid tool name")
 	}
 
-	fileList := func() []string {
-		list := make([]string, 0)
-		for _, path := range args {
-			absolutePath, err := filepath.Abs(path)
-			if err != nil {
-				qwe(1, err, "failed to parse absolute path")
-			}
-			list = append(list, absolutePath)
-		}
-		return list
-	}()
+	path := args[0]
+	absoluteFilePath, err := filepath.Abs(path)
+	if err != nil {
+		qwe(1, err, "failed to parse absolute path")
+	}
 
-	if err := c.ImportScanResult(project, branch, tool, fileList); err != nil {
+	eventID, err := c.ImportScanResult(project, branch, tool, absoluteFilePath)
+	if err != nil {
 		qwe(1, err, "failed to import scan results")
 	}
 
-	qwm(0, "scan results imported")
+	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
+	_, _ = fmt.Fprintf(w, "Event ID\n")
+	_, _ = fmt.Fprintf(w, "---\n")
+	_, _ = fmt.Fprintf(w, "%s\n", eventID)
+	_ = w.Flush()
+	qwm(0, "scan results imported successfully")
 }

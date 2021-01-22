@@ -199,7 +199,7 @@ func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
 	return m, err
 }
 
-func (c *Client) ImportScanResult(project, branch, tool string, files []string) error {
+func (c *Client) ImportScanResult(project, branch, tool string, file string) (string, error) {
 	path := "/api/v1/scans/import"
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)
@@ -207,38 +207,37 @@ func (c *Client) ImportScanResult(project, branch, tool string, files []string) 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	for _, file := range files {
-		if _, err := os.Stat(file); os.IsNotExist(err) {
-			return err
-		}
-		f, err := os.Open(file)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		part, err := writer.CreateFormFile("files", filepath.Base(f.Name()))
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(part, f)
-		if err != nil {
-			return err
-		}
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return "", err
 	}
-	if err := writer.WriteField("project", project); err != nil {
-		return err
+	f, err := os.Open(file)
+	if err != nil {
+		return "", err
 	}
-	if err := writer.WriteField("branch", branch); err != nil {
-		return err
+	defer func() { _ = f.Close() }()
+	part, err := writer.CreateFormFile("file", filepath.Base(f.Name()))
+	if err != nil {
+		return "", err
 	}
-	if err := writer.WriteField("tool", tool); err != nil {
-		return err
+	_, err = io.Copy(part, f)
+	if err != nil {
+		return "", err
 	}
-	writer.Close()
+
+	if err = writer.WriteField("project", project); err != nil {
+		return "", err
+	}
+	if err = writer.WriteField("branch", branch); err != nil {
+		return "", err
+	}
+	if err = writer.WriteField("tool", tool); err != nil {
+		return "", err
+	}
+	_ = writer.Close()
 
 	req, err := http.NewRequest("POST", u.String(), body)
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
@@ -247,17 +246,18 @@ func (c *Client) ImportScanResult(project, branch, tool string, files []string) 
 	req.Header.Set("X-Cookie", viper.GetString("token"))
 
 	type importScanResultResponse struct {
+		EventID string `json:"event_id"`
 		Message string `json:"message"`
 	}
-	var isrr importScanResultResponse
-	resp, err := c.do(req, &isrr)
+	var importResponse importScanResultResponse
+	resp, err := c.do(req, &importResponse)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New("failed to import scan results")
+		return "", errors.New("failed to import scan results")
 	}
 
-	return nil
+	return importResponse.EventID, nil
 }

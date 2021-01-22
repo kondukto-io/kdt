@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/google/go-querystring/query"
 	"github.com/spf13/viper"
 )
 
@@ -28,7 +29,13 @@ type (
 		Tool     string     `json:"tool"`
 		Date     *time.Time `json:"date"`
 		Score    int        `json:"score"`
-		Summary  *Summary   `json:"summary"`
+		Summary  Summary    `json:"summary"`
+	}
+
+	ScanSearchParams struct {
+		Tool  string `json:"tool,omitempty"`
+		Meta  string `json:"meta,omitempty"`
+		Limit int    `json:"limit,omitempty"`
 	}
 
 	ResultSet struct {
@@ -53,7 +60,7 @@ type (
 	}
 )
 
-func (c *Client) ListScans(project string) ([]Scan, error) {
+func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, error) {
 	// TODO: list scans call should be updated to take tool and metadata arguments
 	scans := make([]Scan, 0)
 
@@ -62,6 +69,12 @@ func (c *Client) ListScans(project string) ([]Scan, error) {
 	if err != nil {
 		return scans, err
 	}
+
+	v, err := query.Values(params)
+	if err != nil {
+		return nil, err
+	}
+	req.URL.RawQuery = v.Encode()
 
 	type getProjectScansResponse struct {
 		Scans []Scan `json:"data"`
@@ -79,6 +92,23 @@ func (c *Client) ListScans(project string) ([]Scan, error) {
 	}
 
 	return ps.Scans, nil
+}
+
+func (c *Client) FindScan(project string, params *ScanSearchParams) (*Scan, error) {
+	if params == nil {
+		return nil, errors.New("scan query params cannot be empty")
+	}
+	params.Limit = 1
+	scans, err := c.ListScans(project, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scans :%w", err)
+	}
+
+	if len(scans) == 0 {
+		return nil, errors.New("scan not found")
+	}
+
+	return &scans[0], nil
 }
 
 func (c *Client) StartScanByScanId(id string) (string, error) {
@@ -130,7 +160,7 @@ func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 }
 
 func (c *Client) GetScanSummary(id string) (*Scan, error) {
-	path := fmt.Sprintf("/api/v1/scans/%s/summary", id)
+	path := fmt.Sprintf("/api/v1/scans/%s", id)
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -194,7 +224,6 @@ func (c *Client) ImportScanResult(project, branch, tool string, files []string) 
 		if err != nil {
 			return err
 		}
-
 	}
 	if err := writer.WriteField("project", project); err != nil {
 		return err

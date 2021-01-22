@@ -50,140 +50,51 @@ const (
 	toolZapless         = "owaspzapheadless"
 	toolNancy           = "nancy"
 	toolSemGrep         = "semgrep"
+	toolVeracode        = "veracode"
+)
+
+const (
+	modeByFile = iota
+	modeByScanID
+	modeByProjectTool
+	modeByProjectToolAndMetadata
 )
 
 // scanCmd represents the scan command
 var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "base command for starting scans",
-	Run: func(cmd *cobra.Command, args []string) {
-		// Check scan method
-		byFile := cmd.Flag("file").Changed
-		byScanId := cmd.Flag("scan-id").Changed
-		byMetaData := cmd.Flag("meta").Changed
-		byProjectAndTool := cmd.Flag("project").Changed && cmd.Flag("tool").Changed && !byMetaData
-		byProjectAndToolAndMeta := byProjectAndTool && byMetaData
-		byProjectToolFile := byProjectAndTool && byFile && !byMetaData
+	Run:   scanRootCommand,
+}
 
-		const (
-			modeFile = iota
-			modeScanID
-			modeProjectTool
-			modeProjectToolMetadata
-		)
+func scanRootCommand(cmd *cobra.Command, args []string) {
+	// Initialize Kondukto client
+	c, err := client.New()
+	if err != nil {
+		qwe(1, err, "could not initialize Kondukto client")
+	}
 
-		mode := func() uint {
-			if byProjectToolFile {
-				return modeFile
-			}
-			if byScanId {
-				return modeScanID
-			}
-			if byProjectAndTool {
-				return modeProjectTool
-			}
-			if byProjectAndToolAndMeta {
-				return modeProjectToolMetadata
-			}
-			return modeScanID
-		}()
+	scanID, err := getScanID(cmd, c)
+	if err != nil {
+		qwe(1, err, "scan failed")
+	}
 
-		// Initialize Kondukto client
-		c, err := client.New()
-		if err != nil {
-			qwe(1, err, "could not initialize Kondukto client")
-		}
+	eventID, err := c.StartScanByScanId(scanID)
+	if err != nil {
+		qwe(1, err, "could not start scan")
+	}
 
-		var scanID string // to keep id of the scan to be restarted
-		// TODO: all scanBy* functions might return a scan ID for ease
+	async, err := cmd.Flags().GetBool("async")
+	if err != nil {
+		qwe(1, err, "failed to parse async flag")
+	}
 
-		switch mode {
-		case modeScanID:
-			// scan mode to restart a scan with a known scan ID
-			scanID, err = cmd.Flags().GetString("scan-id")
-			if err != nil {
-				qwe(1, err, "failed to parse scan-id flag")
-			}
-		case modeFile:
-			// scan mode to start a scan by importing a file
-			err = scanByFile(cmd, c)
-		case modeProjectTool:
-			err = scanByProjectTool(cmd, c)
-		case modeProjectToolMetadata:
-			// TODO: this function is not implemented yet. It's just a simple copy of the upper one, but with extra metadata parameter
-			err = scanByProjectToolMetadata(cmd, c)
-		default:
-			err = errors.New("invalid scan mode")
-		}
-		if err != nil {
-			qwe(1, err, "scan failed")
-		}
+	// Do not wait for scan to finish if async set to true
+	if async {
+		qwm(0, "scan has been started with async parameter, exiting.")
+	}
 
-		eventID, err := c.StartScanByScanId(scanID)
-		if err != nil {
-			qwe(1, err, "could not start scan")
-		}
-
-		start := time.Now()
-		timeoutFlag, err := cmd.Flags().GetInt("timeout")
-		if err != nil {
-			qwe(1, err, "failed to parse timeout flag")
-		}
-		duration := time.Duration(timeoutFlag) * time.Minute
-
-		async, err := cmd.Flags().GetBool("async")
-		if err != nil {
-			qwe(1, err, "failed to parse async flag")
-		}
-
-		// Do not wait for scan to finish if async set to true
-		if async {
-			qwm(0, "scan has been started with async parameter, exiting.")
-		} else {
-			lastStatus := -1
-			for {
-				event, err := c.GetScanStatus(eventID)
-				if err != nil {
-					qwe(1, err, "could not get scan status")
-				}
-
-				switch event.Active {
-				case eventFailed:
-					qwm(1, "scan failed")
-				case eventInactive:
-					if event.Status == jobFinished {
-						log.Println("scan finished successfully")
-						scan, err := c.GetScanSummary(event.ScanId)
-						if err != nil {
-							qwe(1, err, "failed to fetch scan summary")
-						}
-
-						// Printing scan results
-						printScanSummary(scan)
-
-						if err := passTests(scan, cmd); err != nil {
-							qwe(1, err, "scan could not pass security tests")
-						} else if err := checkRelease(cmd); err != nil {
-							qwe(1, err, "scan failed to pass release criteria")
-						}
-						qwm(0, "scan passed security tests successfully")
-					}
-				case eventActive:
-					if duration != 0 && time.Now().Sub(start) > duration {
-						qwm(0, "scan duration exceeds timeout, it will continue running async in the background")
-					}
-					if event.Status != lastStatus {
-						log.Println(statusMsg(event.Status))
-						lastStatus = event.Status
-						// Get new scans scan id
-					}
-					time.Sleep(10 * time.Second)
-				default:
-					qwm(1, "invalid event status")
-				}
-			}
-		}
-	},
+	waitTillScanEnded(cmd, c, eventID)
 }
 
 func init() {
@@ -207,11 +118,88 @@ func init() {
 	scanCmd.Flags().Int("timeout", 0, "minutes to wait for scan to finish. scan will continue async if duration exceeds limit")
 }
 
+func getScanID(cmd *cobra.Command, c *client.Client) (string, error) {
+	switch getScanMode(cmd) {
+	case modeByScanID:
+		// scan mode to restart a scan with a known scan ID
+		return cmd.Flags().GetString("scan-id")
+	case modeByFile:
+		// scan mode to start a scan by importing a file
+		// needs event id
+		if err := scanByFile(cmd, c); err != nil {
+			qwe(1, err, "failed to import scan results")
+		}
+		qwm(0, "scan results imported successfully")
+		return "", nil
+
+	case modeByProjectTool:
+		// scan mode to restart a scan with the given tool param
+		return getScanIDByProjectTool(cmd, c)
+	case modeByProjectToolAndMetadata:
+		// scan mode to restart a scan with the given tool and meta params
+		return getScanIDByProjectToolAndMeta(cmd, c)
+	default:
+		return "", errors.New("invalid scan mode")
+	}
+}
+
+func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
+	start := time.Now()
+	timeoutFlag, err := cmd.Flags().GetInt("timeout")
+	if err != nil {
+		qwe(1, err, "failed to parse timeout flag")
+	}
+	duration := time.Duration(timeoutFlag) * time.Minute
+
+	lastStatus := -1
+	for {
+		event, err := c.GetScanStatus(eventID)
+		if err != nil {
+			qwe(1, err, "could not get scan status")
+		}
+
+		switch event.Active {
+		case eventFailed:
+			qwm(1, "scan failed")
+		case eventInactive:
+			if event.Status == jobFinished {
+				log.Println("scan finished successfully")
+				scan, err := c.GetScanSummary(event.ScanId)
+				if err != nil {
+					qwe(1, err, "failed to fetch scan summary")
+				}
+
+				// Printing scan results
+				printScanSummary(scan)
+
+				if err := passTests(scan, cmd); err != nil {
+					qwe(1, err, "scan could not pass security tests")
+				} else if err := checkRelease(cmd); err != nil {
+					qwe(1, err, "scan failed to pass release criteria")
+				}
+				qwm(0, "scan passed security tests successfully")
+			}
+		case eventActive:
+			if duration != 0 && time.Now().Sub(start) > duration {
+				qwm(0, "scan duration exceeds timeout, it will continue running async in the background")
+			}
+			if event.Status != lastStatus {
+				log.Println(statusMsg(event.Status))
+				lastStatus = event.Status
+				// Get new scans scan id
+			}
+			time.Sleep(10 * time.Second)
+		default:
+			qwm(1, "invalid event status")
+		}
+	}
+}
+
 func validTool(tool string) bool {
 	switch tool {
 	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetSparker,
 		toolOWASPZap, toolFortify, toolGoSec, toolDependencyCheck, toolBrakeman, toolAppScan,
-		toolSCS, toolTrivy, toolNancy, toolCxSca, toolZapless, toolSemGrep, toolWebInspect:
+		toolSCS, toolTrivy, toolNancy, toolCxSca, toolZapless, toolSemGrep, toolWebInspect, toolVeracode:
 		return true
 	default:
 		return false
@@ -335,32 +323,67 @@ func scanByFile(cmd *cobra.Command, c *client.Client) error {
 	return nil
 }
 
-func scanByProjectTool(cmd *cobra.Command, c *client.Client) error {
+func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error) {
 	// Parse command line flags
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
-		return fmt.Errorf("failed to parse project flag: %w", err)
+		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
 	tool, err := cmd.Flags().GetString("tool")
 	if err != nil {
-		return fmt.Errorf("failed to parse tool flag: %w", err)
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
 
 	if !validTool(tool) {
-		return errors.New("invalid tool name")
+		return "", errors.New("invalid tool name")
 	}
 
-	// TODO: Updated ListScans call should include tool parameter
-	scans, err := c.ListScans(project)
+	params := &client.ScanSearchParams{
+		Tool:  tool,
+		Limit: 1,
+	}
+
+	scan, err := c.FindScan(project, params)
 	if err != nil {
 		qwe(1, err, "could not get scans of the project")
 	}
 
-	if len(scans) == 0 {
-		qwm(1, "no scans found for the project")
+	return scan.ID, nil
+}
+
+func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string, error) {
+	// Parse command line flags
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse project flag: %w", err)
+	}
+	tool, err := cmd.Flags().GetString("tool")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
 
-	return nil
+	if !validTool(tool) {
+		return "", errors.New("invalid tool name")
+	}
+
+	meta, err := cmd.Flags().GetString("meta")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+
+	params := &client.ScanSearchParams{
+		Tool:  tool,
+		Meta:  meta,
+		Limit: 1,
+	}
+
+	// TODO: Updated ListScans call should include tool parameter
+	scan, err := c.FindScan(project, params)
+	if err != nil {
+		qwe(1, err, "could not get scans of the project")
+	}
+
+	return scan.ID, nil
 }
 
 func checkRelease(cmd *cobra.Command) error {
@@ -387,28 +410,32 @@ func checkRelease(cmd *cobra.Command) error {
 	return nil
 }
 
-func findScanByMeta(scans []client.Scan, tool, meta string) (string, bool) {
-	if len(scans) == 0 || tool == "" || meta == "" {
-		return "", false
-	}
-	for i := len(scans) - 1; i > -1; i-- {
-		if scans[i].Tool == tool && scans[i].MetaData == meta {
-			return scans[i].ID, true
-		}
-	}
-	return "", false
-}
+func getScanMode(cmd *cobra.Command) uint {
+	// Check scan method
+	byFile := cmd.Flag("file").Changed
+	byScanId := cmd.Flag("scan-id").Changed
+	byMetaData := cmd.Flag("meta").Changed
+	byProjectAndTool := cmd.Flag("project").Changed && cmd.Flag("tool").Changed && !byMetaData
+	byProjectAndToolAndMeta := byProjectAndTool && byMetaData
+	byProjectToolFile := byProjectAndTool && byFile && !byMetaData
 
-func findScanByTool(scans []client.Scan, tool string) (string, bool) {
-	if len(scans) == 0 || tool == "" {
-		return "", false
-	}
-	for i := len(scans) - 1; i > -1; i-- {
-		if scans[i].Tool == tool {
-			return scans[i].ID, true
+	mode := func() uint {
+		if byProjectToolFile {
+			return modeByFile
 		}
-	}
-	return "", false
+		if byScanId {
+			return modeByScanID
+		}
+		if byProjectAndTool {
+			return modeByProjectTool
+		}
+		if byProjectAndToolAndMeta {
+			return modeByProjectToolAndMetadata
+		}
+		return modeByScanID
+	}()
+
+	return mode
 }
 
 func printScanSummary(scan *client.Scan) {

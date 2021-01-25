@@ -11,7 +11,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  pusht_to_registry:
+  push_to_registry:
     name: Build and KDT and push image
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +24,7 @@ jobs:
 
       - name: Create Release
         uses: actions/create-release@v1
+        id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -31,7 +32,6 @@ jobs:
           release_name: Release ${{ github.ref }}
           prerelease: false
           draft: true
-
       - name: Upload Release Asset
         id: upload-release-asset 
         uses: actions/upload-release-asset@v1

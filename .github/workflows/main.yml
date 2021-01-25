@@ -1,0 +1,38 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build and Release KDT
+
+# Controls when the action will run. 
+on:
+  push:
+    branches: [ feature/gh-actions-migration ] ## delete
+  ##pull_request:
+  ##  branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  pusht_to_registry:
+    name: Build and KDT and push image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          make all
+          make image
+        
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with: 
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: kondukto-io/kdt/kdt-cli
+          tag_with_ref: true
+
+      - name: Upload `get.sh`
+        run: |
+          echo "upload get.sh"
+        

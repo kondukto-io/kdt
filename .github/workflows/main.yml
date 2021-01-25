@@ -39,7 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag_name=  ${{ github.ref }}
-          hub release edit $(find _release -type f -printf "-a %p ") -m "" -d "$tag_name"
+          hub release edit $(find _release -type f -printf "-a %p ") -m "" "$tag_name"
 
       - name: Upload `get.sh`
         run: |

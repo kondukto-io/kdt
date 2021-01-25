@@ -6,7 +6,6 @@ DATE          = $(shell date +%FT%T%z)
 BUILD_DIR     = "_release"
 OUT           = "$(BUILD_DIR)/kdt"
 PLATFORMS     := linux/amd64 windows/amd64 darwin/amd64
-PLATFORMS     := linux/amd64 windows/amd64
 TEMP 	      = $(subst /, ,$@)
 OS 	      = $(word 1, $(TEMP))
 ARCH 	      = $(word 2, $(TEMP))

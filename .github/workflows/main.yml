@@ -21,15 +21,39 @@ jobs:
       - name: Build
         run: |
           make all
-        
-      - name: Push to GitHub Packages
-        uses: docker/build-push-action@v1
-        with: 
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          repository: kondukto-io/kdt/kdt-cli
-          tag_with_ref: true
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          prerelease: false
+          draft: true
+
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./_release
+          asset_name: |
+                  kdt-linux
+                  kdt-windows
+                  kdt-darwin
+          asset_content_type: application/octet-stream
+
+          #- name: Push to GitHub Packages
+          #  uses: docker/build-push-action@v1
+          #  with: 
+          #    username: ${{ github.actor }}
+          #    password: ${{ secrets.GITHUB_TOKEN }}
+          #    registry: docker.pkg.github.com
+          #    repository: kondukto-io/kdt/kdt-cli
+          #    tag_with_ref: true
 
       - name: Upload `get.sh`
         run: |

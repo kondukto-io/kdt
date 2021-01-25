@@ -25,11 +25,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-                ## tag_name="${GITHUB_REF##*/}"
           tag_name="1.0.8-test"
           hub release edit $(find _release -type f -printf "-a %p ") -m "" -d "$tag_name"
 
-
+          ## tag_name="${GITHUB_REF##*/}"
           #- name: Push to GitHub Packages
           #  uses: docker/build-push-action@v1
           #  with: 

@@ -60,12 +60,12 @@ type ReleaseStatus struct {
 	} `json:"sca" bson:"sca"`
 }
 
-func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error){
+func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 	if project == "" {
 		return nil, errors.New("invalid project id or name")
 	}
 
-	path := fmt.Sprintf("/api/v1/release/%s", project)
+	path := fmt.Sprintf("/api/v1/projects/%s/release", project)
 
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {

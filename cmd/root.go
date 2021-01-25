@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 	Long:  `KDT is the command line interface of Kondukto for starting scans and setting release criteria. It is made to ease integration of Kondukto to DevSecOps pipelines.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) {},
+	// Run: func(cmd *cobra.Command, args []string) {},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -49,10 +49,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "more logs")
 	rootCmd.PersistentFlags().BoolVar(&insecure, "insecure", false, "skip TLS verification and use insecure http client")
 
-	viper.BindPFlag("insecure", rootCmd.PersistentFlags().Lookup("insecure"))
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
-	viper.BindPFlag("token", rootCmd.PersistentFlags().Lookup("token"))
+	_ = viper.BindPFlag("insecure", rootCmd.PersistentFlags().Lookup("insecure"))
+	_ = viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
+	_ = viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
+	_ = viper.BindPFlag("token", rootCmd.PersistentFlags().Lookup("token"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -78,7 +78,7 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		//fmt.Println("Using config file:", viper.ConfigFileUsed())
+		// fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
 	if viper.GetString("host") == "" || viper.GetString("token") == "" {

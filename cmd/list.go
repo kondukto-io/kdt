@@ -12,9 +12,11 @@ import (
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "base command for lists",
-	Run:   func(cmd *cobra.Command, args []string) {},
+	Run:   listRootCommand,
 }
 
 func init() {
 	rootCmd.AddCommand(listCmd)
 }
+
+func listRootCommand(cmd *cobra.Command, args []string) {}

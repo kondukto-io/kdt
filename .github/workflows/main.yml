@@ -21,7 +21,6 @@ jobs:
       - name: Build
         run: |
           make all
-          make image
         
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v1

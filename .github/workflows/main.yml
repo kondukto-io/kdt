@@ -21,22 +21,25 @@ jobs:
           make all
           ls -al
 
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          prerelease: false
+          draft: true
+          body: |
+           Changes in release
+           - this
+
       - name: Upload Release Asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag_name="1.0.8-test"
           hub release edit $(find _release -type f -printf "-a %p ") -m "" -d "$tag_name"
-
-          ## tag_name="${GITHUB_REF##*/}"
-          #- name: Push to GitHub Packages
-          #  uses: docker/build-push-action@v1
-          #  with: 
-          #    username: ${{ github.actor }}
-          #    password: ${{ secrets.GITHUB_TOKEN }}
-          #    registry: docker.pkg.github.com
-          #    repository: kondukto-io/kdt/kdt-cli
-          #    tag_with_ref: true
 
       - name: Upload `get.sh`
         run: |

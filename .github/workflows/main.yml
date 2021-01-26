@@ -41,7 +41,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          release_id: ${{ steps.create_release_outputs.id }}
+          release_id: ${{ steps.create_release.outputs.id }}
           assets_path: ./_release/
 
       - name: Upload `get.sh`

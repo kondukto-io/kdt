@@ -35,8 +35,7 @@ jobs:
            Changes in release
            - this
 
-
-     - name: Upload Release Assets
+      - name: Upload Release Assets
         id: upload-release-assets 
         uses: dwenegar/upload-release-asset@v1
         env:

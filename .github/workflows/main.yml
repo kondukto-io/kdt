@@ -35,36 +35,15 @@ jobs:
            Changes in release
            - this
 
-      - name: Upload Release Asset
-        id: upload-release-asset 
-        uses: actions/upload-release-asset@v1
+
+     - name: Upload Release Assets
+        id: upload-release-assets 
+        uses: dwenegar/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          release_id: ${{ steps.creatE_release_outputs.id }}
           asset_path: ./_release/kdt-linux
-          asset_name: kdt-linux
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./_release/kdt-windows
-          asset_name: kdt-windows
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./_release/kdt-darwin
-          asset_name: kdt-darwin
-          asset_content_type: application/octet-stream
 
       - name: Upload `get.sh`
         run: |

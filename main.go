@@ -11,10 +11,12 @@ import (
 	"github.com/kondukto-io/kdt/cmd"
 )
 
+var Version string
+
 func main() {
 	args := os.Args
 	if len(args) > 1 && args[1] == "version" {
-		fmt.Println("KDT Kondukto Client v1.0.7")
+		fmt.Printf("KDT Kondukto Client %s", Version)
 		os.Exit(0)
 	}
 

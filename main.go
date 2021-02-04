@@ -16,7 +16,7 @@ var Version string
 func main() {
 	args := os.Args
 	if len(args) > 1 && args[1] == "version" {
-		fmt.Printf("KDT Kondukto Client %s", Version)
+		fmt.Printf("KDT Kondukto Client %s\n", Version)
 		os.Exit(0)
 	}
 

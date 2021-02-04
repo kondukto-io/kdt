@@ -3,7 +3,7 @@ name: Build and Release KDT
 # Controls when the action will run. 
 on:
   push:
-    branches: [ feature/gh-actions-migration ] ## delete
+    branches: [ master ]
   ##pull_request:
   ##  branches: [ master ]
 

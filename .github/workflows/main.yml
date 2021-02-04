@@ -49,6 +49,7 @@ jobs:
         with:
           local: get.sh
           remote: /var/www/getsh
-          host: ${{ secrets.HOST }}
+          port: 10022
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}

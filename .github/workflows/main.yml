@@ -45,7 +45,7 @@ jobs:
           assets_path: ./_release/
 
       - name: Upload `get.sh`
-        uses: garygrossgarten/github-action-scp@release
+        uses: horochx/deploy-via-scp@master
         with:
           local: get.sh
           remote: /var/www/getsh

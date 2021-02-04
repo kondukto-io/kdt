@@ -45,10 +45,10 @@ jobs:
           assets_path: ./_release/
 
       - name: Upload `get.sh`
-        uses: horochx/deploy-via-scp@master
+        uses: nogsantos/scp-deploy@master
         with:
-          local: get.sh
-          remote: /var/www/getsh
+          src: ./get.sh
+          remote: ${{ secrets.SSH_REMOTE }}
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          user: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}

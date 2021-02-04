@@ -5,8 +5,6 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +13,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "prints version number of KDT",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("KDT Kondukto Client v1.0.7")
+		// This function is just a placeholder to show version command in help screen
 	},
 }
 

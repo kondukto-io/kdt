@@ -45,6 +45,10 @@ jobs:
           assets_path: ./_release/
 
       - name: Upload `get.sh`
-        run: |
-          echo "upload get.sh"
-        
+        uses: garygrossgarten/github-action-scp@release
+        with:
+          local: get.sh
+          remote: /var/www/getsh
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}

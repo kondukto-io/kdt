@@ -466,10 +466,16 @@ func getScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to parse tool flag: %w", err)
 	}
+	if branch == "" {
+		return "", nil, errors.New("missing branch field")
+	}
 
 	mergeTarget, err := cmd.Flags().GetString("merge-target")
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+	if mergeTarget == "" {
+		return "", nil, errors.New("missing merge-target field")
 	}
 
 	meta, err := cmd.Flags().GetString("meta")

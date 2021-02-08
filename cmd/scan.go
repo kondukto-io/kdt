@@ -424,9 +424,12 @@ func checkRelease(cmd *cobra.Command) error {
 func getScanMode(cmd *cobra.Command) uint {
 	// Check scan method
 	byFile := cmd.Flag("file").Changed
-	byScanId := cmd.Flag("scan-id").Changed
+	byTool := cmd.Flag("tool").Changed
 	byMetaData := cmd.Flag("meta").Changed
-	byProjectAndTool := cmd.Flag("project").Changed && cmd.Flag("tool").Changed && !byMetaData
+	byScanId := cmd.Flag("scan-id").Changed
+	byProject := cmd.Flag("project").Changed
+
+	byProjectAndTool := byProject && byTool && !byMetaData
 	byProjectAndToolAndMeta := byProjectAndTool && byMetaData
 	byProjectToolFile := byProjectAndTool && byFile && !byMetaData
 

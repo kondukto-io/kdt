@@ -57,6 +57,7 @@ const (
 	modeByFile = iota
 	modeByScanID
 	modeByProjectTool
+	modeByProjectToolAndPR
 	modeByProjectToolAndMetadata
 )
 
@@ -103,6 +104,7 @@ func init() {
 	scanCmd.Flags().StringP("meta", "m", "", "meta data")
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
+	scanCmd.Flags().StringP("merge-target", "mt", "", "target branch name for pull request")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -132,17 +134,30 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		return eventID, nil
 
 	case modeByProjectTool:
-		// scan mode to restart a scan with the given tool param
+		// scan mode to restart a scan with the given project and tool params
 		scanID, err = getScanIDByProjectTool(cmd, c)
 		if err != nil {
 			return "", err
 		}
 	case modeByProjectToolAndMetadata:
-		// scan mode to restart a scan with the given tool and meta params
+		// scan mode to restart a scan with the given project, tool and meta params
 		scanID, err = getScanIDByProjectToolAndMeta(cmd, c)
 		if err != nil {
 			return "", err
 		}
+	case modeByProjectToolAndPR:
+		// scan mode to restart a scan with the given project, tool and pr params
+		scanID, opt, err := getScanIDByProjectToolAndPR(cmd, c)
+		if err != nil {
+			return "", err
+		}
+
+		eventID, err := c.StartScanByOption(scanID, opt)
+		if err != nil {
+			qwe(1, err, "could not start scan")
+		}
+
+		return eventID, nil
 	default:
 		return "", errors.New("invalid scan mode")
 	}
@@ -152,7 +167,45 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		qwe(1, err, "could not start scan")
 	}
 
-	return eventID, err
+	return eventID, nil
+}
+
+func getScanMode(cmd *cobra.Command) uint {
+	// Check scan method
+	byFile := cmd.Flag("file").Changed
+	byTool := cmd.Flag("tool").Changed
+	byMetaData := cmd.Flag("meta").Changed
+	byScanId := cmd.Flag("scan-id").Changed
+	byProject := cmd.Flag("project").Changed
+	byBranch := cmd.Flag("merge-target").Changed
+	byMerge := cmd.Flag("branch").Changed
+	byPR := byBranch && byMerge
+
+	byProjectAndTool := byProject && byTool && !byMetaData
+	byProjectAndToolAndMeta := byProjectAndTool && byMetaData && !byPR
+	byProjectAndToolAndPullRequest := byProjectAndTool && byPR
+	byProjectAndToolAndFile := byProjectAndTool && byFile && !byMetaData
+
+	mode := func() uint {
+		if byProjectAndToolAndFile {
+			return modeByFile
+		}
+		if byScanId {
+			return modeByScanID
+		}
+		if byProjectAndToolAndPullRequest {
+			return modeByProjectToolAndPR
+		}
+		if byProjectAndTool {
+			return modeByProjectTool
+		}
+		if byProjectAndToolAndMeta {
+			return modeByProjectToolAndMetadata
+		}
+		return modeByScanID
+	}()
+
+	return mode
 }
 
 func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
@@ -397,6 +450,54 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 	return scan.ID, nil
 }
 
+func getScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, *client.ScanPROptions, error) {
+	// Parse command line flags
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to parse project flag: %w", err)
+	}
+	tool, err := cmd.Flags().GetString("tool")
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+
+	if !validTool(tool) {
+		return "", nil, errors.New("invalid tool name")
+	}
+
+	branch, err := cmd.Flags().GetString("branch")
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+
+	mergeTarget, err := cmd.Flags().GetString("merge-target")
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+
+	meta, err := cmd.Flags().GetString("meta")
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+
+	params := &client.ScanSearchParams{
+		Tool:  tool,
+		Meta:  meta,
+		Limit: 1,
+	}
+
+	scan, err := c.FindScan(project, params)
+	if err != nil {
+		qwe(1, err, "could not get scans of the project")
+	}
+
+	opt := &client.ScanPROptions{
+		From: branch,
+		To:   mergeTarget,
+	}
+	return scan.ID, opt, nil
+}
+
 func checkRelease(cmd *cobra.Command) error {
 	c, err := client.New()
 	if err != nil {
@@ -419,37 +520,6 @@ func checkRelease(cmd *cobra.Command) error {
 	}
 
 	return nil
-}
-
-func getScanMode(cmd *cobra.Command) uint {
-	// Check scan method
-	byFile := cmd.Flag("file").Changed
-	byTool := cmd.Flag("tool").Changed
-	byMetaData := cmd.Flag("meta").Changed
-	byScanId := cmd.Flag("scan-id").Changed
-	byProject := cmd.Flag("project").Changed
-
-	byProjectAndTool := byProject && byTool && !byMetaData
-	byProjectAndToolAndMeta := byProjectAndTool && byMetaData
-	byProjectToolFile := byProjectAndTool && byFile && !byMetaData
-
-	mode := func() uint {
-		if byProjectToolFile {
-			return modeByFile
-		}
-		if byScanId {
-			return modeByScanID
-		}
-		if byProjectAndTool {
-			return modeByProjectTool
-		}
-		if byProjectAndToolAndMeta {
-			return modeByProjectToolAndMetadata
-		}
-		return modeByScanID
-	}()
-
-	return mode
 }
 
 func printScanSummary(scan *client.Scan) {

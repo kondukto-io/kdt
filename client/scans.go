@@ -37,6 +37,10 @@ type (
 		Meta  string `json:"meta,omitempty"`
 		Limit int    `json:"limit,omitempty"`
 	}
+	ScanPROptions struct {
+		From string `json:"from"`
+		To   string `json:"to"`
+	}
 
 	ResultSet struct {
 		Score   int      `json:"score"`
@@ -65,7 +69,7 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, er
 	scans := make([]Scan, 0)
 
 	path := fmt.Sprintf("/api/v1/projects/%s/scans", project)
-	req, err := c.newRequest("GET", path, nil)
+	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return scans, err
 	}
@@ -113,7 +117,7 @@ func (c *Client) FindScan(project string, params *ScanSearchParams) (*Scan, erro
 
 func (c *Client) StartScanByScanId(id string) (string, error) {
 	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
-	req, err := c.newRequest("GET", path, nil)
+	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return "", err
 	}
@@ -133,7 +137,39 @@ func (c *Client) StartScanByScanId(id string) (string, error) {
 	}
 
 	if rsr.Event == "" {
-		return "", errors.New("")
+		return "", errors.New("event not found")
+	}
+
+	return rsr.Event, nil
+}
+
+func (c *Client) StartScanByOption(id string, opt *ScanPROptions) (string, error) {
+	if opt == nil {
+		return "", errors.New("missing scan options")
+	}
+
+	path := fmt.Sprintf("/api/v1/scans/%s/restart_with_option", id)
+	req, err := c.newRequest(http.MethodPost, path, opt)
+	if err != nil {
+		return "", err
+	}
+
+	type restartScanResponse struct {
+		Event   string `json:"event"`
+		Message string `json:"message"`
+	}
+	var rsr restartScanResponse
+	resp, err := c.do(req, &rsr)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", errors.New("response not ok")
+	}
+
+	if rsr.Event == "" {
+		return "", errors.New("event not found")
 	}
 
 	return rsr.Event, nil
@@ -141,7 +177,7 @@ func (c *Client) StartScanByScanId(id string) (string, error) {
 
 func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
-	req, err := c.newRequest("GET", path, nil)
+	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +197,7 @@ func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 
 func (c *Client) GetScanSummary(id string) (*Scan, error) {
 	path := fmt.Sprintf("/api/v1/scans/%s", id)
-	req, err := c.newRequest("GET", path, nil)
+	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +217,7 @@ func (c *Client) GetScanSummary(id string) (*Scan, error) {
 
 func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
 	path := fmt.Sprintf("/api/v1/scans/%s/last_results", id)
-	req, err := c.newRequest("GET", path, nil)
+	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}

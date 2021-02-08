@@ -104,7 +104,7 @@ func init() {
 	scanCmd.Flags().StringP("meta", "m", "", "meta data")
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
-	scanCmd.Flags().StringP("merge-target", "mt", "", "target branch name for pull request")
+	scanCmd.Flags().StringP("merge-target", "M", "", "target branch name for pull request")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -187,24 +187,21 @@ func getScanMode(cmd *cobra.Command) uint {
 	byProjectAndToolAndFile := byProjectAndTool && byFile && !byMetaData
 
 	mode := func() uint {
-		if byProjectAndToolAndFile {
+		switch true {
+		case byProjectAndToolAndFile:
 			return modeByFile
-		}
-		if byScanId {
+		case byScanId:
+			return modeByScanID
+		case byProjectAndToolAndPullRequest:
+			return modeByProjectToolAndPR
+		case byProjectAndTool:
+			return modeByProjectTool
+		case byProjectAndToolAndMeta:
+			return modeByProjectToolAndMetadata
+		default:
 			return modeByScanID
 		}
-		if byProjectAndToolAndPullRequest {
-			return modeByProjectToolAndPR
-		}
-		if byProjectAndTool {
-			return modeByProjectTool
-		}
-		if byProjectAndToolAndMeta {
-			return modeByProjectToolAndMetadata
-		}
-		return modeByScanID
 	}()
-
 	return mode
 }
 

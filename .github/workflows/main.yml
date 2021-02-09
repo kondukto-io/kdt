@@ -1,0 +1,54 @@
+name: Build and Release KDT
+
+# Controls when the action will run. 
+on:
+  push:
+    branches: [ master ]
+  ##pull_request:
+  ##  branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  push_to_registry:
+    name: Build and KDT and push image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          make all
+          ls -al
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          prerelease: false
+          draft: true
+          body: |
+           Changes in release
+           - this
+
+      - name: Upload Release Assets
+        id: upload-release-assets 
+        uses: dwenegar/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+          assets_path: ./_release/
+
+      - name: Upload `get.sh`
+        uses: nogsantos/scp-deploy@master
+        with:
+          src: ./get.sh
+          remote: ${{ secrets.SSH_REMOTE }}
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}

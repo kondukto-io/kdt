@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-
-      - name: Get the version
         id: vars
         run: echo ::set-output name=tag::$(git describe --tags)
 

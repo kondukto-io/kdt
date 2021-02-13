@@ -32,25 +32,27 @@ const (
 )
 
 const (
-	toolCheckmarx       = "checkmarx"
-	toolCxSca           = "checkmarxsca"
-	toolOWASPZap        = "owaspzap"
-	toolWebInspect      = "webinspect"
-	toolNetSparker      = "netsparker"
-	toolAppSpider       = "appspider"
-	toolBandit          = "bandit"
-	toolFindSecBugs     = "findsecbugs"
-	toolDependencyCheck = "dependencycheck"
-	toolFortify         = "fortify"
-	toolGoSec           = "gosec"
-	toolBrakeman        = "brakeman"
-	toolSCS             = "securitycodescan"
-	toolTrivy           = "trivy"
-	toolAppScan         = "hclappscan"
-	toolZapless         = "owaspzapheadless"
-	toolNancy           = "nancy"
-	toolSemGrep         = "semgrep"
-	toolVeracode        = "veracode"
+	toolCheckmarx           = "checkmarx"
+	toolCxSca               = "checkmarxsca"
+	toolOWASPZap            = "owaspzap"
+	toolWebInspect          = "webinspect"
+	toolNetSparker          = "netsparker"
+	toolAppSpider           = "appspider"
+	toolBandit              = "bandit"
+	toolFindSecBugs         = "findsecbugs"
+	toolDependencyCheck     = "dependencycheck"
+	toolFortify             = "fortify"
+	toolGoSec               = "gosec"
+	toolBrakeman            = "brakeman"
+	toolSCS                 = "securitycodescan"
+	toolTrivy               = "trivy"
+	toolAppScan             = "hclappscan"
+	toolZapless             = "owaspzapheadless"
+	toolNancy               = "nancy"
+	toolSemGrep             = "semgrep"
+	toolVeracode            = "veracode"
+	toolBurpSuite           = "burpsuite"
+	toolBurpSuiteEnterprise = "burpsuiteenterprise"
 )
 
 const (
@@ -259,9 +261,9 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 
 func validTool(tool string) bool {
 	switch tool {
-	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetSparker,
-		toolOWASPZap, toolFortify, toolGoSec, toolDependencyCheck, toolBrakeman, toolAppScan,
-		toolSCS, toolTrivy, toolNancy, toolCxSca, toolZapless, toolSemGrep, toolWebInspect, toolVeracode:
+	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetSparker, toolOWASPZap,
+		toolFortify, toolGoSec, toolDependencyCheck, toolBrakeman, toolAppScan, toolSCS, toolTrivy,
+		toolNancy, toolCxSca, toolZapless, toolSemGrep, toolWebInspect, toolVeracode, toolBurpSuiteEnterprise, toolBurpSuite:
 		return true
 	default:
 		return false

@@ -59,7 +59,7 @@ jobs:
 
       - name: Get the version
         id: vars
-        run: echo ::set-output name=tag::$(echo ${GITHUB_REF:10})
+        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
 
       - name: Build docker image
         run: docker build . -t kondukto/kondukto-cli:${{steps.vars.outputs.tag}}

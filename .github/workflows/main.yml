@@ -62,7 +62,7 @@ jobs:
         run: echo ::set-output name=tag::$(echo ${GITHUB_REF:10})
 
       - name: Build docker image
-        run: make image
+        run: docker build . -t kondukto/kondukto-cli:${{steps.vars.outputs.tag}}
      
       - name: Push to registry
-        run: make push-image
+        run: docker push kondukto/kondukto-cli:${{steps.vars.output.tag}}-gh

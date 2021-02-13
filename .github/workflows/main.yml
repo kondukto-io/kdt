@@ -19,7 +19,7 @@ jobs:
 
       - name: Get the version
         id: vars
-        run: echo ::set-output name=tag::$(git descrube --tags)
+        run: echo ::set-output name=tag::$(git describe --tags)
 
       - name: Build
         run: |

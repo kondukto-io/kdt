@@ -25,6 +25,7 @@ jobs:
         run: |
           make all
           ls -al
+          env
 
       - name: Create Release
         uses: actions/create-release@v1

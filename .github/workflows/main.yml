@@ -16,12 +16,12 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-        run: |
-          echo GIT_TAG=$(git describe --tags --abbrev=0) >> $GITHUB_ENV 
 
       - name: Build
         run: |
+          git fetch --prune --unshallow --tags
           make all
+          _release/kdt-linux version
 
       - name: Create Release
         uses: actions/create-release@v1

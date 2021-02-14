@@ -17,9 +17,13 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2
 
-      - name: Build
+      - name: Version
         run: |
           git fetch --prune --unshallow --tags
+          echo GIT_TAG=$(git describe --tags --abbrev=0) >> $GITHUB_ENV 
+
+      - name: Build
+        run: |
           make all
           _release/kdt-linux version
 
@@ -61,7 +65,7 @@ jobs:
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
       - name: Build docker image
-        run: echo "docker build . -t kondukto/kondukto-cli:${{ steps.vars.outputs.tag }}"
+        run: echo "docker build . -t kondukto/kondukto-cli:${{ env.GIT_TAG }}"
      
       #- name: Push to registry
       #  run: docker push kondukto/kondukto-cli:${{steps.vars.output.tag}}

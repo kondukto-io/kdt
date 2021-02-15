@@ -4,8 +4,6 @@ name: Build and Release KDT
 on:
   push:
     branches: [ master ]
-  ##pull_request:
-  ##  branches: [ master ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -16,10 +14,15 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2
 
+      - name: Version
+        run: |
+          git fetch --prune --unshallow --tags
+          echo GIT_TAG=$(git describe --tags --abbrev=0) >> $GITHUB_ENV 
+
       - name: Build
         run: |
           make all
-          ls -al
+          _release/kdt-linux version
 
       - name: Create Release
         uses: actions/create-release@v1
@@ -27,8 +30,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ env.GIT_TAG }}
+          release_name: Release ${{ env.GIT_TAG }}
           prerelease: false
           draft: true
           body: |
@@ -52,3 +55,12 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           user: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+
+      - name: Login to DockerHub Registry
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Build docker image
+        run: make image
+     
+      - name: Push to registry
+        run: docker push kondukto/kondukto-cli:${{ env.GIT_TAG }}

@@ -15,7 +15,7 @@ IMAGE_VERSION = $(shell echo $(VERSION)|cut -d "-" -f1)
 export GO111MODULE=on
 
 define hash
-	sha256sum $(1) > $(1).sha256
+	cd $(BUILD_DIR) && sha256sum $(1) > $(1).sha256
 endef
 
 default: help
@@ -45,4 +45,4 @@ $(PLATFORMS):
 			-tags prod \
 			-ldflags '-s -w -X main.Version=$(VERSION) -extldflags=-static' \
 			-o $(OUT)-$(OS)
-	$(call hash, $(OUT)-$(OS))
+	$(call hash, kdt-$(OS))

@@ -33,9 +33,10 @@ type (
 	}
 
 	ScanSearchParams struct {
-		Tool  string `json:"tool,omitempty"`
-		Meta  string `json:"meta,omitempty"`
-		Limit int    `json:"limit,omitempty"`
+		Branch string `url:"branch,omitempty"`
+		Tool   string `url:"tool,omitempty"`
+		Meta   string `url:"meta,omitempty"`
+		Limit  int    `url:"limit,omitempty"`
 	}
 	ScanPROptions struct {
 		From string `json:"from"`

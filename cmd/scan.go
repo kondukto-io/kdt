@@ -401,9 +401,15 @@ func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 		return "", errors.New("invalid tool name")
 	}
 
+	branch, err := cmd.Flags().GetString("branch")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
+	}
+
 	params := &client.ScanSearchParams{
-		Tool:  tool,
-		Limit: 1,
+		Tool:   tool,
+		Branch: branch,
+		Limit:  1,
 	}
 
 	scan, err := c.FindScan(project, params)
@@ -434,13 +440,18 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
 
-	params := &client.ScanSearchParams{
-		Tool:  tool,
-		Meta:  meta,
-		Limit: 1,
+	branch, err := cmd.Flags().GetString("branch")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 
-	// TODO: Updated ListScans call should include tool parameter
+	params := &client.ScanSearchParams{
+		Tool:   tool,
+		Meta:   meta,
+		Branch: branch,
+		Limit:  1,
+	}
+
 	scan, err := c.FindScan(project, params)
 	if err != nil {
 		qwe(1, err, "could not get scans of the project")
@@ -495,7 +506,9 @@ func getScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 	if err != nil {
 		qwe(1, err, "could not get scans of the project")
 	}
-
+	if scan == nil {
+		qwm(1, "no found scan by given parameters")
+	}
 	opt := &client.ScanPROptions{
 		From: branch,
 		To:   mergeTarget,

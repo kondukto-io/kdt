@@ -506,7 +506,9 @@ func getScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 	if err != nil {
 		qwe(1, err, "could not get scans of the project")
 	}
-
+	if scan == nil {
+		qwm(1, "no found scan by given parameters")
+	}
 	opt := &client.ScanPROptions{
 		From: branch,
 		To:   mergeTarget,

@@ -497,10 +497,9 @@ func getScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 	}
 
 	params := &client.ScanSearchParams{
-		Tool:   tool,
-		Branch: branch,
-		Meta:   meta,
-		Limit:  1,
+		Tool:  tool,
+		Meta:  meta,
+		Limit: 1,
 	}
 
 	scan, err := c.FindScan(project, params)

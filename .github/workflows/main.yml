@@ -47,14 +47,15 @@ jobs:
           release_id: ${{ steps.create_release.outputs.id }}
           assets_path: ./_release/
 
-      - name: Upload `get.sh`
-        uses: nogsantos/scp-deploy@master
+      - name: Upload get.sh
+        uses: appleboy/scp-action@master
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          USERNAME: ${{ secrets.SSH_USER }}
+          KEY: ${{ secrets.SSH_KEY }}
         with:
-          src: ./get.sh
-          remote: ${{ secrets.SSH_REMOTE }}
-          host: ${{ secrets.SSH_HOST }}
-          user: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          source: ./get.sh
+          target: ${{ secrets.SSH_REMOTE }}
 
       - name: Login to DockerHub Registry
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
@@ -63,4 +64,7 @@ jobs:
         run: make image
      
       - name: Push to registry
-        run: docker push kondukto/kondukto-cli:${{ env.GIT_TAG }}
+        run: |
+           docker push kondukto/kondukto-cli:${{ env.GIT_TAG }}
+           docker push kondukto/kondukto-cli:latest
+

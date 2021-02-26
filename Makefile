@@ -4,6 +4,7 @@ MODULE        = $(shell env GO111MODULE=on $(GO) list -m)
 VERSION       = $(shell git describe --tags)
 DATE          = $(shell date +%FT%T%z)
 BUILD_DIR     = "_release"
+OUT           = "$(BUILD_DIR)/kdt"
 PLATFORMS     := linux/amd64 windows/amd64 darwin/amd64
 TEMP 	      = $(subst /, ,$@)
 OS 	      = $(word 1, $(TEMP))
@@ -25,7 +26,6 @@ image:
 push-image:
 	docker push $(IMAGE_NAME):$(IMAGE_VERSION)
 
-
 clean:
 	rm -r $(BUILD_DIR)
 	go clean
@@ -36,12 +36,11 @@ help:
 	@echo " make all   -- to build kdt in all supported environments"
 	@echo " make image -- to build docker image"
 
-
 all: $(PLATFORMS)
 
 $(PLATFORMS):
 	CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build \
 			-tags prod \
 			-ldflags '-s -w -X main.Version=$(VERSION) -extldflags=-static' \
-			-o kdt-$(OS)
+			-o $(OUT)-$(OS)
 	$(call hash, kdt-$(OS))

@@ -15,13 +15,17 @@ type Project struct {
 	Name string `json:"name,omitempty"`
 }
 
-func (c *Client) ListProjects() ([]Project, error) {
+func (c *Client) ListProjects(arg string) ([]Project, error) {
 	projects := make([]Project, 0)
 
 	req, err := c.newRequest("GET", "/api/v1/projects", nil)
 	if err != nil {
 		return projects, err
 	}
+
+	queryParams := req.URL.Query()
+	queryParams.Add("search", arg)
+	req.URL.RawQuery = queryParams.Encode()
 
 	type getProjectsResponse struct {
 		Projects []Project `json:"data"`

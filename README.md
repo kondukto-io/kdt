@@ -136,16 +136,13 @@ Example Usage:
 ## Supported scanners (tools)
 KDT supports all scanners enabled in Kondukto server. To see the list you can simply run `kdt list scanners`
 
-To run a GoSec scan (for SampleProject in the main branch):
+`kdt scan -p <project_name> -t <tool_name> -b <branch_name>`
+
+for example (run Gosec scan in SampleProject's main branch):
+
 `kdt scan -p SampleProject -t gosec -b main`
 
-To run a Checkmarx scan (for SampleProject in the main branch):
-`kdt scan -p SampleProject -t checkmarx -b main`
-
-To run a dependency scan (for SampleProject in the main branch):
-`kdt scan -p SampleProject -t dependencycheck -b main`
-
-### Scanner list
+### Tool list
 ```
 checkmarx
 checkmarxsca
@@ -168,6 +165,21 @@ semgrep
 veracode
 burpsuite
 burpsuiteenterprise
+```
+
+## Advanced usage examples
+There are multiple cases that you can use KDT in your pipeline.
+
+```
+kdt --config kondukto-config.yml \
+    --insecure \
+    scan \
+    --project SampleProject \
+    --tool fortify \
+    --file results.fpr \
+    --branch develop \
+    --threshold-crit 0 \
+    --threshold-high 0` 
 ```
 
 ## Contributing to KDT

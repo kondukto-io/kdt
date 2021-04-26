@@ -133,6 +133,42 @@ Example Usage:
 
 `kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10 --threshold-risk`
 
+## Supported scanners (tools)
+KDT supports all scanners enabled in Kondukto server. To see the list you can simply run `kdt list scanners`
+
+To run a GoSec scan (for SampleProject in the main branch):
+`kdt scan -p SampleProject -t gosec -b main`
+
+To run a Checkmarx scan (for SampleProject in the main branch):
+`kdt scan -p SampleProject -t checkmarx -b main`
+
+To run a dependency scan (for SampleProject in the main branch):
+`kdt scan -p SampleProject -t dependencycheck -b main`
+
+### Scanner list
+```
+checkmarx
+checkmarxsca
+owaspzap
+webinspect
+netsparker
+appspider
+bandit
+findsecbugs
+dependencycheck
+fortify
+gosec
+brakeman
+securitycodescan
+trivy
+hclappscan
+owaspzapheadless
+nancy
+semgrep
+veracode
+burpsuite
+burpsuiteenterprise
+```
 
 ## Contributing to KDT
 If you wish to get involved in KDT development, create issues for problems and missing features or fork the repository and create pull requests to help the development directly.

@@ -182,6 +182,31 @@ kdt --config kondukto-config.yml \
     --threshold-high 0` 
 ```
 
+- --config: Kondukto configuration file in yaml format
+- --insecure: Don't verify SSL certificates
+- scan: start scan 
+- --project: Application's name in Kondukto server. 
+- --tool: AST tool to be used (fortify). 
+- --file: Results filename, when file parameters is given scan will not be initiated and only the results file (results.fpr) is going to be analyzed.
+- --branch: Branch name.
+- --threshold-crit: Threshold value to "break the build" in the pipeline. When this parameter(s) is given, entered security criteria will be overwritten.
+
+
+```
+kdt --config kondukto-config.yml \
+    scan \
+    --project SampleProject \
+    --tool trivy \
+    --image ubuntu@256:ab02134176aecfe0c0974ab4d3db43ca91eb6483a6b7fe6556b480489edd04a1 \
+    --branch develop \
+```
+- --config: Kondukto configuration file in yaml format
+- scan: start scan 
+- --project: Application's name in Kondukto server. 
+- --tool: AST tool to be used (trivy). 
+- --image: Image name to be scanned. Name can be given with the digest or with the tag name (ubuntu:latest).
+
+
 ## Contributing to KDT
 If you wish to get involved in KDT development, create issues for problems and missing features or fork the repository and create pull requests to help the development directly.
 

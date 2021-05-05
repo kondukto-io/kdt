@@ -133,6 +133,79 @@ Example Usage:
 
 `kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10 --threshold-risk`
 
+## Supported scanners (tools)
+KDT supports all scanners enabled in Kondukto server. To see the list you can simply run `kdt list scanners`
+
+`kdt scan -p <project_name> -t <tool_name> -b <branch_name>`
+
+for example (run Gosec scan in SampleProject's main branch):
+
+`kdt scan -p SampleProject -t gosec -b main`
+
+### Tool list
+```
+checkmarx
+checkmarxsca
+owaspzap
+webinspect
+netsparker
+appspider
+bandit
+findsecbugs
+dependencycheck
+fortify
+gosec
+brakeman
+securitycodescan
+trivy
+hclappscan
+owaspzapheadless
+nancy
+semgrep
+veracode
+burpsuite
+burpsuiteenterprise
+```
+
+## Advanced usage examples
+There are multiple cases that you can use KDT in your pipeline.
+
+```
+kdt --config kondukto-config.yml \
+    --insecure \
+    scan \
+    --project SampleProject \
+    --tool fortify \
+    --file results.fpr \
+    --branch develop \
+    --threshold-crit 0 \
+    --threshold-high 0` 
+```
+
+- --config: Kondukto configuration file in yaml format
+- --insecure: Don't verify SSL certificates
+- scan: start scan 
+- --project: Application's name in Kondukto server. 
+- --tool: AST tool to be used (fortify). 
+- --file: Results filename, when file parameters is given scan will not be initiated and only the results file (results.fpr) is going to be analyzed.
+- --branch: Branch name.
+- --threshold-crit: Threshold value to "break the build" in the pipeline. When this parameter(s) is given, entered security criteria will be overwritten.
+
+
+```
+kdt --config kondukto-config.yml \
+    scan \
+    --project SampleProject \
+    --tool trivy \
+    --image ubuntu@256:ab02134176aecfe0c0974ab4d3db43ca91eb6483a6b7fe6556b480489edd04a1 \
+    --branch develop \
+```
+- --config: Kondukto configuration file in yaml format
+- scan: start scan 
+- --project: Application's name in Kondukto server. 
+- --tool: AST tool to be used (trivy). 
+- --image: Image name to be scanned. Name can be given with the digest or with the tag name (ubuntu:latest).
+
 
 ## Contributing to KDT
 If you wish to get involved in KDT development, create issues for problems and missing features or fork the repository and create pull requests to help the development directly.

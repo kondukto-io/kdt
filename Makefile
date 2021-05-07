@@ -26,7 +26,6 @@ image:
 push-image:
 	docker push $(IMAGE_NAME):$(IMAGE_VERSION)
 
-
 clean:
 	rm -r $(BUILD_DIR)
 	go clean
@@ -36,7 +35,6 @@ help:
 	@echo "Available commands: all | image | help"
 	@echo " make all   -- to build kdt in all supported environments"
 	@echo " make image -- to build docker image"
-
 
 all: $(PLATFORMS)
 

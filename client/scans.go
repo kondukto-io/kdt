@@ -298,3 +298,41 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string) (st
 
 	return importResponse.EventID, nil
 }
+
+func (c *Client) ScanByImage(project, branch, tool, image string) (string, error) {
+	path := "/api/v1/scans/image"
+
+	type imageScanBody struct {
+		Project string
+		Tool    string
+		Branch  string
+		Image   string
+	}
+	reqBody := imageScanBody{
+		Project: project,
+		Tool:    tool,
+		Branch:  branch,
+		Image:   image,
+	}
+
+	req, err := c.newRequest(http.MethodPost, path, &reqBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	type responseBody struct {
+		EventID string
+	}
+	respBody := new(responseBody)
+
+	resp, err := c.do(req, respBody)
+	if err != nil {
+		return "", fmt.Errorf("HTTP response failed: %w", err)
+
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP response not OK")
+	}
+
+	return respBody.EventID, nil
+}

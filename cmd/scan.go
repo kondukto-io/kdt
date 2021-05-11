@@ -544,7 +544,10 @@ func scanByImage(cmd *cobra.Command, c *client.Client) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
-	image := cmd.Flags().GetString("image")
+	image, err := cmd.Flags().GetString("image")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse image flag: %w", err)
+	}
 	if image == "" {
 		return "", errors.New("image name is required")
 	}

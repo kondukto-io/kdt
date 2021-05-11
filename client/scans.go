@@ -321,7 +321,7 @@ func (c *Client) ScanByImage(project, branch, tool, image string) (string, error
 	}
 
 	type responseBody struct {
-		EventID string
+		EventID string `json:"event_id"`
 	}
 	respBody := new(responseBody)
 
@@ -330,7 +330,7 @@ func (c *Client) ScanByImage(project, branch, tool, image string) (string, error
 		return "", fmt.Errorf("HTTP response failed: %w", err)
 
 	}
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusCreated {
 		return "", fmt.Errorf("HTTP response not OK")
 	}
 

@@ -66,4 +66,5 @@ jobs:
       - name: Push to registry
         run: |
           docker push kondukto/kondukto-cli:${{ env.GIT_TAG }}
+          docker tag kondukto/kondukto-cli:${{ env.GIT_TAG }} kondukto/kondukto-cli:latest
           docker push kondukto/kondukto-cli:latest

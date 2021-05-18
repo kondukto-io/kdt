@@ -61,6 +61,7 @@ const (
 	modeByProjectTool
 	modeByProjectToolAndPR
 	modeByProjectToolAndMetadata
+	modeByImage
 )
 
 // scanCmd represents the scan command
@@ -107,6 +108,7 @@ func init() {
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 	scanCmd.Flags().StringP("merge-target", "M", "", "target branch name for pull request")
+	scanCmd.Flags().String("image", "", "image to scan with container security products")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -160,6 +162,12 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		}
 
 		return eventID, nil
+	case modeByImage:
+		eventID, err := scanByImage(cmd, c)
+		if err != nil {
+			qwe(1, err, "could not start scan")
+		}
+		return eventID, nil
 	default:
 		return "", errors.New("invalid scan mode")
 	}
@@ -182,6 +190,7 @@ func getScanMode(cmd *cobra.Command) uint {
 	byBranch := cmd.Flag("merge-target").Changed
 	byMerge := cmd.Flag("branch").Changed
 	byPR := byBranch && byMerge
+	byImage := cmd.Flag("image").Changed
 
 	byProjectAndTool := byProject && byTool && !byMetaData
 	byProjectAndToolAndMeta := byProjectAndTool && byMetaData && !byPR
@@ -189,7 +198,10 @@ func getScanMode(cmd *cobra.Command) uint {
 	byProjectAndToolAndFile := byProjectAndTool && byFile && !byMetaData
 
 	mode := func() uint {
+		// sorted by priority
 		switch true {
+		case byImage:
+			return modeByImage
 		case byProjectAndToolAndFile:
 			return modeByFile
 		case byScanId:
@@ -514,6 +526,38 @@ func getScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 		To:   mergeTarget,
 	}
 	return scan.ID, opt, nil
+}
+
+func scanByImage(cmd *cobra.Command, c *client.Client) (string, error) {
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse project flag: %w", err)
+	}
+	tool, err := cmd.Flags().GetString("tool")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+	if !validTool(tool) {
+		return "", errors.New("invalid tool name")
+	}
+	branch, err := cmd.Flags().GetString("branch")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
+	}
+	image, err := cmd.Flags().GetString("image")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse image flag: %w", err)
+	}
+	if image == "" {
+		return "", errors.New("image name is required")
+	}
+
+	eventID, err := c.ScanByImage(project, branch, tool, image)
+	if err != nil {
+		return "", err
+	}
+
+	return eventID, nil
 }
 
 func checkRelease(cmd *cobra.Command) error {

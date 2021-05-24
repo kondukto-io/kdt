@@ -30,6 +30,7 @@ func (c *Client) ListProjects(arg string) ([]Project, error) {
 	type getProjectsResponse struct {
 		Projects []Project `json:"data"`
 		Total    int       `json:"total"`
+		Error    string    `json:"error"`
 	}
 	var ps getProjectsResponse
 
@@ -39,7 +40,7 @@ func (c *Client) ListProjects(arg string) ([]Project, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return projects, errors.New("response not ok")
+		return projects, fmt.Errorf("response not ok: %v", ps.Error)
 	}
 
 	return ps.Projects, nil

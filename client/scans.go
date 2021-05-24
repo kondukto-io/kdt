@@ -285,6 +285,7 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string) (st
 	type importScanResultResponse struct {
 		EventID string `json:"event_id"`
 		Message string `json:"message"`
+		Error   string `json:"error"`
 	}
 	var importResponse importScanResultResponse
 	resp, err := c.do(req, &importResponse)
@@ -293,7 +294,7 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string) (st
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.New("failed to import scan results")
+		return "", fmt.Errorf("failed to import scan results: %v", importResponse.Error)
 	}
 
 	return importResponse.EventID, nil
@@ -322,6 +323,7 @@ func (c *Client) ScanByImage(project, branch, tool, image string) (string, error
 
 	type responseBody struct {
 		EventID string `json:"event_id"`
+		Error   string `json:"error"`
 	}
 	respBody := new(responseBody)
 
@@ -331,7 +333,7 @@ func (c *Client) ScanByImage(project, branch, tool, image string) (string, error
 
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("HTTP response not OK")
+		return "", fmt.Errorf("HTTP response not OK: %v", respBody.Error)
 	}
 
 	return respBody.EventID, nil

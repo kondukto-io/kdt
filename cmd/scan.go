@@ -7,11 +7,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"text/tabwriter"
 	"time"
+
+	"github.com/kondukto-io/kdt/klog"
 
 	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
@@ -80,12 +81,12 @@ func scanRootCommand(cmd *cobra.Command, args []string) {
 
 	eventID, err := startScan(cmd, c)
 	if err != nil {
-		qwe(1, err, "scan failed")
+		klog.Fatalf("failed to start scan: %v", err)
 	}
 
 	async, err := cmd.Flags().GetBool("async")
 	if err != nil {
-		qwe(1, err, "failed to parse async flag")
+		klog.Fatalf("failed to parse async flag: %v", err)
 	}
 
 	// Do not wait for scan to finish if async set to true
@@ -231,7 +232,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 	for {
 		event, err := c.GetScanStatus(eventID)
 		if err != nil {
-			qwe(1, err, "could not get scan status")
+			klog.Fatalf("failed to get scan status: %v", err)
 		}
 
 		switch event.Active {
@@ -239,7 +240,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 			qwm(1, "scan failed")
 		case eventInactive:
 			if event.Status == jobFinished {
-				log.Println("scan finished successfully")
+				klog.Println("scan finished successfully")
 				scan, err := c.GetScanSummary(event.ScanId)
 				if err != nil {
 					qwe(1, err, "failed to fetch scan summary")
@@ -260,7 +261,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 				qwm(0, "scan duration exceeds timeout, it will continue running async in the background")
 			}
 			if event.Status != lastStatus {
-				log.Println(statusMsg(event.Status))
+				klog.Println(statusMsg(event.Status))
 				lastStatus = event.Status
 				// Get new scans scan id
 			}
@@ -426,7 +427,7 @@ func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
-		qwe(1, err, "could not get scans of the project")
+		klog.Fatal("no scans found for given project and tool configuration")
 	}
 
 	return scan.ID, nil
@@ -466,6 +467,7 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
+		klog.Fatal("no scans found for given project, tool and metadata configuration")
 		qwe(1, err, "could not get scans of the project")
 	}
 
@@ -516,6 +518,7 @@ func getScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
+		klog.Fatalf("no scans found for given project, tool and PR configuration")
 		qwe(1, err, "could not get scans of the project")
 	}
 	if scan == nil {

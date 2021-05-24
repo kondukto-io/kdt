@@ -7,6 +7,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/kondukto-io/kdt/klog"
+
 	"github.com/spf13/cobra"
 
 	"github.com/mitchellh/go-homedir"
@@ -53,6 +55,10 @@ func init() {
 	_ = viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	_ = viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("host"))
 	_ = viper.BindPFlag("token", rootCmd.PersistentFlags().Lookup("token"))
+
+	if verbose {
+		klog.DefaultLogger.Level = klog.LevelDebug
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.

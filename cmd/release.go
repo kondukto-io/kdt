@@ -9,6 +9,8 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/kondukto-io/kdt/klog"
+
 	"github.com/kondukto-io/kdt/client"
 
 	"github.com/spf13/cobra"
@@ -62,7 +64,7 @@ func releaseRootCommand(cmd *cobra.Command, args []string) {
 
 	sast, err := cmd.Flags().GetBool("sast")
 	if err != nil {
-		qwm(1, "failed to parse sast flag")
+		klog.Fatalln("failed to parse sast flag")
 	}
 
 	dast, err := cmd.Flags().GetBool("dast")

@@ -6,8 +6,9 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
+
+	"github.com/kondukto-io/kdt/klog"
 )
 
 // qwe quits with error. If there are messages, wraps error with message
@@ -15,12 +16,12 @@ func qwe(code int, err error, messages ...string) {
 	for _, m := range messages {
 		err = fmt.Errorf("%s: %w", m, err)
 	}
-	log.Println(err)
+	klog.Fatalln(err)
 	os.Exit(code)
 }
 
 // qwm quits with message
 func qwm(code int, message string) {
-	log.Println(message)
+	klog.Println(message)
 	os.Exit(code)
 }

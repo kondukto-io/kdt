@@ -19,7 +19,7 @@ const (
 	PrefixError   = "ERR: "
 	PrefixWarning = "WRN: "
 	PrefixDebug   = "DBG: "
-	PrefixFatal   = "FTL: "
+	PrefixFatal   = "ERR: "
 	PrefixPanic   = "PNC: "
 )
 
@@ -30,11 +30,11 @@ type Logger struct {
 
 var DefaultLogger = &Logger{
 	Level:  LevelError,
-	Output: os.Stderr,
+	Output: os.Stdout,
 }
 
 func (l *Logger) out(s string) error {
-	s = fmt.Sprintf("%s ", time.Now().String())
+	s = fmt.Sprintf("%s %s", time.Now().Format(time.RFC3339), s)
 	if len(s) == 0 || s[len(s)-1] != '\n' {
 		s += "\n"
 	}

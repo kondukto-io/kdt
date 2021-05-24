@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 )
 
 const (
@@ -13,7 +14,14 @@ const (
 	LevelDebug
 )
 
-const ()
+const (
+	PrefixInfo    = "INF: "
+	PrefixError   = "ERR: "
+	PrefixWarning = "WRN: "
+	PrefixDebug   = "DBG: "
+	PrefixFatal   = "FTL: "
+	PrefixPanic   = "PNC: "
+)
 
 type Logger struct {
 	Level  uint
@@ -26,6 +34,7 @@ var DefaultLogger = &Logger{
 }
 
 func (l *Logger) out(s string) error {
+	s = fmt.Sprintf("%s ", time.Now().String())
 	if len(s) == 0 || s[len(s)-1] != '\n' {
 		s += "\n"
 	}
@@ -34,47 +43,47 @@ func (l *Logger) out(s string) error {
 }
 
 func Print(v ...interface{}) {
-	DefaultLogger.out(fmt.Sprint(v...))
+	DefaultLogger.out(PrefixInfo + fmt.Sprint(v...))
 }
 
 func Printf(format string, v ...interface{}) {
-	DefaultLogger.out(fmt.Sprintf(format, v...))
+	DefaultLogger.out(PrefixInfo + fmt.Sprintf(format, v...))
 }
 
 func Println(v ...interface{}) {
-	DefaultLogger.out(fmt.Sprintln(v...))
+	DefaultLogger.out(PrefixInfo + fmt.Sprintln(v...))
 }
 
 func Fatal(v ...interface{}) {
-	DefaultLogger.out(fmt.Sprint(v...))
+	DefaultLogger.out(PrefixFatal + fmt.Sprint(v...))
 	os.Exit(1)
 }
 
 func Fatalf(format string, v ...interface{}) {
-	DefaultLogger.out(fmt.Sprintf(format, v...))
+	DefaultLogger.out(PrefixFatal + fmt.Sprintf(format, v...))
 	os.Exit(1)
 }
 
 func Fatalln(v ...interface{}) {
-	DefaultLogger.out(fmt.Sprintln(v...))
+	DefaultLogger.out(PrefixFatal + fmt.Sprintln(v...))
 	os.Exit(1)
 }
 
 func Panic(v ...interface{}) {
 	s := fmt.Sprint(v...)
-	DefaultLogger.out(s)
+	DefaultLogger.out(PrefixPanic + s)
 	panic(s)
 }
 
 func Panicf(format string, v ...interface{}) {
 	s := fmt.Sprintf(format, v...)
-	DefaultLogger.out(s)
+	DefaultLogger.out(PrefixPanic + s)
 	panic(s)
 }
 
 func Panicln(v ...interface{}) {
 	s := fmt.Sprintln(v...)
-	DefaultLogger.out(s)
+	DefaultLogger.out(PrefixPanic + s)
 	panic(s)
 }
 
@@ -82,39 +91,39 @@ func Debug(v ...interface{}) {
 	if DefaultLogger.Level < LevelDebug {
 		return
 	}
-	DefaultLogger.out(fmt.Sprint(v...))
+	DefaultLogger.out(PrefixDebug + fmt.Sprint(v...))
 }
 
 func Debugf(format string, v ...interface{}) {
 	if DefaultLogger.Level < LevelDebug {
 		return
 	}
-	DefaultLogger.out(fmt.Sprintf(format, v...))
+	DefaultLogger.out(PrefixDebug + fmt.Sprintf(format, v...))
 }
 
 func Debugln(v ...interface{}) {
 	if DefaultLogger.Level < LevelDebug {
 		return
 	}
-	DefaultLogger.out(fmt.Sprintln(v...))
+	DefaultLogger.out(PrefixDebug + fmt.Sprintln(v...))
 }
 func Warn(v ...interface{}) {
 	if DefaultLogger.Level < LevelWarning {
 		return
 	}
-	DefaultLogger.out(fmt.Sprint(v...))
+	DefaultLogger.out(PrefixWarning + fmt.Sprint(v...))
 }
 
 func Warnf(format string, v ...interface{}) {
 	if DefaultLogger.Level < LevelWarning {
 		return
 	}
-	DefaultLogger.out(fmt.Sprintf(format, v...))
+	DefaultLogger.out(PrefixWarning + fmt.Sprintf(format, v...))
 }
 
 func Warnln(v ...interface{}) {
 	if DefaultLogger.Level < LevelWarning {
 		return
 	}
-	DefaultLogger.out(fmt.Sprintln(v...))
+	DefaultLogger.out(PrefixWarning + fmt.Sprintln(v...))
 }

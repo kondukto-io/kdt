@@ -40,7 +40,7 @@ func (c *Client) ListProjects(arg string) ([]Project, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return projects, fmt.Errorf("response not ok: %v", ps.Error)
+		return projects, fmt.Errorf("HTTP response not OK : %v", ps.Error)
 	}
 
 	return ps.Projects, nil
@@ -85,7 +85,7 @@ func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("response not ok")
+		return nil, errors.New("HTTP response not OK ")
 	}
 
 	return rs, nil

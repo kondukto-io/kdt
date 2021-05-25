@@ -93,7 +93,7 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, er
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return scans, errors.New("response not ok")
+		return scans, errors.New("HTTP response not OK")
 	}
 
 	return ps.Scans, nil
@@ -134,7 +134,7 @@ func (c *Client) StartScanByScanId(id string) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return "", errors.New("response not ok")
+		return "", errors.New("HTTP response not OK ")
 	}
 
 	if rsr.Event == "" {
@@ -166,7 +166,7 @@ func (c *Client) StartScanByOption(id string, opt *ScanPROptions) (string, error
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return "", errors.New("response not ok")
+		return "", errors.New("HTTP response not OK ")
 	}
 
 	if rsr.Event == "" {
@@ -190,7 +190,7 @@ func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("response not ok")
+		return nil, errors.New("HTTP response not OK ")
 	}
 
 	return e, nil
@@ -210,7 +210,7 @@ func (c *Client) GetScanSummary(id string) (*Scan, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("response not ok")
+		return nil, errors.New("HTTP response not OK ")
 	}
 
 	return scan, nil
@@ -230,7 +230,7 @@ func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("response not ok")
+		return nil, errors.New("HTTP response not OK ")
 	}
 
 	return m, err

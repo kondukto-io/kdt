@@ -87,8 +87,8 @@ func TestDo(t *testing.T) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		klog.Fatalf("")
-		t.Fatal("http response not ok")
+		klog.Fatalf("HTTP response status code: %d", resp.StatusCode)
+		t.Fatal("HTTP response not OK")
 	}
 
 	j, err := json.Marshal(&someone)

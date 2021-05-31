@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/kondukto-io/kdt/klog"
 )
 
 type Project struct {
@@ -17,6 +19,8 @@ type Project struct {
 
 func (c *Client) ListProjects(arg string) ([]Project, error) {
 	projects := make([]Project, 0)
+
+	klog.Debug("retrieving project list...")
 
 	req, err := c.newRequest("GET", "/api/v1/projects", nil)
 	if err != nil {

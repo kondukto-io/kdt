@@ -70,6 +70,10 @@ var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "base command for starting scans",
 	Run:   scanRootCommand,
+	//PreRun: func(cmd *cobra.Command, args []string) {
+	//	p, _ := cmd.Flags().GetString("project")
+	//	klog.Debugf("Project name: %s", p)
+	//},
 }
 
 func scanRootCommand(cmd *cobra.Command, args []string) {
@@ -264,6 +268,8 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 				klog.Println(statusMsg(event.Status))
 				lastStatus = event.Status
 				// Get new scans scan id
+			} else {
+				klog.Debugf("event status [%s]", statusMsg(event.Status))
 			}
 			time.Sleep(10 * time.Second)
 		default:

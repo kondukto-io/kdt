@@ -9,9 +9,8 @@ import (
 
 	"github.com/kondukto-io/kdt/klog"
 
-	"github.com/spf13/cobra"
-
 	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -23,6 +22,8 @@ var (
 	cfgFile  string
 	verbose  bool
 	insecure bool
+	host     string
+	token    string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -49,8 +50,6 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	var host, token string
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kdt.yaml)")
 	rootCmd.PersistentFlags().StringVar(&host, "host", "", "Kondukto server host")

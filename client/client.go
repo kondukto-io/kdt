@@ -13,8 +13,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kondukto-io/kdt/klog"
-
 	"github.com/spf13/viper"
 )
 
@@ -90,8 +88,6 @@ func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
-
-	klog.Debugf("HTTP response status code: %d", resp.StatusCode)
 
 	err = json.Unmarshal(data, &v)
 	return resp, err

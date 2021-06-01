@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kondukto-io/kdt/klog"
+
 	"github.com/google/go-querystring/query"
 	"github.com/spf13/viper"
 )
@@ -69,6 +71,8 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, er
 	// TODO: list scans call should be updated to take tool and metadata arguments
 	scans := make([]Scan, 0)
 
+	klog.Debugf("retrieving scans of the project: %s", project)
+
 	path := fmt.Sprintf("/api/v1/projects/%s/scans", project)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
@@ -117,6 +121,7 @@ func (c *Client) FindScan(project string, params *ScanSearchParams) (*Scan, erro
 }
 
 func (c *Client) StartScanByScanId(id string) (string, error) {
+	klog.Debug("starting scan by scan_id")
 	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
@@ -177,6 +182,7 @@ func (c *Client) StartScanByOption(id string, opt *ScanPROptions) (string, error
 }
 
 func (c *Client) GetScanStatus(eventId string) (*Event, error) {
+
 	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
@@ -237,6 +243,9 @@ func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
 }
 
 func (c *Client) ImportScanResult(project, branch, tool string, file string) (string, error) {
+
+	klog.Debugf("importing scan results using the file:%s", file)
+
 	path := "/api/v1/scans/import"
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)

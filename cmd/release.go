@@ -48,6 +48,7 @@ func releaseRootCommand(cmd *cobra.Command, args []string) {
 	if err != nil {
 		qwe(1, fmt.Errorf("failed to get release status: %w", err))
 	}
+
 	const statusUndefined = "undefined"
 	const statusFail = "fail"
 

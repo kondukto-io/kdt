@@ -54,6 +54,8 @@ const (
 	toolVeracode            = "veracode"
 	toolBurpSuite           = "burpsuite"
 	toolBurpSuiteEnterprise = "burpsuiteenterprise"
+	toolNuclei              = "nuclei"
+	toolGitLeaks            = "gitleaks"
 )
 
 const (

@@ -67,15 +67,19 @@ const (
 	modeByImage
 )
 
+var byTool string
+
 // scanCmd represents the scan command
 var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "base command for starting scans",
 	Run:   scanRootCommand,
-	//PreRun: func(cmd *cobra.Command, args []string) {
-	//	p, _ := cmd.Flags().GetString("project")
-	//	klog.Debugf("Project name: %s", p)
-	//},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		t, _ := cmd.Flags().GetString("tool")
+		if !validTool(t) {
+			klog.Fatal("a valid tool must be given. Run `kdt list scanners` to see the supported scanner's list.")
+		}
+	},
 }
 
 func scanRootCommand(cmd *cobra.Command, args []string) {
@@ -280,16 +284,16 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 	}
 }
 
-func validTool(tool string) bool {
-	switch tool {
-	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetSparker, toolOWASPZap,
-		toolFortify, toolGoSec, toolDependencyCheck, toolBrakeman, toolAppScan, toolSCS, toolTrivy,
-		toolNancy, toolCxSca, toolZapless, toolSemGrep, toolWebInspect, toolVeracode, toolBurpSuiteEnterprise, toolBurpSuite:
-		return true
-	default:
-		return false
-	}
-}
+//func validTool(tool string) bool {
+//	switch tool {
+//	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetSparker, toolOWASPZap,
+//		toolFortify, toolGoSec, toolDependencyCheck, toolBrakeman, toolAppScan, toolSCS, toolTrivy,
+//		toolNancy, toolCxSca, toolZapless, toolSemGrep, toolWebInspect, toolVeracode, toolBurpSuiteEnterprise, toolBurpSuite:
+//		return true
+//	default:
+//		return false
+//	}
+//}
 
 func statusMsg(s int) string {
 	switch s {

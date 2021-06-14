@@ -30,7 +30,7 @@ var scanners = map[string]string{
 	"nuclei":              "dast",
 	"gitleaks":            "sast",
 	"semgrep":             "sast",
-	"semgerpiac":          "iac",
+	"semgrepconfig":       "iac",
 	"kicks":               "iac",
 	"trivy":               "cs",
 }

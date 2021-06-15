@@ -2,6 +2,7 @@
 Copyright © 2019 Kondukto
 
 */
+
 package client
 
 import (
@@ -97,7 +98,7 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, er
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return scans, errors.New("HTTP response not OK")
+		return scans, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
 	return ps.Scans, nil
@@ -139,7 +140,7 @@ func (c *Client) StartScanByScanId(id string) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return "", errors.New("HTTP response not OK ")
+		return "", fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
 	if rsr.Event == "" {
@@ -171,7 +172,7 @@ func (c *Client) StartScanByOption(id string, opt *ScanPROptions) (string, error
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return "", errors.New("HTTP response not OK ")
+		return "", fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
 	if rsr.Event == "" {
@@ -182,24 +183,23 @@ func (c *Client) StartScanByOption(id string, opt *ScanPROptions) (string, error
 }
 
 func (c *Client) GetScanStatus(eventId string) (*Event, error) {
-
 	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	e := &Event{}
+	var e Event
 	resp, err := c.do(req, &e)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("HTTP response not OK ")
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
-	return e, nil
+	return &e, nil
 }
 
 func (c *Client) GetScanSummary(id string) (*Scan, error) {
@@ -209,17 +209,17 @@ func (c *Client) GetScanSummary(id string) (*Scan, error) {
 		return nil, err
 	}
 
-	scan := &Scan{}
+	var scan Scan
 	resp, err := c.do(req, &scan)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("HTTP response not OK ")
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
-	return scan, nil
+	return &scan, nil
 }
 
 func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
@@ -236,7 +236,7 @@ func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("HTTP response not OK ")
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
 	return m, err
@@ -296,6 +296,7 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string) (st
 		Message string `json:"message"`
 		Error   string `json:"error"`
 	}
+
 	var importResponse importScanResultResponse
 	resp, err := c.do(req, &importResponse)
 	if err != nil {
@@ -303,7 +304,7 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string) (st
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to import scan results: %v", importResponse.Error)
+		return "", fmt.Errorf("failed to import scan results: %s", importResponse.Error)
 	}
 
 	return importResponse.EventID, nil
@@ -339,10 +340,10 @@ func (c *Client) ScanByImage(project, branch, tool, image string) (string, error
 	resp, err := c.do(req, respBody)
 	if err != nil {
 		return "", fmt.Errorf("HTTP response failed: %w", err)
-
 	}
+
 	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("HTTP response not OK: %v", respBody.Error)
+		return "", fmt.Errorf("HTTP response not OK: %s", respBody.Error)
 	}
 
 	return respBody.EventID, nil

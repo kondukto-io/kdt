@@ -2,6 +2,7 @@
 Copyright © 2019 Kondukto
 
 */
+
 package client
 
 import (
@@ -44,7 +45,7 @@ func (c *Client) ListProjects(arg string) ([]Project, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return projects, fmt.Errorf("HTTP response not OK : %v", ps.Error)
+		return projects, fmt.Errorf("HTTP response not OK : %s", ps.Error)
 	}
 
 	return ps.Projects, nil
@@ -71,7 +72,7 @@ type ReleaseStatus struct {
 
 func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 	if project == "" {
-		return nil, errors.New("invalid project id or name")
+		return nil, errors.New("missing project id or name")
 	}
 
 	path := fmt.Sprintf("/api/v1/projects/%s/release", project)
@@ -89,7 +90,7 @@ func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("HTTP response not OK ")
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
 	return rs, nil

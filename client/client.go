@@ -2,6 +2,7 @@
 Copyright © 2019 Kondukto
 
 */
+
 package client
 
 import (
@@ -82,7 +83,7 @@ func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

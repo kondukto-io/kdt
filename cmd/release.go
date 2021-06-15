@@ -2,6 +2,7 @@
 Copyright © 2020 Kondukto
 
 */
+
 package cmd
 
 import (
@@ -33,7 +34,7 @@ func init() {
 	_ = releaseCmd.MarkFlagRequired("project")
 }
 
-func releaseRootCommand(cmd *cobra.Command, args []string) {
+func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
 		qwe(1, err, "could not initialize Kondukto client")

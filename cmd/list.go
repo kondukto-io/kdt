@@ -2,6 +2,7 @@
 Copyright © 2019 Kondukto
 
 */
+
 package cmd
 
 import (
@@ -14,7 +15,7 @@ var listCmd = &cobra.Command{
 	Short: "base command for lists",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			cmd.Help()
+			_ = cmd.Help()
 			qwm(0, "")
 		}
 	},

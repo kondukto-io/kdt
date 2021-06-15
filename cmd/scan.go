@@ -2,6 +2,7 @@
 Copyright © 2019 Kondukto
 
 */
+
 package cmd
 
 import (
@@ -41,8 +42,6 @@ const (
 	modeByImage
 )
 
-var byTool string
-
 // scanCmd represents the scan command
 var scanCmd = &cobra.Command{
 	Use:   "scan",
@@ -56,7 +55,7 @@ var scanCmd = &cobra.Command{
 	},
 }
 
-func scanRootCommand(cmd *cobra.Command, args []string) {
+func scanRootCommand(cmd *cobra.Command, _ []string) {
 	// Initialize Kondukto client
 	c, err := client.New()
 	if err != nil {
@@ -374,6 +373,7 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	return eventID, nil
 }
 
+//goland:noinspection GoNilness
 func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error) {
 	// Parse command line flags
 	project, err := cmd.Flags().GetString("project")

@@ -13,7 +13,7 @@ var listScannersCmd = &cobra.Command{
 	Short: "list supported scanners",
 	Run: func(cmd *cobra.Command, args []string) {
 		w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-		defer w.Flush()
+		defer func() { _ = w.Flush() }()
 
 		_, _ = fmt.Fprintf(w, "Tool Name\tScanner Type\n")
 		_, _ = fmt.Fprintf(w, "------\t------\n")

@@ -15,6 +15,7 @@ import (
 var scanners = map[string]string{
 	"checkmarx":           "sast",
 	"checkmarxsca":        "sca",
+	"checkmarxkics":       "iac",
 	"owaspzap":            "dast",
 	"webinspect":          "dast",
 	"netsparker":          "dast",
@@ -33,7 +34,6 @@ var scanners = map[string]string{
 	"gitleaks":            "sast",
 	"semgrep":             "sast",
 	"semgrepconfig":       "iac",
-	"kicks":               "iac",
 	"trivy":               "cs",
 }
 

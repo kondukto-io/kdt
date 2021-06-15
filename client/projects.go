@@ -2,12 +2,15 @@
 Copyright © 2019 Kondukto
 
 */
+
 package client
 
 import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/kondukto-io/kdt/klog"
 )
 
 type Project struct {
@@ -17,6 +20,8 @@ type Project struct {
 
 func (c *Client) ListProjects(arg string) ([]Project, error) {
 	projects := make([]Project, 0)
+
+	klog.Debug("retrieving project list...")
 
 	req, err := c.newRequest("GET", "/api/v1/projects", nil)
 	if err != nil {
@@ -30,6 +35,7 @@ func (c *Client) ListProjects(arg string) ([]Project, error) {
 	type getProjectsResponse struct {
 		Projects []Project `json:"data"`
 		Total    int       `json:"total"`
+		Error    string    `json:"error"`
 	}
 	var ps getProjectsResponse
 
@@ -39,7 +45,7 @@ func (c *Client) ListProjects(arg string) ([]Project, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return projects, errors.New("response not ok")
+		return projects, fmt.Errorf("HTTP response not OK : %s", ps.Error)
 	}
 
 	return ps.Projects, nil
@@ -66,7 +72,7 @@ type ReleaseStatus struct {
 
 func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 	if project == "" {
-		return nil, errors.New("invalid project id or name")
+		return nil, errors.New("missing project id or name")
 	}
 
 	path := fmt.Sprintf("/api/v1/projects/%s/release", project)
@@ -84,7 +90,7 @@ func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("response not ok")
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
 	return rs, nil

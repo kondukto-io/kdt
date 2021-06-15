@@ -2,14 +2,16 @@
 Copyright © 2019 Kondukto
 
 */
+
 package cmd
 
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/kondukto-io/kdt/klog"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -17,7 +19,13 @@ const (
 	repoURL = "https://github.com/kondukto-io/kdt"
 )
 
-var cfgFile string
+var (
+	cfgFile  string
+	verbose  bool
+	insecure bool
+	host     string
+	token    string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -26,7 +34,11 @@ var rootCmd = &cobra.Command{
 	Long:  `KDT is the command line interface of Kondukto for starting scans and setting release criteria. It is made to ease integration of Kondukto to DevSecOps pipelines.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) {},
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if verbose {
+			klog.DefaultLogger.Level = klog.LevelDebug
+		}
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -39,9 +51,6 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	var insecure, verbose bool
-	var host, token string
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kdt.yaml)")
 	rootCmd.PersistentFlags().StringVar(&host, "host", "", "Kondukto server host")

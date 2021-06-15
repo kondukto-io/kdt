@@ -20,6 +20,7 @@ var scanners = map[string]string{
 	"appspider":           "dast",
 	"bandit":              "sast",
 	"findsecbugs":         "sast",
+	"gosec":               "sast",
 	"dependencycheck":     "sca",
 	"fortify":             "sast",
 	"securitycodescan":    "sast",

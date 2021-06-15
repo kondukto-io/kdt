@@ -2,6 +2,7 @@
 Copyright © 2019 Kondukto
 
 */
+
 package cmd
 
 import (
@@ -27,7 +28,7 @@ func init() {
 	_ = listScansCmd.MarkFlagRequired("project")
 }
 
-func scanListRootCommand(cmd *cobra.Command, args []string) {
+func scanListRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
 		qwe(1, err, "could not initialize Kondukto client")
@@ -44,7 +45,7 @@ func scanListRootCommand(cmd *cobra.Command, args []string) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
 	_, _ = fmt.Fprintf(w, "NAME\tID\tBRANCH\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tSCORE\tDATE\n")
 	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")

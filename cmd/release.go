@@ -2,12 +2,15 @@
 Copyright © 2020 Kondukto
 
 */
+
 package cmd
 
 import (
 	"fmt"
 	"os"
 	"text/tabwriter"
+
+	"github.com/kondukto-io/kdt/klog"
 
 	"github.com/kondukto-io/kdt/client"
 
@@ -31,7 +34,7 @@ func init() {
 	_ = releaseCmd.MarkFlagRequired("project")
 }
 
-func releaseRootCommand(cmd *cobra.Command, args []string) {
+func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
 		qwe(1, err, "could not initialize Kondukto client")
@@ -46,6 +49,7 @@ func releaseRootCommand(cmd *cobra.Command, args []string) {
 	if err != nil {
 		qwe(1, fmt.Errorf("failed to get release status: %w", err))
 	}
+
 	const statusUndefined = "undefined"
 	const statusFail = "fail"
 
@@ -53,16 +57,15 @@ func releaseRootCommand(cmd *cobra.Command, args []string) {
 		qwm(0, "project has no release criteria")
 	}
 
-	// Printing scan results
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	fmt.Fprintf(w, "STATUS\tSAST\tDAST\tSCA\n")
-	fmt.Fprintf(w, "---\t---\t---\t---\n")
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\n\n", rs.Status, rs.SAST.Status, rs.DAST.Status, rs.SCA.Status)
-	w.Flush()
+	_, _ = fmt.Fprintf(w, "STATUS\tSAST\tDAST\tSCA\n")
+	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\n")
+	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n\n", rs.Status, rs.SAST.Status, rs.DAST.Status, rs.SCA.Status)
+	_ = w.Flush()
 
 	sast, err := cmd.Flags().GetBool("sast")
 	if err != nil {
-		qwm(1, "failed to parse sast flag")
+		klog.Fatalln("failed to parse sast flag")
 	}
 
 	dast, err := cmd.Flags().GetBool("dast")

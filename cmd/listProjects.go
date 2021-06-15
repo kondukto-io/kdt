@@ -2,6 +2,7 @@
 Copyright © 2019 Kondukto
 
 */
+
 package cmd
 
 import (
@@ -24,7 +25,7 @@ func init() {
 	listCmd.AddCommand(listProjectsCmd)
 }
 
-func projectsRootCommand(cmd *cobra.Command, args []string) {
+func projectsRootCommand(_ *cobra.Command, args []string) {
 	c, err := client.New()
 	if err != nil {
 		qwe(1, err, "could not initialize Kondukto client")
@@ -45,11 +46,11 @@ func projectsRootCommand(cmd *cobra.Command, args []string) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
-	fmt.Fprintln(w, "NAME\tID")
-	fmt.Fprintln(w, "---\t---")
+	_, _ = fmt.Fprintln(w, "NAME\tID")
+	_, _ = fmt.Fprintln(w, "---\t---")
 	for _, project := range projects {
-		fmt.Fprintf(w, "%s\t%s\n", project.Name, project.ID)
+		_, _ = fmt.Fprintf(w, "%s\t%s\n", project.Name, project.ID)
 	}
 }

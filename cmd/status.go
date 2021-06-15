@@ -2,6 +2,7 @@
 Copyright © 2019 Kondukto
 
 */
+
 package cmd
 
 import (
@@ -31,7 +32,7 @@ func init() {
 	statusCmd.Flags().Int("threshold-low", 0, "threshold for number of vulnerabilities with low severity")
 }
 
-func statusRootCommand(cmd *cobra.Command, args []string) {
+func statusRootCommand(cmd *cobra.Command, _ []string) {
 	// Initialize Kondukto client
 	c, err := client.New()
 	if err != nil {
@@ -67,7 +68,7 @@ func statusRootCommand(cmd *cobra.Command, args []string) {
 	_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tSCORE\tDATE\n")
 	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
 	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n\n", scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Score, scan.Date)
-	w.Flush()
+	_ = w.Flush()
 	if err := passTests(scan, cmd); err != nil {
 		qwe(1, err, "scan could not pass security tests")
 	} else {

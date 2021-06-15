@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/kondukto-io/kdt/klog"
 )
 
 func TestNewRequestPath(t *testing.T) {
@@ -85,7 +87,8 @@ func TestDo(t *testing.T) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatal("http response not ok")
+		klog.Fatalf("HTTP response status code: %d", resp.StatusCode)
+		t.Fatal("HTTP response not OK")
 	}
 
 	j, err := json.Marshal(&someone)

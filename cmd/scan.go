@@ -2,16 +2,18 @@
 Copyright © 2019 Kondukto
 
 */
+
 package cmd
 
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"text/tabwriter"
 	"time"
+
+	"github.com/kondukto-io/kdt/klog"
 
 	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
@@ -32,30 +34,6 @@ const (
 )
 
 const (
-	toolCheckmarx           = "checkmarx"
-	toolCxSca               = "checkmarxsca"
-	toolOWASPZap            = "owaspzap"
-	toolWebInspect          = "webinspect"
-	toolNetSparker          = "netsparker"
-	toolAppSpider           = "appspider"
-	toolBandit              = "bandit"
-	toolFindSecBugs         = "findsecbugs"
-	toolDependencyCheck     = "dependencycheck"
-	toolFortify             = "fortify"
-	toolGoSec               = "gosec"
-	toolBrakeman            = "brakeman"
-	toolSCS                 = "securitycodescan"
-	toolTrivy               = "trivy"
-	toolAppScan             = "hclappscan"
-	toolZapless             = "owaspzapheadless"
-	toolNancy               = "nancy"
-	toolSemGrep             = "semgrep"
-	toolVeracode            = "veracode"
-	toolBurpSuite           = "burpsuite"
-	toolBurpSuiteEnterprise = "burpsuiteenterprise"
-)
-
-const (
 	modeByFile = iota
 	modeByScanID
 	modeByProjectTool
@@ -69,9 +47,15 @@ var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "base command for starting scans",
 	Run:   scanRootCommand,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		t, _ := cmd.Flags().GetString("tool")
+		if !validTool(t) {
+			klog.Fatal("a valid tool must be given. Run `kdt list scanners` to see the supported scanner's list.")
+		}
+	},
 }
 
-func scanRootCommand(cmd *cobra.Command, args []string) {
+func scanRootCommand(cmd *cobra.Command, _ []string) {
 	// Initialize Kondukto client
 	c, err := client.New()
 	if err != nil {
@@ -80,12 +64,12 @@ func scanRootCommand(cmd *cobra.Command, args []string) {
 
 	eventID, err := startScan(cmd, c)
 	if err != nil {
-		qwe(1, err, "scan failed")
+		klog.Fatalf("failed to start scan: %v", err)
 	}
 
 	async, err := cmd.Flags().GetBool("async")
 	if err != nil {
-		qwe(1, err, "failed to parse async flag")
+		klog.Fatalf("failed to parse async flag: %v", err)
 	}
 
 	// Do not wait for scan to finish if async set to true
@@ -231,7 +215,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 	for {
 		event, err := c.GetScanStatus(eventID)
 		if err != nil {
-			qwe(1, err, "could not get scan status")
+			klog.Fatalf("failed to get scan status: %v", err)
 		}
 
 		switch event.Active {
@@ -239,7 +223,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 			qwm(1, "scan failed")
 		case eventInactive:
 			if event.Status == jobFinished {
-				log.Println("scan finished successfully")
+				klog.Println("scan finished successfully")
 				scan, err := c.GetScanSummary(event.ScanId)
 				if err != nil {
 					qwe(1, err, "failed to fetch scan summary")
@@ -260,25 +244,16 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 				qwm(0, "scan duration exceeds timeout, it will continue running async in the background")
 			}
 			if event.Status != lastStatus {
-				log.Println(statusMsg(event.Status))
+				klog.Println(statusMsg(event.Status))
 				lastStatus = event.Status
 				// Get new scans scan id
+			} else {
+				klog.Debugf("event status [%s]", statusMsg(event.Status))
 			}
 			time.Sleep(10 * time.Second)
 		default:
 			qwm(1, "invalid event status")
 		}
-	}
-}
-
-func validTool(tool string) bool {
-	switch tool {
-	case toolAppSpider, toolBandit, toolCheckmarx, toolFindSecBugs, toolNetSparker, toolOWASPZap,
-		toolFortify, toolGoSec, toolDependencyCheck, toolBrakeman, toolAppScan, toolSCS, toolTrivy,
-		toolNancy, toolCxSca, toolZapless, toolSemGrep, toolWebInspect, toolVeracode, toolBurpSuiteEnterprise, toolBurpSuite:
-		return true
-	default:
-		return false
 	}
 }
 
@@ -398,6 +373,7 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	return eventID, nil
 }
 
+//goland:noinspection GoNilness
 func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error) {
 	// Parse command line flags
 	project, err := cmd.Flags().GetString("project")
@@ -426,7 +402,7 @@ func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
-		qwe(1, err, "could not get scans of the project")
+		klog.Fatal("no scans found for given project and tool configuration")
 	}
 
 	return scan.ID, nil
@@ -466,6 +442,7 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
+		klog.Fatal("no scans found for given project, tool and metadata configuration")
 		qwe(1, err, "could not get scans of the project")
 	}
 
@@ -516,6 +493,7 @@ func getScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
+		klog.Fatalf("no scans found for given project, tool and PR configuration")
 		qwe(1, err, "could not get scans of the project")
 	}
 	if scan == nil {

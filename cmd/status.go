@@ -6,9 +6,7 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"text/tabwriter"
+	"strconv"
 
 	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
@@ -61,15 +59,19 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		qwe(1, err, "failed to fetch scan summary")
 	}
-	scan.Score = summary.Score
 
-	// Printing scan results
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tSCORE\tDATE\n")
-	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
-	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n\n", scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Score, scan.Date)
-	_ = w.Flush()
-	if err := passTests(scan, cmd); err != nil {
+	scan.Score = summary.Score
+	s := summary.Summary
+	name, id, meta, tool, date := scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Date.String()
+	crit, high, med, low, score := strconv.Itoa(s.Critical), strconv.Itoa(s.High), strconv.Itoa(s.Medium), strconv.Itoa(s.Low), strconv.Itoa(scan.Score)
+	scanSummaryRows := []Row{
+		{Columns: []string{"NAME", "ID", "META", "TOOL", "CRIT", "HIGH", "MED", "LOW", "SCORE", "DATE"}},
+		{Columns: []string{"----", "--", "----", "----", "----", "----", "---", "---", "-----", "----"}},
+		{Columns: []string{name, id, meta, tool, crit, high, med, low, score, date}},
+	}
+	tableWriter(scanSummaryRows...)
+
+	if err = passTests(scan, cmd); err != nil {
 		qwe(1, err, "scan could not pass security tests")
 	} else {
 		qwm(0, "scan passed security tests successfully")

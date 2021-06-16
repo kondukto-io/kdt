@@ -6,10 +6,6 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"text/tabwriter"
-
 	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
 )
@@ -44,13 +40,16 @@ func scanListRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(1, "no scans found with the project id/name")
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	defer func() { _ = w.Flush() }()
-
-	_, _ = fmt.Fprintf(w, "NAME\tID\tBRANCH\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tSCORE\tDATE\n")
-	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
-	for _, scan := range scans {
-		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.Branch, scan.MetaData,
-			scan.Tool, scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Score, scan.Date)
+	scanSummaryRows := []Row{
+		{Columns: []string{"NAME", "ID", "BRANCH", "META", "TOOL", "CRIT", "HIGH", "MED", "LOW", "SCORE", "DATE"}},
+		{Columns: []string{"----", "--", "------", "----", "----", "----", "----", "---", "---", "-----", "----"}},
 	}
+
+	for _, scan := range scans {
+		s := scan.Summary
+		name, id, branch, meta, tool, date := scan.Name, scan.ID, scan.Branch, scan.MetaData, scan.Tool, scan.Date.String()
+		crit, high, med, low, score := strC(s.Critical), strC(s.High), strC(s.Medium), strC(s.Low), strC(scan.Score)
+		scanSummaryRows = append(scanSummaryRows, Row{Columns: []string{name, id, branch, meta, tool, crit, high, med, low, score, date}})
+	}
+	tableWriter(scanSummaryRows...)
 }

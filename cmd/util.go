@@ -8,6 +8,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"text/tabwriter"
 
 	"github.com/kondukto-io/kdt/klog"
 )
@@ -58,3 +60,21 @@ func validTool(t string) bool {
 	}
 	return false
 }
+
+type Row struct {
+	Columns []string
+}
+
+func tableWriter(rows ...Row) {
+	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
+	for _, row := range rows {
+		var r string
+		for _, column := range row.Columns {
+			r += fmt.Sprintf("%s\t", column)
+		}
+		_, _ = fmt.Fprintf(w, "%s\n", r)
+	}
+	_ = w.Flush()
+}
+
+func strC(v int) string { return strconv.Itoa(v) }

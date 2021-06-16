@@ -7,8 +7,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"text/tabwriter"
 
 	"github.com/kondukto-io/kdt/klog"
 
@@ -57,11 +55,12 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(0, "project has no release criteria")
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	_, _ = fmt.Fprintf(w, "STATUS\tSAST\tDAST\tSCA\n")
-	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\n")
-	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n\n", rs.Status, rs.SAST.Status, rs.DAST.Status, rs.SCA.Status)
-	_ = w.Flush()
+	releaseCriteriaRows := []Row{
+		{Columns: []string{"STATUS", "SAST", "DAST", "SCA"}},
+		{Columns: []string{"------", "----", "----", "---"}},
+		{Columns: []string{rs.Status, rs.SAST.Status, rs.DAST.Status, rs.SCA.Status}},
+	}
+	tableWriter(releaseCriteriaRows...)
 
 	sast, err := cmd.Flags().GetBool("sast")
 	if err != nil {

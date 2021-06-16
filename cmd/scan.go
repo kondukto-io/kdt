@@ -8,9 +8,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
-	"text/tabwriter"
 	"time"
 
 	"github.com/kondukto-io/kdt/klog"
@@ -232,9 +230,9 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 				// Printing scan results
 				printScanSummary(scan)
 
-				if err := passTests(scan, cmd); err != nil {
+				if err = passTests(scan, cmd); err != nil {
 					qwe(1, err, "scan could not pass security tests")
-				} else if err := checkRelease(cmd); err != nil {
+				} else if err = checkRelease(cmd); err != nil {
 					qwe(1, err, "scan failed to pass release criteria")
 				}
 				qwm(0, "scan passed security tests successfully")
@@ -373,7 +371,6 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	return eventID, nil
 }
 
-//goland:noinspection GoNilness
 func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error) {
 	// Parse command line flags
 	project, err := cmd.Flags().GetString("project")
@@ -563,10 +560,14 @@ func checkRelease(cmd *cobra.Command) error {
 }
 
 func printScanSummary(scan *client.Scan) {
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
-	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
-	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool,
-		scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
-	_ = w.Flush()
+	s := scan.Summary
+	name, id, branch, meta, tool, date := scan.Name, scan.ID, scan.Branch, scan.MetaData, scan.Tool, scan.Date.String()
+	crit, high, med, low, score := strC(s.Critical), strC(s.High), strC(s.Medium), strC(s.Low), strC(scan.Score)
+	scanSummaryRows := []Row{
+		{Columns: []string{"NAME", "ID", "BRANCH", "META", "TOOL", "CRIT", "HIGH", "MED", "LOW", "SCORE", "DATE"}},
+		{Columns: []string{"----", "--", "------", "----", "----", "----", "----", "---", "---", "-----", "----"}},
+		{Columns: []string{name, id, branch, meta, tool, crit, high, med, low, score, date}},
+	}
+
+	tableWriter(scanSummaryRows...)
 }

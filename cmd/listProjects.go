@@ -6,10 +6,6 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"text/tabwriter"
-
 	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
 )
@@ -45,12 +41,12 @@ func projectsRootCommand(_ *cobra.Command, args []string) {
 		qwm(1, "no projects found")
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	defer func() { _ = w.Flush() }()
-
-	_, _ = fmt.Fprintln(w, "NAME\tID")
-	_, _ = fmt.Fprintln(w, "---\t---")
-	for _, project := range projects {
-		_, _ = fmt.Fprintf(w, "%s\t%s\n", project.Name, project.ID)
+	projectRows := []Row{
+		{Columns: []string{"NAME", "ID"}},
+		{Columns: []string{"----", "----"}},
 	}
+	for _, project := range projects {
+		projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID}})
+	}
+	tableWriter(projectRows...)
 }

@@ -28,6 +28,7 @@ func init() {
 	importCmd.Flags().StringP("tool", "t", "", "tool name")
 	importCmd.Flags().StringP("branch", "b", "", "branch")
 	importCmd.Flags().Bool("async", false, "does not block build process")
+	importCmd.Flags().Int("timeout", 0, "minutes to wait for import to finish. import will continue async if duration exceeds limit")
 
 	_ = importCmd.MarkFlagRequired("project")
 	_ = importCmd.MarkFlagRequired("tool")

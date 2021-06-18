@@ -9,11 +9,13 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
+	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/viper"
 )
 
@@ -25,6 +27,10 @@ type Client struct {
 	httpClient *http.Client
 
 	BaseURL *url.URL
+}
+
+type KonduktoError struct {
+	Error string `json:"error"`
 }
 
 func New() (*Client, error) {
@@ -88,6 +94,15 @@ func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return resp, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		var e KonduktoError
+		if err = json.Unmarshal(data, &e); err != nil {
+			klog.Debugf("failed to parse error message: %v: %v", err, data)
+			return nil, err
+		}
+		return nil, fmt.Errorf("response not OK: %s", e.Error)
 	}
 
 	err = json.Unmarshal(data, &v)

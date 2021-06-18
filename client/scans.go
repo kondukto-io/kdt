@@ -28,9 +28,11 @@ type (
 		ID       string     `json:"id"`
 		Name     string     `json:"name"`
 		Branch   string     `json:"branch"`
+		ScanType string     `json:"scan_type"`
 		MetaData string     `json:"meta_data"`
 		Tool     string     `json:"tool"`
 		Date     *time.Time `json:"date"`
+		Project  string     `json:"project"`
 		Score    int        `json:"score"`
 		Summary  Summary    `json:"summary"`
 	}
@@ -41,6 +43,7 @@ type (
 		Meta   string `url:"meta,omitempty"`
 		Limit  int    `url:"limit,omitempty"`
 	}
+
 	ScanPROptions struct {
 		From string `json:"from"`
 		To   string `json:"to"`
@@ -121,6 +124,27 @@ func (c *Client) FindScan(project string, params *ScanSearchParams) (*Scan, erro
 	return &scans[0], nil
 }
 
+func (c *Client) FindScanByID(id string) (*Scan, error) {
+	path := fmt.Sprintf("/api/v1/scans/%s", id)
+	req, err := c.newRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var scan Scan
+	resp, err := c.do(req, &scan)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	}
+
+	return &scan, nil
+}
+
 func (c *Client) StartScanByScanId(id string) (string, error) {
 	klog.Debug("starting scan by scan_id")
 	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
@@ -134,17 +158,9 @@ func (c *Client) StartScanByScanId(id string) (string, error) {
 		Message string `json:"message"`
 	}
 	var rsr restartScanResponse
-	resp, err := c.do(req, &rsr)
+	_, err = c.do(req, &rsr)
 	if err != nil {
 		return "", err
-	}
-
-	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
-	}
-
-	if rsr.Event == "" {
-		return "", errors.New("event not found")
 	}
 
 	return rsr.Event, nil
@@ -200,26 +216,6 @@ func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 	}
 
 	return &e, nil
-}
-
-func (c *Client) GetScanSummary(id string) (*Scan, error) {
-	path := fmt.Sprintf("/api/v1/scans/%s", id)
-	req, err := c.newRequest(http.MethodGet, path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var scan Scan
-	resp, err := c.do(req, &scan)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
-	}
-
-	return &scan, nil
 }
 
 func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
@@ -281,7 +277,7 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string) (st
 	}
 	_ = writer.Close()
 
-	req, err := http.NewRequest("POST", u.String(), body)
+	req, err := http.NewRequest(http.MethodPost, u.String(), body)
 	if err != nil {
 		return "", err
 	}

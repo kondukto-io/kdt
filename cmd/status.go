@@ -55,7 +55,7 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 		}
 	}
 
-	summary, err := c.GetScanSummary(scan.ID)
+	summary, err := c.FindScanByID(scan.ID)
 	if err != nil {
 		qwe(1, err, "failed to fetch scan summary")
 	}

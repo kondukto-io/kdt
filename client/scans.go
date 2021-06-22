@@ -138,7 +138,6 @@ func (c *Client) FindScanByID(id string) (*Scan, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-
 		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 

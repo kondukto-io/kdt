@@ -8,14 +8,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
-	"text/tabwriter"
 	"time"
 
+	"github.com/kondukto-io/kdt/client"
 	"github.com/kondukto-io/kdt/klog"
 
-	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +47,8 @@ var scanCmd = &cobra.Command{
 	Run:   scanRootCommand,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		t, _ := cmd.Flags().GetString("tool")
-		if !validTool(t) {
+		s, _ := cmd.Flags().GetString("scan-id")
+		if s == "" && !validTool(t) {
 			klog.Fatal("a valid tool must be given. Run `kdt list scanners` to see the supported scanner's list.")
 		}
 	},
@@ -74,6 +73,12 @@ func scanRootCommand(cmd *cobra.Command, _ []string) {
 
 	// Do not wait for scan to finish if async set to true
 	if async {
+		eventRows := []Row{
+			{Columns: []string{"EVENT ID"}},
+			{Columns: []string{"--------"}},
+			{Columns: []string{eventID}},
+		}
+		tableWriter(eventRows...)
 		qwm(0, "scan has been started with async parameter, exiting.")
 	}
 
@@ -224,7 +229,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 		case eventInactive:
 			if event.Status == jobFinished {
 				klog.Println("scan finished successfully")
-				scan, err := c.GetScanSummary(event.ScanId)
+				scan, err := c.FindScanByID(event.ScanId)
 				if err != nil {
 					qwe(1, err, "failed to fetch scan summary")
 				}
@@ -232,9 +237,9 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 				// Printing scan results
 				printScanSummary(scan)
 
-				if err := passTests(scan, cmd); err != nil {
+				if err = passTests(scan, cmd); err != nil {
 					qwe(1, err, "scan could not pass security tests")
-				} else if err := checkRelease(cmd); err != nil {
+				} else if err = checkRelease(scan, cmd); err != nil {
 					qwe(1, err, "scan failed to pass release criteria")
 				}
 				qwm(0, "scan passed security tests successfully")
@@ -373,7 +378,6 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	return eventID, nil
 }
 
-//goland:noinspection GoNilness
 func getScanIDByProjectTool(cmd *cobra.Command, c *client.Client) (string, error) {
 	// Parse command line flags
 	project, err := cmd.Flags().GetString("project")
@@ -538,17 +542,13 @@ func scanByImage(cmd *cobra.Command, c *client.Client) (string, error) {
 	return eventID, nil
 }
 
-func checkRelease(cmd *cobra.Command) error {
+func checkRelease(scan *client.Scan, cmd *cobra.Command) error {
 	c, err := client.New()
 	if err != nil {
 		return err
 	}
-	project, err := cmd.Flags().GetString("project")
-	if err != nil {
-		return fmt.Errorf("project flag parsing error: %v", err)
-	}
 
-	rs, err := c.ReleaseStatus(project)
+	rs, err := c.ReleaseStatus(scan.Project)
 	if err != nil {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}
@@ -563,10 +563,14 @@ func checkRelease(cmd *cobra.Command) error {
 }
 
 func printScanSummary(scan *client.Scan) {
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	_, _ = fmt.Fprintf(w, "NAME\tID\tMETA\tTOOL\tCRIT\tHIGH\tMED\tLOW\tINFO\tDATE\n")
-	_, _ = fmt.Fprintf(w, "---\t---\t---\t---\t---\t---\t---\t---\t---\t---\n")
-	_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\n", scan.Name, scan.ID, scan.MetaData, scan.Tool,
-		scan.Summary.Critical, scan.Summary.High, scan.Summary.Medium, scan.Summary.Low, scan.Summary.Info, scan.Date)
-	_ = w.Flush()
+	s := scan.Summary
+	name, id, branch, meta, tool, date := scan.Name, scan.ID, scan.Branch, scan.MetaData, scan.Tool, scan.Date.String()
+	crit, high, med, low, score := strC(s.Critical), strC(s.High), strC(s.Medium), strC(s.Low), strC(scan.Score)
+	scanSummaryRows := []Row{
+		{Columns: []string{"NAME", "ID", "BRANCH", "META", "TOOL", "CRIT", "HIGH", "MED", "LOW", "SCORE", "DATE"}},
+		{Columns: []string{"----", "--", "------", "----", "----", "----", "----", "---", "---", "-----", "----"}},
+		{Columns: []string{name, id, branch, meta, tool, crit, high, med, low, score, date}},
+	}
+
+	tableWriter(scanSummaryRows...)
 }

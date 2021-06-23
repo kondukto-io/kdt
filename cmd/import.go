@@ -6,12 +6,10 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
-	"text/tabwriter"
 
 	"github.com/kondukto-io/kdt/client"
+	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +27,8 @@ func init() {
 	importCmd.Flags().StringP("project", "p", "", "project name or id")
 	importCmd.Flags().StringP("tool", "t", "", "tool name")
 	importCmd.Flags().StringP("branch", "b", "", "branch")
+	importCmd.Flags().Bool("async", false, "does not block build process")
+	importCmd.Flags().Int("timeout", 0, "minutes to wait for import to finish. import will continue async if duration exceeds limit")
 
 	_ = importCmd.MarkFlagRequired("project")
 	_ = importCmd.MarkFlagRequired("tool")
@@ -75,10 +75,23 @@ func importRootCommand(cmd *cobra.Command, args []string) {
 		qwe(1, err, "failed to import scan results")
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
-	_, _ = fmt.Fprintf(w, "Event ID\n")
-	_, _ = fmt.Fprintf(w, "---\n")
-	_, _ = fmt.Fprintf(w, "%s\n", eventID)
-	_ = w.Flush()
+	async, err := cmd.Flags().GetBool("async")
+	if err != nil {
+		klog.Fatalf("failed to parse async flag: %v", err)
+	}
+
+	// Do not wait for import to finish if async set to true
+	if async {
+		eventRows := []Row{
+			{Columns: []string{"EVENT ID"}},
+			{Columns: []string{"--------"}},
+			{Columns: []string{eventID}},
+		}
+		tableWriter(eventRows...)
+		qwm(0, "import has been started with async parameter, exiting.")
+	}
+
+	waitTillScanEnded(cmd, c, eventID)
+
 	qwm(0, "scan results imported successfully")
 }

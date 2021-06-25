@@ -9,24 +9,32 @@ import (
 
 var listScannersCmd = &cobra.Command{
 	Use:   "scanners",
-	Short: "list supported scanners",
+	Short: "list active scanners",
 	Run: func(cmd *cobra.Command, args []string) {
 		c, err := client.New()
 		if err != nil {
 			qwe(1, err, "could not initialize Kondukto client")
 		}
 
-		activeScanners, err := c.ListActiveScanners(nil)
+		scannerType := cmd.Flag("type").Value.String()
+		scannerLabels := cmd.Flag("labels").Value.String()
+		activeScanners, err := c.ListActiveScanners(&client.ScannersSearchParams{
+			Types:  scannerType,
+			Labels: scannerLabels,
+		})
 		if err != nil {
 			qwe(1, err, "could not get Kondukto active scanners")
 		}
 
 		scannerRows := []Row{
-			{Columns: []string{"ID", "Name", "Type", "Labels"}},
-			{Columns: []string{"--", "----", "----", "------"}},
+			{Columns: []string{"Name", "ID", "Type", "Labels"}},
+			{Columns: []string{"----", "--", "----", "------"}},
 		}
 		for _, v := range activeScanners.ActiveScanners {
-			scannerRows = append(scannerRows, Row{Columns: []string{v.Id, v.Slug, v.Type, strings.Join(v.Labels, ",")}})
+			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.Id, v.Type, strings.Join(v.Labels, ",")}})
+		}
+		if len(scannerRows) == 2 {
+			scannerRows = append(scannerRows, Row{Columns: []string{"no found active scanner"}})
 		}
 		tableWriter(scannerRows...)
 	},
@@ -34,4 +42,7 @@ var listScannersCmd = &cobra.Command{
 
 func init() {
 	listCmd.AddCommand(listScannersCmd)
+
+	listScannersCmd.Flags().StringP("type", "t", "", "scanner type")
+	listScannersCmd.Flags().StringP("labels", "l", "", "comma separated scanner labels")
 }

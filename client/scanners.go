@@ -15,10 +15,10 @@ import (
 
 type (
 	ScannersSearchParams struct {
-		Type   string   `url:"branch,omitempty"`
-		Labels []string `url:"tool,omitempty"`
-		Name   string   `url:"meta,omitempty"`
-		Limit  int      `url:"limit,omitempty"`
+		Types  string `url:"types"`
+		Labels string `url:"labels"`
+		Name   string `url:"name"`
+		Limit  int    `url:"limit"`
 	}
 	ScannersResponse struct {
 		ActiveScanners []struct {
@@ -33,7 +33,7 @@ type (
 	}
 )
 
-func (c *Client) ListActiveScanners(params *ScanSearchParams) (*ScannersResponse, error) {
+func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResponse, error) {
 	klog.Debugf("retrieving active scanners")
 
 	path := fmt.Sprintf("/api/v1/scanners/active")

@@ -24,7 +24,7 @@ import (
 )
 
 type (
-	Scan struct {
+	ScanDetail struct {
 		ID       string     `json:"id"`
 		Name     string     `json:"name"`
 		Branch   string     `json:"branch"`
@@ -69,11 +69,58 @@ type (
 		ScanId  string `json:"scan_id"`
 		Message string `json:"message"`
 	}
+
+	Scan struct {
+		// Branch is holding current branch value of scan
+		Branch string `json:"branch"`
+		// Project is holding ID or Name value of project
+		Project string `json:"project"`
+		// ToolID is holding ID value of selected scanner
+		ToolID string `json:"tool_id"`
+		// PR is holding detail of pull requests branches to be scanned
+		PR PRInfo `json:"pr"`
+		// Custom is holding custom type of scanners that specified on the Kondukto side
+		Custom Custom `json:"custom"`
+	}
+
+	PRInfo struct {
+		OK     bool   `json:"ok" json:"ok"`
+		Target string `json:"target" bson:"target" valid:"Branch"`
+	}
+
+	Custom struct {
+		Type int `json:"type" bson:"type"`
+	}
 )
 
-func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, error) {
+func (c *Client) CreateNewScan(scan *Scan) (string, error) {
+	klog.Debug("creating new scan with given parameters")
+	if scan == nil {
+		return "", errors.New("missing scan fields")
+	}
+
+	path := "/api/v1/scans/create"
+	req, err := c.newRequest(http.MethodPost, path, scan)
+	if err != nil {
+		return "", err
+	}
+
+	type scanResponse struct {
+		EventID string `json:"event_id"`
+		Message string `json:"message"`
+	}
+	var rsr scanResponse
+	_, err = c.do(req, &rsr)
+	if err != nil {
+		return "", err
+	}
+
+	return rsr.EventID, nil
+}
+
+func (c *Client) ListScans(project string, params *ScanSearchParams) ([]ScanDetail, error) {
 	// TODO: list scans call should be updated to take tool and metadata arguments
-	scans := make([]Scan, 0)
+	scans := make([]ScanDetail, 0)
 
 	klog.Debugf("retrieving scans of the project: %s", project)
 
@@ -90,8 +137,8 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, er
 	req.URL.RawQuery = v.Encode()
 
 	type getProjectScansResponse struct {
-		Scans []Scan `json:"data"`
-		Total int    `json:"total"`
+		Scans []ScanDetail `json:"data"`
+		Total int          `json:"total"`
 	}
 	var ps getProjectScansResponse
 
@@ -107,7 +154,7 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, er
 	return ps.Scans, nil
 }
 
-func (c *Client) FindScan(project string, params *ScanSearchParams) (*Scan, error) {
+func (c *Client) FindScan(project string, params *ScanSearchParams) (*ScanDetail, error) {
 	if params == nil {
 		return nil, errors.New("scan query params cannot be empty")
 	}
@@ -124,14 +171,14 @@ func (c *Client) FindScan(project string, params *ScanSearchParams) (*Scan, erro
 	return &scans[0], nil
 }
 
-func (c *Client) FindScanByID(id string) (*Scan, error) {
+func (c *Client) FindScanByID(id string) (*ScanDetail, error) {
 	path := fmt.Sprintf("/api/v1/scans/%s", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var scan Scan
+	var scan ScanDetail
 	resp, err := c.do(req, &scan)
 	if err != nil {
 		return nil, err

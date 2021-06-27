@@ -21,16 +21,26 @@ type (
 		Limit  int    `url:"limit"`
 	}
 	ScannersResponse struct {
-		ActiveScanners []struct {
-			Id          string   `json:"id"`
-			Type        string   `json:"type"`
-			Slug        string   `json:"slug"`
-			DisplayName string   `json:"display_name"`
-			Labels      []string `json:"labels"`
-			CustomType  int      `json:"custom_type"`
-		} `json:"active_scanners"`
-		Total int `json:"total"`
+		ActiveScanners []ScannerInfo `json:"active_scanners"`
+		Total          int           `json:"total"`
 	}
+	ScannerInfo struct {
+		Id          string   `json:"id"`
+		Type        string   `json:"type"`
+		Slug        string   `json:"slug"`
+		DisplayName string   `json:"display_name"`
+		Labels      []string `json:"labels"`
+		CustomType  int      `json:"custom_type"`
+	}
+)
+
+const (
+	ScannerLabelKDT      = "kdt"
+	ScannerLabelBind     = "bind"
+	ScannerLabelAgent    = "agent"
+	ScannerLabelDocker   = "docker"
+	ScannerLabelImport   = "import"
+	ScannerLabelTemplate = "template"
 )
 
 func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResponse, error) {
@@ -59,4 +69,21 @@ func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResp
 	}
 
 	return &scanners, nil
+}
+
+func (c *Client) IsValidTool(tool string) bool {
+	klog.Debugf("validating tool name")
+
+	scanners, err := c.ListActiveScanners(&ScannersSearchParams{Name: tool})
+	if err != nil {
+		klog.Debugf("failed to get active scanners: %v", err)
+		return false
+	}
+
+	if scanners.Total == 0 {
+		klog.Debugf("invalid or inactive tool name: %s", tool)
+		return false
+	}
+
+	return true
 }

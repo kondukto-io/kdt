@@ -60,8 +60,8 @@ func importRootCommand(cmd *cobra.Command, args []string) {
 		qwe(1, err, "failed to parse tool flag")
 	}
 
-	if !validTool(tool) {
-		qwm(1, "invalid tool name")
+	if !c.IsValidTool(tool) {
+		qwm(1, "invalid or inactive tool name")
 	}
 
 	path := args[0]

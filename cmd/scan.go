@@ -251,7 +251,13 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 
 		switch event.Active {
 		case eventFailed:
-			qwm(1, "scan failed")
+			eventRows := []Row{
+				{Columns: []string{"EventID", "Event Status", "UI Link"}},
+				{Columns: []string{"-------", "------------", "-------"}},
+				{Columns: []string{event.ID, "Failed", event.Links.HTML}},
+			}
+			TableWriter(eventRows...)
+			qwm(1, fmt.Sprintf("Scan failed. Reason: %s", event.Message))
 		case eventInactive:
 			if event.Status == jobFinished {
 				klog.Println("scan finished successfully")

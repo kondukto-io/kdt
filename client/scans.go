@@ -70,6 +70,9 @@ type (
 		Active  int    `json:"active"`
 		ScanId  string `json:"scan_id"`
 		Message string `json:"message"`
+		Links   struct {
+			HTML string `json:"html"`
+		} `json:"links"`
 	}
 
 	Scan struct {

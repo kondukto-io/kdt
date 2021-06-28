@@ -171,6 +171,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 }
 
 func checkForRescanOnlyTool(cmd *cobra.Command, c *client.Client) (bool, *client.ScannerInfo, error) {
+	klog.Debugf("checking for rescan only tools")
 	name, err := cmd.Flags().GetString("tool")
 	if err != nil || name == "" {
 		return false, nil, errors.New("missing require tool flag")

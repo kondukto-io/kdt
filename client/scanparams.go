@@ -31,7 +31,7 @@ type (
 	}
 )
 
-func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (*ScanparamResponse, error) {
+func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (*ScanparamsDetail, error) {
 	klog.Debugf("retrieving scanparams")
 	if project == "" {
 		return nil, errors.New("missing project identifier")
@@ -55,5 +55,9 @@ func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (
 		return nil, err
 	}
 
-	return &scanparams, nil
+	if scanparams.Total == 0 {
+		return nil, errors.New("scanparams not found")
+	}
+
+	return &scanparams.Data[0], nil
 }

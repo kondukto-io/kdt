@@ -134,37 +134,12 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		}
 		return eventID, nil
 	case modeByProjectTool:
-		rescanOnly, scanner, err := checkForRescanOnlyTool(cmd, c)
-		if err != nil {
-			return "", err
-		}
-
 		// scan mode to restart a scan with the given project and tool parameters
-		scanID, found, err := findScanIDByProjectTool(cmd, c, rescanOnly)
+		eventID, err := startScanByProjectTool(cmd, c)
 		if err != nil {
 			return "", err
 		}
-
-		if found {
-			eventID, err := c.RestartScanByScanID(scanID)
-			if err != nil {
-				return "", err
-			}
-			return eventID, nil
-		}
-
-		klog.Printf("no found completed scan by given parameters, creating a new scan")
-		branch, _ := cmd.Flags().GetString("branch")
-		project, _ := cmd.Flags().GetString("project")
-		return c.CreateNewScan(&client.Scan{
-			Branch:  branch,
-			Project: project,
-			ToolID:  scanner.Id,
-			Custom: client.Custom{
-				Type: scanner.CustomType,
-			},
-		})
-
+		return eventID, nil
 	case modeByProjectToolAndPR:
 		rescanOnly, scanner, err := checkForRescanOnlyTool(cmd, c)
 		if err != nil {
@@ -454,24 +429,29 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	return eventID, nil
 }
 
-func findScanIDByProjectTool(cmd *cobra.Command, c *client.Client, rescanOnly bool) (string, bool, error) {
+func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error) {
+	rescanOnly, scanner, err := checkForRescanOnlyTool(cmd, c)
+	if err != nil {
+		return "", err
+	}
+
 	// Parse command line flags
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
-		return "", false, fmt.Errorf("failed to parse project flag: %w", err)
+		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
 	tool, err := cmd.Flags().GetString("tool")
 	if err != nil {
-		return "", false, fmt.Errorf("failed to parse tool flag: %w", err)
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
 
 	if !c.IsValidTool(tool) {
-		return "", false, fmt.Errorf("invalid or inactive tool name: %s", tool)
+		return "", fmt.Errorf("invalid or inactive tool name: %s", tool)
 	}
 
 	branch, err := cmd.Flags().GetString("branch")
 	if err != nil {
-		return "", false, fmt.Errorf("failed to parse branch flag: %w", err)
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 
 	params := &client.ScanSearchParams{
@@ -481,15 +461,44 @@ func findScanIDByProjectTool(cmd *cobra.Command, c *client.Client, rescanOnly bo
 	}
 
 	scan, err := c.FindScan(project, params)
+	if err == nil {
+		eventID, err := c.RestartScanByScanID(scan.ID)
+		if err != nil {
+			return "", err
+		}
+		return eventID, nil
+	} else {
+		klog.Debugf("failed to get scans: %v, trying to get scanparams", err)
+	}
+
+	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
+		ToolID: scanner.Id,
+		Branch: branch,
+		Limit:  1,
+	})
 	if err != nil {
+		klog.Debugf("failed to get scanparams: %v, trying to create new scan", err)
+	}
+	scanData := &client.Scan{
+		Branch:  branch,
+		Project: project,
+		ToolID:  scanner.Id,
+		Custom: client.Custom{
+			Type: scanner.CustomType,
+		},
+	}
+
+	if sp != nil {
+		scanData.ScanparamsID = sp.Id
+	} else {
 		if rescanOnly {
 			klog.Printf("scanner tool %s is only allowing rescans", tool)
 			klog.Fatal("no scans found for given project and tool configuration")
 		}
-		return "", false, nil
 	}
 
-	return scan.ID, true, nil
+	klog.Printf("creating a new scan")
+	return c.CreateNewScan(scanData)
 }
 
 func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string, error) {

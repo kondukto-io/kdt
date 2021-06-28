@@ -26,12 +26,24 @@ var listScannersCmd = &cobra.Command{
 			qwe(1, err, "could not get Kondukto active scanners")
 		}
 
+		var rescanOnly = func(labels []string) string {
+			rescanOnlyLabels := []string{client.ScannerLabelAgent, client.ScannerLabelBind, client.ScannerLabelTemplate}
+			for _, r := range rescanOnlyLabels {
+				for _, l := range labels {
+					if l == r {
+						return "rescan"
+					}
+				}
+			}
+			return "new scan"
+		}
+
 		scannerRows := []Row{
-			{Columns: []string{"Name", "ID", "Type", "Labels"}},
-			{Columns: []string{"----", "--", "----", "------"}},
+			{Columns: []string{"Name", "ID", "Type", "Trigger", "Labels"}},
+			{Columns: []string{"----", "--", "----", "-------", "------"}},
 		}
 		for _, v := range activeScanners.ActiveScanners {
-			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.Id, v.Type, strings.Join(v.Labels, ",")}})
+			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.Id, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ",")}})
 		}
 		if len(scannerRows) == 2 {
 			scannerRows = append(scannerRows, Row{Columns: []string{"no found active scanner"}})

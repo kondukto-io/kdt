@@ -153,6 +153,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 			return eventID, nil
 		}
 
+		klog.Printf("no found completed scan by given parameters, creating a new scan")
 		branch, _ := cmd.Flags().GetString("branch")
 		project, _ := cmd.Flags().GetString("project")
 		return c.CreateNewScan(&client.Scan{

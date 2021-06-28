@@ -136,7 +136,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		}
 		return eventID, nil
 	case modeByProjectTool:
-		required, scanner, err := isScanIDRequire(cmd, c)
+		required, scanner, err := checkForRescanOnlyTool(cmd, c)
 		if err != nil {
 			return "", err
 		}
@@ -167,7 +167,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		})
 
 	case modeByProjectToolAndPR:
-		required, scanner, err := isScanIDRequire(cmd, c)
+		required, scanner, err := checkForRescanOnlyTool(cmd, c)
 		if err != nil {
 			return "", err
 		}
@@ -222,7 +222,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 	}
 }
 
-func isScanIDRequire(cmd *cobra.Command, c *client.Client) (bool, *client.ScannerInfo, error) {
+func checkForRescanOnlyTool(cmd *cobra.Command, c *client.Client) (bool, *client.ScannerInfo, error) {
 	name, err := cmd.Flags().GetString("tool")
 	if err != nil || name == "" {
 		return false, nil, errors.New("missing require tool flag")
@@ -232,7 +232,7 @@ func isScanIDRequire(cmd *cobra.Command, c *client.Client) (bool, *client.Scanne
 		return false, nil, fmt.Errorf("failed to get active scanners: %w", err)
 	}
 	if scanners.Total == 0 {
-		return false, nil, errors.New("invalid or inactive scanner tool name")
+		return false, nil, fmt.Errorf("invalid or inactive scanner tool name: %s", name)
 	}
 	scanner := scanners.ActiveScanners[0]
 	for _, label := range scanner.Labels {

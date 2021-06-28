@@ -114,8 +114,6 @@ func init() {
 }
 
 func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
-	var err error
-	var scanID string
 	switch getScanMode(cmd) {
 	case modeByFile:
 		// scan mode to start a scan by importing a file
@@ -126,7 +124,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		return eventID, nil
 	case modeByScanID:
 		// scan mode to restart a scan with a known scan ID
-		scanID, err = cmd.Flags().GetString("scan-id")
+		scanID, err := cmd.Flags().GetString("scan-id")
 		if err != nil {
 			return "", err
 		}
@@ -136,13 +134,13 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		}
 		return eventID, nil
 	case modeByProjectTool:
-		required, scanner, err := checkForRescanOnlyTool(cmd, c)
+		rescanOnly, scanner, err := checkForRescanOnlyTool(cmd, c)
 		if err != nil {
 			return "", err
 		}
 
-		// scan mode to restart a scan with the given project and tool params
-		scanID, found, err := findScanIDByProjectTool(cmd, c, required)
+		// scan mode to restart a scan with the given project and tool parameters
+		scanID, found, err := findScanIDByProjectTool(cmd, c, rescanOnly)
 		if err != nil {
 			return "", err
 		}
@@ -167,12 +165,12 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		})
 
 	case modeByProjectToolAndPR:
-		required, scanner, err := checkForRescanOnlyTool(cmd, c)
+		rescanOnly, scanner, err := checkForRescanOnlyTool(cmd, c)
 		if err != nil {
 			return "", err
 		}
 		// scan mode to restart a scan with the given project, tool and pr params
-		scanID, found, opt, err := findScanIDByProjectToolAndPR(cmd, c, required)
+		scanID, found, opt, err := findScanIDByProjectToolAndPR(cmd, c, rescanOnly)
 		if err != nil {
 			return "", err
 		}
@@ -202,7 +200,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 
 	case modeByProjectToolAndMetadata:
 		// scan mode to restart a scan with the given project, tool and meta params
-		scanID, err = getScanIDByProjectToolAndMeta(cmd, c)
+		scanID, err := getScanIDByProjectToolAndMeta(cmd, c)
 		if err != nil {
 			return "", err
 		}
@@ -455,7 +453,7 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	return eventID, nil
 }
 
-func findScanIDByProjectTool(cmd *cobra.Command, c *client.Client, required bool) (string, bool, error) {
+func findScanIDByProjectTool(cmd *cobra.Command, c *client.Client, rescanOnly bool) (string, bool, error) {
 	// Parse command line flags
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
@@ -483,7 +481,7 @@ func findScanIDByProjectTool(cmd *cobra.Command, c *client.Client, required bool
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
-		if required {
+		if rescanOnly {
 			klog.Printf("scanner tool %s is only allowing rescans", tool)
 			klog.Fatal("no scans found for given project and tool configuration")
 		}
@@ -534,7 +532,7 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 	return scan.ID, nil
 }
 
-func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client, required bool) (string, bool, *client.ScanPROptions, error) {
+func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client, rescanOnly bool) (string, bool, *client.ScanPROptions, error) {
 	// Parse command line flags
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
@@ -578,7 +576,7 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client, required
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
-		if required {
+		if rescanOnly {
 			klog.Debugf("scanner tool %s is only allowing rescans", tool)
 			klog.Fatal("no scans found for given project, tool and PR configuration")
 		}

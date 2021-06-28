@@ -418,11 +418,6 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
-
-	if !c.IsValidTool(tool) {
-		return "", fmt.Errorf("invalid or inactive tool name: %s", tool)
-	}
-
 	branch, err := cmd.Flags().GetString("branch")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse branch flag: %w", err)
@@ -489,11 +484,6 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
-
-	if !c.IsValidTool(tool) {
-		return "", fmt.Errorf("invalid or inactive tool name: %s", tool)
-	}
-
 	meta, err := cmd.Flags().GetString("meta")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
@@ -534,11 +524,6 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
-
-	if !c.IsValidTool(tool) {
-		return "", fmt.Errorf("invalid or inactive tool name: %s", tool)
-	}
-
 	branch, err := cmd.Flags().GetString("branch")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
@@ -624,9 +609,6 @@ func scanByImage(cmd *cobra.Command, c *client.Client) (string, error) {
 	tool, err := cmd.Flags().GetString("tool")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
-	}
-	if !c.IsValidTool(tool) {
-		return "", fmt.Errorf("invalid or inactive tool name: %s", tool)
 	}
 	branch, err := cmd.Flags().GetString("branch")
 	if err != nil {

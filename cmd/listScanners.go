@@ -36,7 +36,7 @@ var listScannersCmd = &cobra.Command{
 		if len(scannerRows) == 2 {
 			scannerRows = append(scannerRows, Row{Columns: []string{"no found active scanner"}})
 		}
-		tableWriter(scannerRows...)
+		TableWriter(scannerRows...)
 	},
 }
 

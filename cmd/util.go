@@ -33,7 +33,7 @@ type Row struct {
 	Columns []string
 }
 
-func tableWriter(rows ...Row) {
+func TableWriter(rows ...Row) {
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 4, ' ', 0)
 	for _, row := range rows {
 		var r string

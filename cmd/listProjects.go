@@ -48,5 +48,5 @@ func projectsRootCommand(_ *cobra.Command, args []string) {
 	for _, project := range projects {
 		projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID}})
 	}
-	tableWriter(projectRows...)
+	TableWriter(projectRows...)
 }

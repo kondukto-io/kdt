@@ -83,7 +83,7 @@ func scanRootCommand(cmd *cobra.Command, _ []string) {
 			{Columns: []string{"--------"}},
 			{Columns: []string{eventID}},
 		}
-		tableWriter(eventRows...)
+		TableWriter(eventRows...)
 		qwm(0, "scan has been started with async parameter, exiting.")
 	}
 
@@ -654,5 +654,5 @@ func printScanSummary(scan *client.ScanDetail) {
 		{Columns: []string{name, id, branch, meta, tool, crit, high, med, low, score, date}},
 	}
 
-	tableWriter(scanSummaryRows...)
+	TableWriter(scanSummaryRows...)
 }

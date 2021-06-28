@@ -128,7 +128,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		eventID, err := c.StartScanByScanId(scanID)
+		eventID, err := c.RestartScanByScanID(scanID)
 		if err != nil {
 			return "", err
 		}
@@ -146,7 +146,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		}
 
 		if found {
-			eventID, err := c.StartScanByScanId(scanID)
+			eventID, err := c.RestartScanByScanID(scanID)
 			if err != nil {
 				return "", err
 			}
@@ -175,7 +175,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 			return "", err
 		}
 		if found {
-			eventID, err := c.StartScanByOption(scanID, opt)
+			eventID, err := c.RestartScanWithOption(scanID, opt)
 			if err != nil {
 				qwe(1, err, "could not start scan")
 			}
@@ -204,7 +204,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		eventID, err := c.StartScanByScanId(scanID)
+		eventID, err := c.RestartScanByScanID(scanID)
 		if err != nil {
 			qwe(1, err, "could not start scan")
 		}

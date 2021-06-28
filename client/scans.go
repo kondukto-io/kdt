@@ -17,9 +17,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kondukto-io/kdt/klog"
-
 	"github.com/google/go-querystring/query"
+	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/viper"
 )
 
@@ -118,6 +117,166 @@ func (c *Client) CreateNewScan(scan *Scan) (string, error) {
 	return rsr.EventID, nil
 }
 
+func (c *Client) RestartScanByScanID(id string) (string, error) {
+	klog.Debug("starting scan by scan_id")
+	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
+	req, err := c.newRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return "", err
+	}
+
+	type restartScanResponse struct {
+		Event   string `json:"event"`
+		Message string `json:"message"`
+	}
+	var rsr restartScanResponse
+	_, err = c.do(req, &rsr)
+	if err != nil {
+		return "", err
+	}
+
+	return rsr.Event, nil
+}
+
+func (c *Client) RestartScanWithOption(id string, opt *ScanPROptions) (string, error) {
+	if opt == nil {
+		return "", errors.New("missing scan options")
+	}
+
+	path := fmt.Sprintf("/api/v1/scans/%s/restart_with_option", id)
+	req, err := c.newRequest(http.MethodPost, path, opt)
+	if err != nil {
+		return "", err
+	}
+
+	type restartScanResponse struct {
+		Event   string `json:"event"`
+		Message string `json:"message"`
+	}
+	var rsr restartScanResponse
+	resp, err := c.do(req, &rsr)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	}
+
+	if rsr.Event == "" {
+		return "", errors.New("event not found")
+	}
+
+	return rsr.Event, nil
+}
+
+func (c *Client) ScanByImage(project, branch, tool, image string) (string, error) {
+	path := "/api/v1/scans/image"
+
+	type imageScanBody struct {
+		Project string
+		Tool    string
+		Branch  string
+		Image   string
+	}
+	reqBody := imageScanBody{
+		Project: project,
+		Tool:    tool,
+		Branch:  branch,
+		Image:   image,
+	}
+
+	req, err := c.newRequest(http.MethodPost, path, &reqBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	type responseBody struct {
+		EventID string `json:"event_id"`
+		Error   string `json:"error"`
+	}
+	respBody := new(responseBody)
+
+	resp, err := c.do(req, respBody)
+	if err != nil {
+		return "", fmt.Errorf("HTTP response failed: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("HTTP response not OK: %s", respBody.Error)
+	}
+
+	return respBody.EventID, nil
+}
+
+func (c *Client) ImportScanResult(project, branch, tool string, file string) (string, error) {
+
+	klog.Debugf("importing scan results using the file:%s", file)
+
+	path := "/api/v1/scans/import"
+	rel := &url.URL{Path: path}
+	u := c.BaseURL.ResolveReference(rel)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return "", err
+	}
+	f, err := os.Open(file)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = f.Close() }()
+	part, err := writer.CreateFormFile("file", filepath.Base(f.Name()))
+	if err != nil {
+		return "", err
+	}
+	_, err = io.Copy(part, f)
+	if err != nil {
+		return "", err
+	}
+
+	if err = writer.WriteField("project", project); err != nil {
+		return "", err
+	}
+	if err = writer.WriteField("branch", branch); err != nil {
+		return "", err
+	}
+	if err = writer.WriteField("tool", tool); err != nil {
+		return "", err
+	}
+	_ = writer.Close()
+
+	req, err := http.NewRequest(http.MethodPost, u.String(), body)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("X-Cookie", viper.GetString("token"))
+
+	type importScanResultResponse struct {
+		EventID string `json:"event_id"`
+		Message string `json:"message"`
+		Error   string `json:"error"`
+	}
+
+	var importResponse importScanResultResponse
+	resp, err := c.do(req, &importResponse)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to import scan results: %s", importResponse.Error)
+	}
+
+	return importResponse.EventID, nil
+}
+
 func (c *Client) ListScans(project string, params *ScanSearchParams) ([]ScanDetail, error) {
 	// TODO: list scans call should be updated to take tool and metadata arguments
 	scans := make([]ScanDetail, 0)
@@ -191,59 +350,6 @@ func (c *Client) FindScanByID(id string) (*ScanDetail, error) {
 	return &scan, nil
 }
 
-func (c *Client) StartScanByScanId(id string) (string, error) {
-	klog.Debug("starting scan by scan_id")
-	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
-	req, err := c.newRequest(http.MethodGet, path, nil)
-	if err != nil {
-		return "", err
-	}
-
-	type restartScanResponse struct {
-		Event   string `json:"event"`
-		Message string `json:"message"`
-	}
-	var rsr restartScanResponse
-	_, err = c.do(req, &rsr)
-	if err != nil {
-		return "", err
-	}
-
-	return rsr.Event, nil
-}
-
-func (c *Client) StartScanByOption(id string, opt *ScanPROptions) (string, error) {
-	if opt == nil {
-		return "", errors.New("missing scan options")
-	}
-
-	path := fmt.Sprintf("/api/v1/scans/%s/restart_with_option", id)
-	req, err := c.newRequest(http.MethodPost, path, opt)
-	if err != nil {
-		return "", err
-	}
-
-	type restartScanResponse struct {
-		Event   string `json:"event"`
-		Message string `json:"message"`
-	}
-	var rsr restartScanResponse
-	resp, err := c.do(req, &rsr)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
-	}
-
-	if rsr.Event == "" {
-		return "", errors.New("event not found")
-	}
-
-	return rsr.Event, nil
-}
-
 func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
 	req, err := c.newRequest(http.MethodGet, path, nil)
@@ -282,111 +388,4 @@ func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
 	}
 
 	return m, err
-}
-
-func (c *Client) ImportScanResult(project, branch, tool string, file string) (string, error) {
-
-	klog.Debugf("importing scan results using the file:%s", file)
-
-	path := "/api/v1/scans/import"
-	rel := &url.URL{Path: path}
-	u := c.BaseURL.ResolveReference(rel)
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return "", err
-	}
-	f, err := os.Open(file)
-	if err != nil {
-		return "", err
-	}
-	defer func() { _ = f.Close() }()
-	part, err := writer.CreateFormFile("file", filepath.Base(f.Name()))
-	if err != nil {
-		return "", err
-	}
-	_, err = io.Copy(part, f)
-	if err != nil {
-		return "", err
-	}
-
-	if err = writer.WriteField("project", project); err != nil {
-		return "", err
-	}
-	if err = writer.WriteField("branch", branch); err != nil {
-		return "", err
-	}
-	if err = writer.WriteField("tool", tool); err != nil {
-		return "", err
-	}
-	_ = writer.Close()
-
-	req, err := http.NewRequest(http.MethodPost, u.String(), body)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("Content-Type", writer.FormDataContentType())
-
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("X-Cookie", viper.GetString("token"))
-
-	type importScanResultResponse struct {
-		EventID string `json:"event_id"`
-		Message string `json:"message"`
-		Error   string `json:"error"`
-	}
-
-	var importResponse importScanResultResponse
-	resp, err := c.do(req, &importResponse)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to import scan results: %s", importResponse.Error)
-	}
-
-	return importResponse.EventID, nil
-}
-
-func (c *Client) ScanByImage(project, branch, tool, image string) (string, error) {
-	path := "/api/v1/scans/image"
-
-	type imageScanBody struct {
-		Project string
-		Tool    string
-		Branch  string
-		Image   string
-	}
-	reqBody := imageScanBody{
-		Project: project,
-		Tool:    tool,
-		Branch:  branch,
-		Image:   image,
-	}
-
-	req, err := c.newRequest(http.MethodPost, path, &reqBody)
-	if err != nil {
-		return "", fmt.Errorf("failed to create HTTP request: %w", err)
-	}
-
-	type responseBody struct {
-		EventID string `json:"event_id"`
-		Error   string `json:"error"`
-	}
-	respBody := new(responseBody)
-
-	resp, err := c.do(req, respBody)
-	if err != nil {
-		return "", fmt.Errorf("HTTP response failed: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("HTTP response not OK: %s", respBody.Error)
-	}
-
-	return respBody.EventID, nil
 }

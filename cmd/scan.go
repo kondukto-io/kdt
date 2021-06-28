@@ -316,7 +316,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 
 				if err = passTests(scan, cmd); err != nil {
 					qwe(1, err, "scan could not pass security tests")
-				} else if err = checkRelease(scan, cmd); err != nil {
+				} else if err = checkRelease(scan); err != nil {
 					qwe(1, err, "scan failed to pass release criteria")
 				}
 				qwm(0, "scan passed security tests successfully")
@@ -624,7 +624,7 @@ func scanByImage(cmd *cobra.Command, c *client.Client) (string, error) {
 	return eventID, nil
 }
 
-func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
+func checkRelease(scan *client.ScanDetail) error {
 	c, err := client.New()
 	if err != nil {
 		return err

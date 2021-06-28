@@ -19,6 +19,7 @@ type (
 		ToolID string `url:"tool_id"`
 		Branch string `url:"branch"`
 		Limit  int    `url:"limit"`
+		Manual bool   `url:"manual"`
 	}
 	ScanparamResponse struct {
 		Data  []ScanparamsDetail `json:"data"`
@@ -37,7 +38,7 @@ func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (
 		return nil, errors.New("missing project identifier")
 	}
 
-	path := fmt.Sprintf("/api/v1/projects%s/scanparams", project)
+	path := fmt.Sprintf("/api/v1/projects/%s/scanparams", project)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err

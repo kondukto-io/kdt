@@ -71,13 +71,13 @@ type (
 
 	Scan struct {
 		// ScanparamsID is holding identifier of scanparams, when given, it will override other fields
-		ScanparamsID string `json:"scanparams_id"`
+		ScanparamsID string `json:"scanparams_id,omitempty"`
 		// Branch is holding current branch value of scan
 		Branch string `json:"branch"`
 		// Project is holding ID or Name value of project
 		Project string `json:"project"`
 		// ToolID is holding ID value of selected scanner
-		ToolID string `json:"tool_id"`
+		ToolID string `json:"tool_id,omitempty"`
 		// PR is holding detail of pull requests branches to be scanned
 		PR PRInfo `json:"pr"`
 		// Custom is holding custom type of scanners that specified on the Kondukto side

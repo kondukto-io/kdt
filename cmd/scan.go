@@ -656,9 +656,9 @@ func printScanSummary(scan *client.ScanDetail) {
 	name, id, branch, meta, tool, date := scan.Name, scan.ID, scan.Branch, scan.MetaData, scan.Tool, scan.Date.String()
 	crit, high, med, low, score := strC(s.Critical), strC(s.High), strC(s.Medium), strC(s.Low), strC(scan.Score)
 	scanSummaryRows := []Row{
-		{Columns: []string{"NAME", "ID", "BRANCH", "META", "TOOL", "CRIT", "HIGH", "MED", "LOW", "SCORE", "DATE"}},
-		{Columns: []string{"----", "--", "------", "----", "----", "----", "----", "---", "---", "-----", "----"}},
-		{Columns: []string{name, id, branch, meta, tool, crit, high, med, low, score, date}},
+		{Columns: []string{"NAME", "ID", "BRANCH", "META", "TOOL", "CRIT", "HIGH", "MED", "LOW", "SCORE", "DATE", "UI Link"}},
+		{Columns: []string{"----", "--", "------", "----", "----", "----", "----", "---", "---", "-----", "----", "-------"}},
+		{Columns: []string{name, id, branch, meta, tool, crit, high, med, low, score, date, scan.Links.HTML}},
 	}
 
 	TableWriter(scanSummaryRows...)

@@ -34,6 +34,9 @@ type (
 		Project  string     `json:"project"`
 		Score    int        `json:"score"`
 		Summary  Summary    `json:"summary"`
+		Links    struct {
+			HTML string `json:"html"`
+		} `json:"links"`
 	}
 
 	ScanSearchParams struct {

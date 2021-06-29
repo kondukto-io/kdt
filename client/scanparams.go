@@ -1,6 +1,5 @@
 /*
 Copyright © 2021 Kondukto
-Created by Yusuf Eyisan aka @yeyisan
 */
 
 package client

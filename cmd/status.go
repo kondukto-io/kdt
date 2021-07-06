@@ -69,7 +69,7 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 		{Columns: []string{"----", "--", "----", "----", "----", "----", "---", "---", "-----", "----"}},
 		{Columns: []string{name, id, meta, tool, crit, high, med, low, score, date}},
 	}
-	tableWriter(scanSummaryRows...)
+	TableWriter(scanSummaryRows...)
 
 	if err = passTests(scan, cmd); err != nil {
 		qwe(1, err, "scan could not pass security tests")

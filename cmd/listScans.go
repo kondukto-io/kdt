@@ -51,5 +51,5 @@ func scanListRootCommand(cmd *cobra.Command, _ []string) {
 		crit, high, med, low, score := strC(s.Critical), strC(s.High), strC(s.Medium), strC(s.Low), strC(scan.Score)
 		scanSummaryRows = append(scanSummaryRows, Row{Columns: []string{name, id, branch, meta, tool, crit, high, med, low, score, date}})
 	}
-	tableWriter(scanSummaryRows...)
+	TableWriter(scanSummaryRows...)
 }

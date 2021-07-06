@@ -102,6 +102,9 @@ func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 			klog.Debugf("failed to parse error message: %v: %v", err, data)
 			return nil, err
 		}
+		if e.Error == "" {
+			return nil, fmt.Errorf("respons not OK: %s", string(data))
+		}
 		return nil, fmt.Errorf("response not OK: %s", e.Error)
 	}
 

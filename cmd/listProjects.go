@@ -42,11 +42,11 @@ func projectsRootCommand(_ *cobra.Command, args []string) {
 	}
 
 	projectRows := []Row{
-		{Columns: []string{"NAME", "ID"}},
-		{Columns: []string{"----", "--"}},
+		{Columns: []string{"NAME", "ID", "UI Link"}},
+		{Columns: []string{"----", "--", "-------"}},
 	}
 	for _, project := range projects {
-		projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID}})
+		projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Links.HTML}})
 	}
-	tableWriter(projectRows...)
+	TableWriter(projectRows...)
 }

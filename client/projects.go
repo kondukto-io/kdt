@@ -14,8 +14,11 @@ import (
 )
 
 type Project struct {
-	ID   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
+	ID    string `json:"id,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Links struct {
+		HTML string `json:"html"`
+	} `json:"links"`
 }
 
 func (c *Client) ListProjects(arg string) ([]Project, error) {

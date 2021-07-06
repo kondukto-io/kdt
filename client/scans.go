@@ -17,14 +17,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kondukto-io/kdt/klog"
-
 	"github.com/google/go-querystring/query"
+	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/viper"
 )
 
 type (
-	Scan struct {
+	ScanDetail struct {
 		ID       string     `json:"id"`
 		Name     string     `json:"name"`
 		Branch   string     `json:"branch"`
@@ -35,6 +34,9 @@ type (
 		Project  string     `json:"project"`
 		Score    int        `json:"score"`
 		Summary  Summary    `json:"summary"`
+		Links    struct {
+			HTML string `json:"html"`
+		} `json:"links"`
 	}
 
 	ScanSearchParams struct {
@@ -68,83 +70,62 @@ type (
 		Active  int    `json:"active"`
 		ScanId  string `json:"scan_id"`
 		Message string `json:"message"`
+		Links   struct {
+			HTML string `json:"html"`
+		} `json:"links"`
+	}
+
+	Scan struct {
+		// ScanparamsID is holding identifier of scanparams, when given, it will override other fields
+		ScanparamsID string `json:"scanparams_id,omitempty"`
+		// Branch is holding current branch value of scan
+		Branch string `json:"branch"`
+		// Project is holding ID or Name value of project
+		Project string `json:"project"`
+		// ToolID is holding ID value of selected scanner
+		ToolID string `json:"tool_id,omitempty"`
+		// PR is holding detail of pull requests branches to be scanned
+		PR PRInfo `json:"pr"`
+		// Custom is holding custom type of scanners that specified on the Kondukto side
+		Custom Custom `json:"custom"`
+	}
+
+	PRInfo struct {
+		OK     bool   `json:"ok" json:"ok"`
+		Target string `json:"target" bson:"target" valid:"Branch"`
+	}
+
+	Custom struct {
+		Type int `json:"type" bson:"type"`
 	}
 )
 
-func (c *Client) ListScans(project string, params *ScanSearchParams) ([]Scan, error) {
-	// TODO: list scans call should be updated to take tool and metadata arguments
-	scans := make([]Scan, 0)
+func (c *Client) CreateNewScan(scan *Scan) (string, error) {
+	klog.Debug("creating new scan with given parameters")
+	if scan == nil {
+		return "", errors.New("missing scan fields")
+	}
 
-	klog.Debugf("retrieving scans of the project: %s", project)
-
-	path := fmt.Sprintf("/api/v1/projects/%s/scans", project)
-	req, err := c.newRequest(http.MethodGet, path, nil)
+	path := "/api/v1/scans/create"
+	req, err := c.newRequest(http.MethodPost, path, scan)
 	if err != nil {
-		return scans, err
+		return "", err
 	}
 
-	v, err := query.Values(params)
+	type scanResponse struct {
+		EventID string `json:"event_id"`
+		Message string `json:"message"`
+	}
+	var rsr scanResponse
+	_, err = c.do(req, &rsr)
 	if err != nil {
-		return nil, err
-	}
-	req.URL.RawQuery = v.Encode()
-
-	type getProjectScansResponse struct {
-		Scans []Scan `json:"data"`
-		Total int    `json:"total"`
-	}
-	var ps getProjectScansResponse
-
-	resp, err := c.do(req, &ps)
-	if err != nil {
-		return scans, err
+		return "", err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return scans, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
-	}
-
-	return ps.Scans, nil
+	return rsr.EventID, nil
 }
 
-func (c *Client) FindScan(project string, params *ScanSearchParams) (*Scan, error) {
-	if params == nil {
-		return nil, errors.New("scan query params cannot be empty")
-	}
-	params.Limit = 1
-	scans, err := c.ListScans(project, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get scans :%w", err)
-	}
-
-	if len(scans) == 0 {
-		return nil, errors.New("scan not found")
-	}
-
-	return &scans[0], nil
-}
-
-func (c *Client) FindScanByID(id string) (*Scan, error) {
-	path := fmt.Sprintf("/api/v1/scans/%s", id)
-	req, err := c.newRequest(http.MethodGet, path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var scan Scan
-	resp, err := c.do(req, &scan)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
-	}
-
-	return &scan, nil
-}
-
-func (c *Client) StartScanByScanId(id string) (string, error) {
+func (c *Client) RestartScanByScanID(id string) (string, error) {
 	klog.Debug("starting scan by scan_id")
 	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
@@ -165,7 +146,7 @@ func (c *Client) StartScanByScanId(id string) (string, error) {
 	return rsr.Event, nil
 }
 
-func (c *Client) StartScanByOption(id string, opt *ScanPROptions) (string, error) {
+func (c *Client) RestartScanWithOption(id string, opt *ScanPROptions) (string, error) {
 	if opt == nil {
 		return "", errors.New("missing scan options")
 	}
@@ -197,44 +178,43 @@ func (c *Client) StartScanByOption(id string, opt *ScanPROptions) (string, error
 	return rsr.Event, nil
 }
 
-func (c *Client) GetScanStatus(eventId string) (*Event, error) {
-	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
-	req, err := c.newRequest(http.MethodGet, path, nil)
+func (c *Client) ScanByImage(project, branch, tool, image string) (string, error) {
+	path := "/api/v1/scans/image"
+
+	type imageScanBody struct {
+		Project string
+		Tool    string
+		Branch  string
+		Image   string
+	}
+	reqBody := imageScanBody{
+		Project: project,
+		Tool:    tool,
+		Branch:  branch,
+		Image:   image,
+	}
+
+	req, err := c.newRequest(http.MethodPost, path, &reqBody)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
-	var e Event
-	resp, err := c.do(req, &e)
+	type responseBody struct {
+		EventID string `json:"event_id"`
+		Error   string `json:"error"`
+	}
+	respBody := new(responseBody)
+
+	resp, err := c.do(req, respBody)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("HTTP response failed: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("HTTP response not OK: %s", respBody.Error)
 	}
 
-	return &e, nil
-}
-
-func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
-	path := fmt.Sprintf("/api/v1/scans/%s/last_results", id)
-	req, err := c.newRequest(http.MethodGet, path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	m := make(map[string]*ResultSet)
-	resp, err := c.do(req, &m)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
-	}
-
-	return m, err
+	return respBody.EventID, nil
 }
 
 func (c *Client) ImportScanResult(project, branch, tool string, file string) (string, error) {
@@ -305,41 +285,115 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string) (st
 	return importResponse.EventID, nil
 }
 
-func (c *Client) ScanByImage(project, branch, tool, image string) (string, error) {
-	path := "/api/v1/scans/image"
+func (c *Client) ListScans(project string, params *ScanSearchParams) ([]ScanDetail, error) {
+	// TODO: list scans call should be updated to take tool and metadata arguments
+	scans := make([]ScanDetail, 0)
 
-	type imageScanBody struct {
-		Project string
-		Tool    string
-		Branch  string
-		Image   string
-	}
-	reqBody := imageScanBody{
-		Project: project,
-		Tool:    tool,
-		Branch:  branch,
-		Image:   image,
-	}
+	klog.Debugf("retrieving scans of the project: %s", project)
 
-	req, err := c.newRequest(http.MethodPost, path, &reqBody)
+	path := fmt.Sprintf("/api/v1/projects/%s/scans", project)
+	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to create HTTP request: %w", err)
+		return scans, err
 	}
 
-	type responseBody struct {
-		EventID string `json:"event_id"`
-		Error   string `json:"error"`
-	}
-	respBody := new(responseBody)
-
-	resp, err := c.do(req, respBody)
+	v, err := query.Values(params)
 	if err != nil {
-		return "", fmt.Errorf("HTTP response failed: %w", err)
+		return nil, err
+	}
+	req.URL.RawQuery = v.Encode()
+
+	type getProjectScansResponse struct {
+		Scans []ScanDetail `json:"data"`
+		Total int          `json:"total"`
+	}
+	var ps getProjectScansResponse
+
+	resp, err := c.do(req, &ps)
+	if err != nil {
+		return scans, err
 	}
 
-	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("HTTP response not OK: %s", respBody.Error)
+	if resp.StatusCode != http.StatusOK {
+		return scans, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
-	return respBody.EventID, nil
+	return ps.Scans, nil
+}
+
+func (c *Client) FindScan(project string, params *ScanSearchParams) (*ScanDetail, error) {
+	if params == nil {
+		return nil, errors.New("scan query params cannot be empty")
+	}
+	params.Limit = 1
+	scans, err := c.ListScans(project, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get scans :%w", err)
+	}
+
+	if len(scans) == 0 {
+		return nil, errors.New("scan not found")
+	}
+
+	return &scans[0], nil
+}
+
+func (c *Client) FindScanByID(id string) (*ScanDetail, error) {
+	path := fmt.Sprintf("/api/v1/scans/%s", id)
+	req, err := c.newRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var scan ScanDetail
+	resp, err := c.do(req, &scan)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	}
+
+	return &scan, nil
+}
+
+func (c *Client) GetScanStatus(eventId string) (*Event, error) {
+	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
+	req, err := c.newRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var e Event
+	resp, err := c.do(req, &e)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	}
+
+	return &e, nil
+}
+
+func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
+	path := fmt.Sprintf("/api/v1/scans/%s/last_results", id)
+	req, err := c.newRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]*ResultSet)
+	resp, err := c.do(req, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	}
+
+	return m, err
 }

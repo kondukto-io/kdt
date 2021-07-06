@@ -60,7 +60,7 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		{Columns: []string{"------", "----", "----", "---"}},
 		{Columns: []string{rs.Status, rs.SAST.Status, rs.DAST.Status, rs.SCA.Status}},
 	}
-	tableWriter(releaseCriteriaRows...)
+	TableWriter(releaseCriteriaRows...)
 
 	sast, err := cmd.Flags().GetBool("sast")
 	if err != nil {

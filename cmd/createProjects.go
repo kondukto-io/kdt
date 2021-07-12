@@ -25,9 +25,9 @@ func init() {
 	createCmd.AddCommand(createProjectCmd)
 
 	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another project")
-	createProjectCmd.Flags().String("repo-id", "", "ALM project repository url")
+	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
-	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated labels")
+	createProjectCmd.Flags().String("repo-id", "", "ALM project repository url/id")
 	createProjectCmd.Flags().StringP("alm", "a", "", "ALM tool name")
 
 }

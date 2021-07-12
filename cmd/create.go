@@ -1,3 +1,8 @@
+/*
+Copyright © 2021 Kondukto
+
+*/
+
 package cmd
 
 import "github.com/spf13/cobra"

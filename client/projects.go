@@ -14,9 +14,11 @@ import (
 )
 
 type Project struct {
-	ID    string `json:"id,omitempty"`
-	Name  string `json:"name,omitempty"`
-	Links struct {
+	ID     string         `json:"id,omitempty"`
+	Name   string         `json:"name,omitempty"`
+	Labels []ProjectLabel `json:"labels"`
+	Team   ProjectTeam    `json:"team"`
+	Links  struct {
 		HTML string `json:"html"`
 	} `json:"links"`
 }
@@ -52,6 +54,48 @@ func (c *Client) ListProjects(arg string) ([]Project, error) {
 	}
 
 	return ps.Projects, nil
+}
+
+type ProjectDetail struct {
+	Source   ProjectSource  `json:"source"`
+	Team     ProjectTeam    `json:"team"`
+	Labels   []ProjectLabel `json:"labels"`
+	Override bool           `json:"override"`
+}
+
+type ProjectSource struct {
+	Tool string `json:"tool"`
+	ID   string `json:"id"`
+	URL  string `json:"url"`
+}
+type ProjectTeam struct {
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+}
+type ProjectLabel struct {
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+}
+
+func (c *Client) CreateProject(pd ProjectDetail) (*Project, error) {
+	klog.Debug("creating a project")
+
+	req, err := c.newRequest(http.MethodPost, "/api/v2/projects", pd)
+	if err != nil {
+		return nil, err
+	}
+
+	type projectResponse struct {
+		Project Project `json:"project"`
+		Message string  `json:"message"`
+	}
+	var pr projectResponse
+	_, err = c.do(req, &pr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pr.Project, nil
 }
 
 type ReleaseStatus struct {

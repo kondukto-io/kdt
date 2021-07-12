@@ -7,6 +7,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/kondukto-io/kdt/client"
@@ -24,8 +25,7 @@ func init() {
 	createCmd.AddCommand(createProjectCmd)
 
 	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another project")
-	createProjectCmd.Flags().StringP("url", "u", "", "ALM project repository url")
-	createProjectCmd.Flags().String("id", "", "ALM project repository id")
+	createProjectCmd.Flags().String("repo-id", "", "ALM project repository url")
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated labels")
 	createProjectCmd.Flags().StringP("alm", "a", "", "ALM tool name")
@@ -55,18 +55,13 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(1, err, "could not initialize Kondukto client")
 	}
 
-	repositoryURL, err := cmd.Flags().GetString("url")
+	repositoryID, err := cmd.Flags().GetString("repo-id")
 	if err != nil {
 		qwe(1, err, "failed to parse the repo url flag")
 	}
 
-	repositoryID, err := cmd.Flags().GetString("id")
-	if err != nil {
-		qwe(1, err, "failed to parse the repo id flag")
-	}
-
-	if repositoryURL == "" && repositoryID == "" {
-		qwm(1, "missing required fields repo-url and repo-id")
+	if repositoryID == "" {
+		qwm(1, "missing required flag repo-id")
 	}
 
 	force, err := cmd.Flags().GetBool("force-create")
@@ -76,9 +71,6 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 
 	if !force {
 		var alm = repositoryID
-		if repositoryURL != "" {
-			alm = repositoryURL
-		}
 		projects, err := c.ListProjects("", alm)
 		if err != nil {
 			qwe(1, err, "failed to check project with alm info")
@@ -89,7 +81,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 				projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, parseLabels(project.Labels), project.Links.HTML}})
 			}
 			TableWriter(projectRows...)
-			qwm(1, "project with the same repo-url already exists. for force creation pass --force-create flag")
+			qwm(1, "project with the same repo-id already exists. for force creation pass --force-create flag")
 		}
 	}
 
@@ -114,11 +106,16 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	pd := client.ProjectDetail{
-		Source: client.ProjectSource{
-			Tool: tool,
-			URL:  repositoryURL,
-			ID:   repositoryID,
-		},
+		Source: func() client.ProjectSource {
+			s := client.ProjectSource{Tool: tool}
+			_, err := url.Parse(repositoryID)
+			if err != nil {
+				s.ID = repositoryID
+			} else {
+				s.URL = repositoryID
+			}
+			return s
+		}(),
 		Team: client.ProjectTeam{
 			Name: team,
 		},
@@ -134,4 +131,5 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, parseLabels(project.Labels), project.Links.HTML}})
 
 	TableWriter(projectRows...)
+	qwm(0, "project created successfully")
 }

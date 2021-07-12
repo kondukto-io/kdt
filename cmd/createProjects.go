@@ -25,10 +25,10 @@ var createProjectCmd = &cobra.Command{
 func init() {
 	createCmd.AddCommand(createProjectCmd)
 
-	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another project")
+	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another Kondukto project")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
-	createProjectCmd.Flags().String("repo-id", "", "ALM project repository url/id")
+	createProjectCmd.Flags().String("repo-id", "", "URL or ID of ALM repository")
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
 
 }

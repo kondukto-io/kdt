@@ -100,7 +100,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 			}
 			l += fmt.Sprintf(",%s", label.Name)
 		}
-		return labels
+		return l
 	}()
 
 	projectRows := []Row{

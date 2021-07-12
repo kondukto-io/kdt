@@ -23,7 +23,7 @@ type Project struct {
 	} `json:"links"`
 }
 
-func (c *Client) ListProjects(arg string) ([]Project, error) {
+func (c *Client) ListProjects(search, alm string) ([]Project, error) {
 	projects := make([]Project, 0)
 
 	klog.Debug("retrieving project list...")
@@ -34,7 +34,8 @@ func (c *Client) ListProjects(arg string) ([]Project, error) {
 	}
 
 	queryParams := req.URL.Query()
-	queryParams.Add("search", arg)
+	queryParams.Add("search", search)
+	queryParams.Add("alm", alm)
 	req.URL.RawQuery = queryParams.Encode()
 
 	type getProjectsResponse struct {

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/kondukto-io/kdt/client"
+	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ func init() {
 }
 
 func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
-	parseLabels := func(labels []client.ProjectLabel) string {
+	labelsToText := func(labels []client.ProjectLabel) string {
 		var l string
 		for i, label := range labels {
 			if i == 0 {
@@ -78,7 +79,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 
 		if len(projects) > 0 {
 			for _, project := range projects {
-				projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, parseLabels(project.Labels), project.Links.HTML}})
+				projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, labelsToText(project.Labels), project.Links.HTML}})
 			}
 			TableWriter(projectRows...)
 			qwm(1, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag", len(projects)))
@@ -96,8 +97,8 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	parsedLabels := make([]client.ProjectLabel, 0)
-	for _, s := range strings.Split(labels, ",") {
-		parsedLabels = append(parsedLabels, client.ProjectLabel{Name: s})
+	for _, l := range strings.Split(labels, ",") {
+		parsedLabels = append(parsedLabels, client.ProjectLabel{Name: l})
 	}
 
 	tool, err := cmd.Flags().GetString("alm")
@@ -128,7 +129,28 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(1, err, "failed to create project")
 	}
 
-	projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, parseLabels(project.Labels), project.Links.HTML}})
+	if len(project.Labels) != len(parsedLabels) {
+		var missingLabels string
+		for i, label := range parsedLabels {
+			if !func() bool {
+				for _, projectLabel := range project.Labels {
+					if label.Name == projectLabel.Name {
+						return true
+					}
+				}
+				return false
+			}() {
+				if i == 0 || missingLabels == "" {
+					missingLabels = label.Name
+				} else {
+					missingLabels += fmt.Sprintf(",%s", label.Name)
+				}
+			}
+		}
+		klog.Printf("failed to add some labels: %s", missingLabels)
+	}
+
+	projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, labelsToText(project.Labels), project.Links.HTML}})
 
 	TableWriter(projectRows...)
 	qwm(0, "project created successfully")

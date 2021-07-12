@@ -29,7 +29,7 @@ func init() {
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
 	createProjectCmd.Flags().String("repo-id", "", "ALM project repository url/id")
-	createProjectCmd.Flags().StringP("alm", "a", "", "ALM tool name")
+	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
 
 }
 
@@ -101,7 +101,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		parsedLabels = append(parsedLabels, client.ProjectLabel{Name: l})
 	}
 
-	tool, err := cmd.Flags().GetString("alm")
+	tool, err := cmd.Flags().GetString("alm-tool")
 	if err != nil {
 		qwe(1, err, "failed to parse the alm flag")
 	}

@@ -81,7 +81,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 				projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, parseLabels(project.Labels), project.Links.HTML}})
 			}
 			TableWriter(projectRows...)
-			qwm(1, "project with the same repo-id already exists. for force creation pass --force-create flag")
+			qwm(1, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag", len(projects)))
 		}
 	}
 

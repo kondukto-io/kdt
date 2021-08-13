@@ -101,7 +101,8 @@ func init() {
 	scanCmd.Flags().StringP("meta", "m", "", "meta data")
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
-	scanCmd.Flags().StringP("merge-target", "M", "", "target branch name for pull request")
+	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull request")
+	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().String("image", "", "image to scan with container security products")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")

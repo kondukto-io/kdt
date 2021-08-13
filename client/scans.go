@@ -48,8 +48,9 @@ type (
 	}
 
 	ScanPROptions struct {
-		From string `json:"from"`
-		To   string `json:"to"`
+		From               string `json:"from"`
+		To                 string `json:"to"`
+		OverrideOldAnalyze bool   `json:"override-old-analyze"`
 	}
 
 	ResultSet struct {

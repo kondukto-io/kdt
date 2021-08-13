@@ -545,10 +545,14 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 	}
 	branch, err := cmd.Flags().GetString("branch")
 	if err != nil {
-		return "", fmt.Errorf("failed to parse tool flag: %w", err)
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 	if branch == "" {
 		return "", errors.New("missing branch field")
+	}
+	override, err := cmd.Flags().GetBool("override")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse override flag: %w", err)
 	}
 
 	mergeTarget, err := cmd.Flags().GetString("merge-target")
@@ -573,8 +577,9 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 	scan, err := c.FindScan(project, params)
 	if err == nil {
 		opt := &client.ScanPROptions{
-			From: branch,
-			To:   mergeTarget,
+			From:               branch,
+			To:                 mergeTarget,
+			OverrideOldAnalyze: override,
 		}
 		eventID, err := c.RestartScanWithOption(scan.ID, opt)
 		if err != nil {

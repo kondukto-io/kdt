@@ -402,7 +402,19 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 
-	eventID, err := c.ImportScanResult(project, branch, tool, absoluteFilePath)
+	target, err := cmd.Flags().GetString("merge-target")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse merge target flag: %w", err)
+	}
+	override, err := cmd.Flags().GetBool("override")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse override flag: %w", err)
+	}
+	if override && target == "" {
+		return "", errors.New("overriding PR analysis requires a merge target")
+	}
+
+	eventID, err := c.ImportScanResult(project, branch, tool, absoluteFilePath, target, override)
 	if err != nil {
 		return "", fmt.Errorf("failed to import scan results: %w", err)
 	}

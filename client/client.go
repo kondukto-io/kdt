@@ -96,18 +96,20 @@ func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 		return resp, err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		var e KonduktoError
-		if err = json.Unmarshal(data, &e); err != nil {
-			klog.Debugf("failed to parse error message: %v: %v", err, data)
-			return nil, err
-		}
-		if e.Error == "" {
-			return nil, fmt.Errorf("respons not OK: %s", string(data))
-		}
-		return nil, fmt.Errorf("response not OK: %s", e.Error)
+	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+		err = json.Unmarshal(data, &v)
+		return resp, err
 	}
 
-	err = json.Unmarshal(data, &v)
-	return resp, err
+	var e KonduktoError
+	if err = json.Unmarshal(data, &e); err != nil {
+		klog.Debugf("failed to parse error message: %v: %v", err, data)
+		return nil, err
+	}
+
+	if e.Error != "" {
+		return nil, fmt.Errorf("response not OK: response status:%d error message: %s", resp.StatusCode, e.Error)
+	}
+
+	return nil, fmt.Errorf("respons not OK: %s", string(data))
 }

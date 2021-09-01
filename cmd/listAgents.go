@@ -27,7 +27,7 @@ var listAgentsCmd = &cobra.Command{
 			agentRows = append(agentRows, Row{Columns: []string{v.Label, v.ID, v.Url}})
 		}
 		if len(agentRows) == 2 {
-			agentRows = append(agentRows, Row{Columns: []string{"no found active scanner"}})
+			agentRows = append(agentRows, Row{Columns: []string{"no found active agent"}})
 		}
 		TableWriter(agentRows...)
 	},

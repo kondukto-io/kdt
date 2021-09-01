@@ -449,7 +449,7 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	}
 
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
-		ToolID: scanner.Id,
+		ToolID: scanner.ID,
 		Branch: branch,
 		Limit:  1,
 		Manual: false,
@@ -460,7 +460,7 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	scanData := &client.Scan{
 		Branch:  branch,
 		Project: project,
-		ToolID:  scanner.Id,
+		ToolID:  scanner.ID,
 		Custom: client.Custom{
 			Type: scanner.CustomType,
 		},
@@ -574,7 +574,7 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 	}
 
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
-		ToolID: scanner.Id,
+		ToolID: scanner.ID,
 		Branch: branch,
 		Limit:  1,
 	})
@@ -594,7 +594,7 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 		return &client.Scan{
 			Branch:  branch,
 			Project: project,
-			ToolID:  scanner.Id,
+			ToolID:  scanner.ID,
 			Custom: client.Custom{
 				Type: scanner.CustomType,
 			},

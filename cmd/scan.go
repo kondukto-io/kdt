@@ -142,7 +142,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		return eventID, nil
 	case modeByProjectToolAndPR:
 		// scan mode to restart a scan with the given project, tool and pr params
-		eventID, err := findScanIDByProjectToolAndPR(cmd, c)
+		eventID, err := startScanByProjectToolAndPR(cmd, c)
 		if err != nil {
 			return "", err
 		}
@@ -517,7 +517,7 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 	return scan.ID, nil
 }
 
-func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, error) {
+func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, error) {
 	rescanOnly, scanner, err := checkForRescanOnlyTool(cmd, c)
 	if err != nil {
 		return "", err

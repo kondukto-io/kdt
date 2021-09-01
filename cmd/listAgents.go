@@ -21,7 +21,7 @@ var listAgentsCmd = &cobra.Command{
 
 		agentRows := []Row{
 			{Columns: []string{"Label", "ID", "URL"}},
-			{Columns: []string{"-----", "--", "----"}},
+			{Columns: []string{"-----", "--", "---"}},
 		}
 		for _, v := range activeAgents.ActiveAgents {
 			agentRows = append(agentRows, Row{Columns: []string{v.Label, v.ID, v.Url}})

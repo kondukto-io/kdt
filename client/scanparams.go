@@ -18,7 +18,10 @@ type (
 		ToolID string `url:"tool_id"`
 		Branch string `url:"branch"`
 		Limit  int    `url:"limit"`
+		Meta   string `url:"meta"`
+		Target string `url:"target"`
 		Manual bool   `url:"manual"`
+		PR     bool   `url:"pr"`
 	}
 	ScanparamResponse struct {
 		Data  []ScanparamsDetail `json:"data"`

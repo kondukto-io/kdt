@@ -43,6 +43,8 @@ type (
 		Branch string `url:"branch,omitempty"`
 		Tool   string `url:"tool,omitempty"`
 		Meta   string `url:"meta,omitempty"`
+		PR     bool   `url:"pr"`
+		Manual bool   `url:"manual"`
 		Limit  int    `url:"limit,omitempty"`
 	}
 

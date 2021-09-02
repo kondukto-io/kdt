@@ -433,6 +433,8 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	params := &client.ScanSearchParams{
 		Tool:   tool,
 		Branch: branch,
+		PR:     false,
+		Manual: false,
 		Limit:  1,
 	}
 
@@ -451,8 +453,9 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
 		ToolID: scanner.ID,
 		Branch: branch,
-		Limit:  1,
 		Manual: false,
+		PR:     false,
+		Limit:  1,
 	})
 	if err != nil {
 		klog.Debugf("failed to get scanparams: %v, trying to create new scan", err)
@@ -524,6 +527,7 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 		Tool:   tool,
 		Meta:   meta,
 		Branch: branch,
+		PR:     false,
 		Limit:  1,
 	}
 
@@ -593,8 +597,10 @@ func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 	}
 
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
-		ToolID: scanner.ID,
 		Branch: branch,
+		ToolID: scanner.ID,
+		Target: mergeTarget,
+		PR:     true,
 		Limit:  1,
 	})
 	if err != nil {

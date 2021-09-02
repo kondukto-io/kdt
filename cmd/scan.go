@@ -461,20 +461,39 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 		Branch:  branch,
 		Project: project,
 		ToolID:  scanner.ID,
-		Custom: client.Custom{
-			Type: scanner.CustomType,
-		},
+		Custom:  client.Custom{Type: scanner.CustomType},
 	}
 
 	if sp != nil {
 		klog.Debug("a scanparams found with the same parameters")
 		scanData.ScanparamsID = sp.Id
-	} else {
-		if rescanOnly {
-			klog.Printf("scanner tool %s is only allowing rescans", tool)
-			klog.Fatal("no scans found for given project and tool configuration")
+		return c.CreateNewScan(scanData)
+	}
+
+	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+		klog.Debugf("scanner tool %s is only allowing rescans", tool)
+		klog.Fatal("no scans found for given project and tool configuration")
+	}
+
+	klog.Debug("no scanparams found with the same parameters, creating a new scan")
+	if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
+		agents, err := c.ListActiveAgents(&client.AgentSearchParams{Label: "label"})
+		if err != nil {
+			klog.Debugf("failed to get active agents: %v")
+			klog.Fatal("failed to get active agents")
 		}
-		klog.Debug("no scanparams found with the same parameters, creating a new scan")
+		if agents.Total == 0 {
+			klog.Debugf("no found agent to start scan: %v")
+			klog.Fatal("no found agent to start scan")
+		}
+		if agents.Total > 1 {
+			klog.Debugf("[%d] agents found. Please specify it which one should be selected", agents.Total)
+			klog.Fatal("multiple agents found, please select one")
+		}
+
+		agent := agents.ActiveAgents.First()
+		klog.Debugf("agent [%s] found. Setting scan with agent", agent.Label)
+		scanData.AgentID = agent.ID
 	}
 
 	klog.Printf("creating a new scan")
@@ -587,11 +606,12 @@ func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 			return &client.Scan{ScanparamsID: sp.Id}
 		}
 
-		if rescanOnly {
+		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
 			klog.Debugf("scanner tool %s is only allowing rescans", tool)
 			klog.Fatal("no scans found for given project, tool and PR configuration")
 		}
-		return &client.Scan{
+
+		var scan = &client.Scan{
 			Branch:  branch,
 			Project: project,
 			ToolID:  scanner.ID,
@@ -603,6 +623,29 @@ func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 				Target: mergeTarget,
 			},
 		}
+
+		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
+			agents, err := c.ListActiveAgents(&client.AgentSearchParams{Label: "label"})
+			if err != nil {
+				klog.Debugf("failed to get active agents: %v")
+				klog.Fatal("failed to get active agents")
+			}
+			if agents.Total == 0 {
+				klog.Debugf("no found agent to start scan: %v")
+				klog.Fatal("no found agent to start scan")
+			}
+			if agents.Total > 1 {
+				klog.Debugf("[%d] agents found. Please specify it which one should be selected", agents.Total)
+				klog.Fatal("multiple agents found, please select one")
+			}
+
+			agent := agents.ActiveAgents.First()
+			klog.Debugf("agent [%s] found. Setting scan with agent", agent.Label)
+			scan.AgentID = agent.ID
+		}
+
+		return scan
+
 	}()
 
 	return c.CreateNewScan(scanData)

@@ -33,6 +33,15 @@ type (
 	}
 )
 
+func (s ScannerInfo) HasLabel(l string) bool {
+	for _, label := range s.Labels {
+		if label == l {
+			return true
+		}
+	}
+	return false
+}
+
 const (
 	ScannerLabelKDT      = "kdt"
 	ScannerLabelBind     = "bind"

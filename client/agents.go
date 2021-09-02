@@ -14,12 +14,16 @@ import (
 
 type (
 	AgentSearchParams struct {
-		Limit int `url:"limit"`
+		Limit int    `url:"limit"`
+		Label string `json:"label"`
 	}
 	AgentsResponse struct {
-		ActiveAgents []Agent `json:"active_agents"`
-		Total        int     `json:"total"`
+		ActiveAgents Agents `json:"active_agents"`
+		Total        int    `json:"total"`
 	}
+
+	Agents []Agent
+
 	Agent struct {
 		ID       string `json:"id"`
 		Label    string `json:"label"`
@@ -57,4 +61,11 @@ func (c *Client) ListActiveAgents(params *AgentSearchParams) (*AgentsResponse, e
 	}
 
 	return &agentsResponse, nil
+}
+
+func (a Agents) First() Agent {
+	if len(a) == 0 {
+		return Agent{}
+	}
+	return a[0]
 }

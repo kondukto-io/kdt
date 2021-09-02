@@ -101,7 +101,8 @@ func init() {
 	scanCmd.Flags().StringP("meta", "m", "", "meta data")
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
-	scanCmd.Flags().StringP("merge-target", "M", "", "target branch name for pull request")
+	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull request")
+	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().String("image", "", "image to scan with container security products")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
@@ -402,7 +403,19 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 
-	eventID, err := c.ImportScanResult(project, branch, tool, absoluteFilePath)
+	target, err := cmd.Flags().GetString("merge-target")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse merge target flag: %w", err)
+	}
+	override, err := cmd.Flags().GetBool("override")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse override flag: %w", err)
+	}
+	if override && target == "" {
+		return "", errors.New("overriding PR analysis requires a merge target")
+	}
+
+	eventID, err := c.ImportScanResult(project, branch, tool, absoluteFilePath, target, override)
 	if err != nil {
 		return "", fmt.Errorf("failed to import scan results: %w", err)
 	}
@@ -556,10 +569,14 @@ func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 	}
 	branch, err := cmd.Flags().GetString("branch")
 	if err != nil {
-		return "", fmt.Errorf("failed to parse tool flag: %w", err)
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 	if branch == "" {
 		return "", errors.New("missing branch field")
+	}
+	override, err := cmd.Flags().GetBool("override")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse override flag: %w", err)
 	}
 
 	mergeTarget, err := cmd.Flags().GetString("merge-target")
@@ -584,8 +601,9 @@ func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 	scan, err := c.FindScan(project, params)
 	if err == nil {
 		opt := &client.ScanPROptions{
-			From: branch,
-			To:   mergeTarget,
+			From:               branch,
+			To:                 mergeTarget,
+			OverrideOldAnalyze: override,
 		}
 		eventID, err := c.RestartScanWithOption(scan.ID, opt)
 		if err != nil {

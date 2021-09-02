@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/google/go-querystring/query"
@@ -49,8 +50,9 @@ type (
 	}
 
 	ScanPROptions struct {
-		From string `json:"from"`
-		To   string `json:"to"`
+		From               string `json:"from"`
+		To                 string `json:"to"`
+		OverrideOldAnalyze bool   `json:"override-old-analyze"`
 	}
 
 	ResultSet struct {
@@ -221,7 +223,7 @@ func (c *Client) ScanByImage(project, branch, tool, image string) (string, error
 	return respBody.EventID, nil
 }
 
-func (c *Client) ImportScanResult(project, branch, tool string, file string) (string, error) {
+func (c *Client) ImportScanResult(project, branch, tool string, file string, target string, override bool) (string, error) {
 
 	klog.Debugf("importing scan results using the file:%s", file)
 
@@ -256,6 +258,12 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string) (st
 		return "", err
 	}
 	if err = writer.WriteField("tool", tool); err != nil {
+		return "", err
+	}
+	if err = writer.WriteField("target", target); err != nil {
+		return "", err
+	}
+	if err = writer.WriteField("override-old-analyze", strconv.FormatBool(override)); err != nil {
 		return "", err
 	}
 	_ = writer.Close()

@@ -11,12 +11,12 @@ var listAgentsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		c, err := client.New()
 		if err != nil {
-			qwe(1, err, "could not initialize Kondukto client")
+			qwe(ExitCodeError, err, "could not initialize Kondukto client")
 		}
 
 		activeAgents, err := c.ListActiveAgents(nil)
 		if err != nil {
-			qwe(1, err, "could not get Kondukto active agents")
+			qwe(ExitCodeError, err, "could not get Kondukto active agents")
 		}
 
 		agentRows := []Row{

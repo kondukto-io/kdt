@@ -19,12 +19,24 @@ func qwe(code int, err error, messages ...string) {
 	for _, m := range messages {
 		err = fmt.Errorf("%s: %w", m, err)
 	}
-	klog.Fatalln(err)
+
+	cmd := rootCmd
+	klog.Print(err)
+	if cmd.Flags().Changed("exit-code") {
+		klog.Printf("overriding exit code [%d]\n", code)
+		code, _ = cmd.Flags().GetInt("exit-code")
+	}
+
 	os.Exit(code)
 }
 
 // qwm quits with message
 func qwm(code int, message string) {
+	cmd := rootCmd
+	if cmd.Flags().Changed("exit-code") {
+		klog.Printf("overriding exit code [%d]\n")
+		code, _ = cmd.Flags().GetInt("exit-code")
+	}
 	klog.Println(message)
 	os.Exit(code)
 }

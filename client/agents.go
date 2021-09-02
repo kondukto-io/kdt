@@ -5,6 +5,7 @@ Copyright © 2021 Kondukto
 package client
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -15,7 +16,7 @@ import (
 type (
 	AgentSearchParams struct {
 		Limit int    `url:"limit"`
-		Label string `json:"label"`
+		Label string `url:"label"`
 	}
 	AgentsResponse struct {
 		ActiveAgents Agents `json:"active_agents"`
@@ -68,4 +69,17 @@ func (a Agents) First() Agent {
 		return Agent{}
 	}
 	return a[0]
+}
+
+func (c *Client) FindAgentByLabel(l string) (*Agent, error) {
+	agents, err := c.ListActiveAgents(&AgentSearchParams{Label: l})
+	if err != nil {
+		return nil, err
+	}
+	if agents.Total == 0 {
+		return nil, errors.New("agent not found")
+	}
+
+	agent := agents.ActiveAgents.First()
+	return &agent, nil
 }

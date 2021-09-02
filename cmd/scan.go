@@ -104,6 +104,7 @@ func init() {
 	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull request")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().String("image", "", "image to scan with container security products")
+	scanCmd.Flags().StringP("agent", "a", "", "specify the agent name for agent type scanners")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -443,12 +444,27 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 
+	agent, err := cmd.Flags().GetString("agent")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse agent flag: %w", err)
+	}
+
+	var agentID string
+	if len(agent) > 0 {
+		agentDetail, err := c.FindAgentByLabel(agent)
+		if err != nil {
+			return "", fmt.Errorf("failed to get agent: %w", err)
+		}
+		agentID = agentDetail.ID
+	}
+
 	params := &client.ScanSearchParams{
-		Tool:   tool,
-		Branch: branch,
-		PR:     false,
-		Manual: false,
-		Limit:  1,
+		Tool:    tool,
+		Branch:  branch,
+		PR:      false,
+		Manual:  false,
+		AgentID: agentID,
+		Limit:   1,
 	}
 
 	scan, err := c.FindScan(project, params)
@@ -468,6 +484,7 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 		Branch: branch,
 		Manual: false,
 		PR:     false,
+		Agent:  agent,
 		Limit:  1,
 	})
 	if err != nil {
@@ -493,7 +510,7 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 
 	klog.Debug("no scanparams found with the same parameters, creating a new scan")
 	if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
-		agents, err := c.ListActiveAgents(&client.AgentSearchParams{Label: "label"})
+		agents, err := c.ListActiveAgents(&client.AgentSearchParams{Label: agent})
 		if err != nil {
 			klog.Debugf("failed to get active agents: %v")
 			klog.Fatal("failed to get active agents")
@@ -592,10 +609,25 @@ func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
 
+	agent, err := cmd.Flags().GetString("agent")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse agent flag: %w", err)
+	}
+
+	var agentID string
+	if len(agent) > 0 {
+		agentDetail, err := c.FindAgentByLabel(agent)
+		if err != nil {
+			return "", fmt.Errorf("failed to get agent: %w", err)
+		}
+		agentID = agentDetail.ID
+	}
+
 	params := &client.ScanSearchParams{
-		Tool:  tool,
-		Meta:  meta,
-		Limit: 1,
+		Tool:    tool,
+		Meta:    meta,
+		AgentID: agentID,
+		Limit:   1,
 	}
 
 	scan, err := c.FindScan(project, params)
@@ -617,6 +649,7 @@ func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
 		Branch: branch,
 		ToolID: scanner.ID,
+		Agent:  agent,
 		Target: mergeTarget,
 		PR:     true,
 		Limit:  1,
@@ -649,7 +682,7 @@ func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, 
 		}
 
 		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
-			agents, err := c.ListActiveAgents(&client.AgentSearchParams{Label: "label"})
+			agents, err := c.ListActiveAgents(&client.AgentSearchParams{Label: agent})
 			if err != nil {
 				klog.Debugf("failed to get active agents: %v")
 				klog.Fatal("failed to get active agents")

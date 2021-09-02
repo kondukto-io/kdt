@@ -41,12 +41,13 @@ type (
 	}
 
 	ScanSearchParams struct {
-		Branch string `url:"branch,omitempty"`
-		Tool   string `url:"tool,omitempty"`
-		Meta   string `url:"meta,omitempty"`
-		PR     bool   `url:"pr"`
-		Manual bool   `url:"manual"`
-		Limit  int    `url:"limit,omitempty"`
+		Branch  string `url:"branch,omitempty"`
+		Tool    string `url:"tool,omitempty"`
+		Meta    string `url:"meta,omitempty"`
+		PR      bool   `url:"pr"`
+		Manual  bool   `url:"manual"`
+		AgentID string `url:"agent_id"`
+		Limit   int    `url:"limit,omitempty"`
 	}
 
 	ScanPROptions struct {

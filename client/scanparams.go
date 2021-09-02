@@ -21,6 +21,7 @@ type (
 		Meta   string `url:"meta"`
 		Target string `url:"target"`
 		Manual bool   `url:"manual"`
+		Agent  string `url:"agent"`
 		PR     bool   `url:"pr"`
 	}
 	ScanparamResponse struct {
@@ -40,7 +41,7 @@ func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (
 		return nil, errors.New("missing project identifier")
 	}
 
-	path := fmt.Sprintf("/api/v1/projects/%s/scanparams", project)
+	path := fmt.Sprintf("/api/v2/projects/%s/scanparams", project)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err

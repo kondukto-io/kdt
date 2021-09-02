@@ -224,7 +224,6 @@ func (c *Client) ScanByImage(project, branch, tool, image string) (string, error
 }
 
 func (c *Client) ImportScanResult(project, branch, tool string, file string, target string, override bool) (string, error) {
-
 	klog.Debugf("importing scan results using the file:%s", file)
 
 	path := "/api/v1/scans/import"

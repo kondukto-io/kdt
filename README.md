@@ -134,15 +134,19 @@ Example Usage:
 `kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10 --threshold-risk`
 
 ## Supported scanners (tools)
-KDT supports all scanners enabled in Kondukto server. To see the list you can simply run `kdt list scanners`
+KDT supports all scanners enabled in Kondukto server, to see the list simply run `kdt list scanners`.
 
-`kdt scan -p <project_name> -t <tool_name> -b <branch_name>`
+Example Usage:
 
-for example (run Gosec scan in SampleProject's main branch):
+```
+./kdt --config kondukto.yaml list scanners
+Name       ID                          Type    Trigger     Labels
+----       --                          ----    -------     ------
+gosec      60eec8a83e9e5e6e2ae52d06    sast    new scan    docker,kdt
+semgrep    60eec8a53e9e5e6e2ae52d05    sast    rescan      template,docker,kdt
+```
 
-`kdt scan -p SampleProject -t gosec -b main`
-
-### Tool list
+### Tool list (full)
 ```
 checkmarx
 checkmarxsca
@@ -191,7 +195,6 @@ kdt --config kondukto-config.yml \
 - --branch: Branch name.
 - --threshold-crit: Threshold value to "break the build" in the pipeline. When this parameter(s) is given, entered security criteria will be overwritten.
 
-
 ```
 kdt --config kondukto-config.yml \
     scan \
@@ -206,6 +209,24 @@ kdt --config kondukto-config.yml \
 - --tool: AST tool to be used (trivy). 
 - --image: Image name to be scanned. Name can be given with the digest or with the tag name (ubuntu:latest).
 
+```
+kdt --config kondukto-config.yml \
+    create \
+    project \ 
+    --repo-id https://github.com/kondukto-io/kdt \
+    --labels GDPR,Internal \
+    --alm-tool github \
+```
+- --config: Kondukto configuration file in yaml format
+- create: Base command for create operation.
+- project: Subcommand to create project.
+- --repo-id: Project repository URL or ALM ID.
+- --labels: Associate project with a label list
+- --alm-tool: If there is more than one ALM enabled in Kondukto you need to specify ALM tool, otherwise it is not necessary.
+- --team: Specify a team name. By default team name is `default team`. 
+
+This command will create a project on Kondukto with the same name in your ALM(Application Lifecycle Management) tool. If there is another project
+with the same name, command will print an error message and exit with a status code. You can pass `--force-create` flag to overwrite this behaviour.
 
 ## Contributing to KDT
 If you wish to get involved in KDT development, create issues for problems and missing features or fork the repository and create pull requests to help the development directly.

@@ -65,9 +65,9 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 	name, id, meta, tool, date := scan.Name, scan.ID, scan.MetaData, scan.Tool, scan.Date.String()
 	crit, high, med, low, score := strconv.Itoa(s.Critical), strconv.Itoa(s.High), strconv.Itoa(s.Medium), strconv.Itoa(s.Low), strconv.Itoa(scan.Score)
 	scanSummaryRows := []Row{
-		{Columns: []string{"NAME", "ID", "META", "TOOL", "CRIT", "HIGH", "MED", "LOW", "SCORE", "DATE"}},
-		{Columns: []string{"----", "--", "----", "----", "----", "----", "---", "---", "-----", "----"}},
-		{Columns: []string{name, id, meta, tool, crit, high, med, low, score, date}},
+		{Columns: []string{"NAME", "ID", "META", "TOOL", "CRIT", "HIGH", "MED", "LOW", "SCORE", "DATE", "UI LINK"}},
+		{Columns: []string{"----", "--", "----", "----", "----", "----", "---", "---", "-----", "----", "-------"}},
+		{Columns: []string{name, id, meta, tool, crit, high, med, low, score, date, scan.Links.HTML}},
 	}
 	TableWriter(scanSummaryRows...)
 

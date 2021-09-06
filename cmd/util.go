@@ -23,8 +23,9 @@ func qwe(code int, err error, messages ...string) {
 	cmd := rootCmd
 	klog.Print(err)
 	if cmd.Flags().Changed("exit-code") {
-		klog.Printf("overriding exit code [%d]\n", code)
-		code, _ = cmd.Flags().GetInt("exit-code")
+		overrideExitCode, _ := cmd.Flags().GetInt("exit-code")
+		klog.Printf("overriding exit code [%d] as [%d]\n", code, overrideExitCode)
+		code = overrideExitCode
 	}
 
 	os.Exit(code)
@@ -34,8 +35,9 @@ func qwe(code int, err error, messages ...string) {
 func qwm(code int, message string) {
 	cmd := rootCmd
 	if cmd.Flags().Changed("exit-code") {
-		klog.Printf("overriding exit code [%d]\n")
-		code, _ = cmd.Flags().GetInt("exit-code")
+		overrideExitCode, _ := cmd.Flags().GetInt("exit-code")
+		klog.Printf("overriding exit code [%d] as [%d]\n", code, overrideExitCode)
+		code = overrideExitCode
 	}
 	klog.Println(message)
 	os.Exit(code)

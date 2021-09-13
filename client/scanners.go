@@ -24,7 +24,7 @@ type (
 		Total          int           `json:"total"`
 	}
 	ScannerInfo struct {
-		Id          string   `json:"id"`
+		ID          string   `json:"id"`
 		Type        string   `json:"type"`
 		Slug        string   `json:"slug"`
 		DisplayName string   `json:"display_name"`
@@ -32,6 +32,15 @@ type (
 		CustomType  int      `json:"custom_type"`
 	}
 )
+
+func (s ScannerInfo) HasLabel(l string) bool {
+	for _, label := range s.Labels {
+		if label == l {
+			return true
+		}
+	}
+	return false
+}
 
 const (
 	ScannerLabelKDT      = "kdt"

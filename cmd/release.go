@@ -8,8 +8,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kondukto-io/kdt/klog"
-
 	"github.com/kondukto-io/kdt/client"
 
 	"github.com/spf13/cobra"
@@ -35,24 +33,24 @@ func init() {
 func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(1, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Kondukto client")
 	}
 
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
-		qwe(1, err, "failed to parse project flag")
+		qwe(ExitCodeError, err, "failed to parse project flag")
 	}
 
 	rs, err := c.ReleaseStatus(project)
 	if err != nil {
-		qwe(1, fmt.Errorf("failed to get release status: %w", err))
+		qwe(ExitCodeError, fmt.Errorf("failed to get release status: %w", err))
 	}
 
 	const statusUndefined = "undefined"
 	const statusFail = "fail"
 
 	if rs.Status == statusUndefined {
-		qwm(0, "project has no release criteria")
+		qwm(ExitCodeSuccess, "project has no release criteria")
 	}
 
 	releaseCriteriaRows := []Row{
@@ -64,36 +62,36 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 
 	sast, err := cmd.Flags().GetBool("sast")
 	if err != nil {
-		klog.Fatalln("failed to parse sast flag")
+		qwm(ExitCodeError, "failed to parse sast flag")
 	}
 
 	dast, err := cmd.Flags().GetBool("dast")
 	if err != nil {
-		qwm(1, "failed to parse sast flag")
+		qwm(ExitCodeError, "failed to parse sast flag")
 	}
 
 	sca, err := cmd.Flags().GetBool("sca")
 	if err != nil {
-		qwm(1, "failed to parse sast flag")
+		qwm(ExitCodeError, "failed to parse sast flag")
 	}
 
 	specific := sast || dast || sca
 
 	if !specific && rs.Status == statusFail {
-		qwm(1, "project does not pass release criteria")
+		qwm(ExitCodeError, "project does not pass release criteria")
 	}
 
 	if sast && rs.SAST.Status == statusFail {
-		qwm(1, "project does not pass SAST release criteria")
+		qwm(ExitCodeError, "project does not pass SAST release criteria")
 	}
 
 	if dast && rs.DAST.Status == statusFail {
-		qwm(1, "project does not pass DAST release criteria")
+		qwm(ExitCodeError, "project does not pass DAST release criteria")
 	}
 
 	if sca && rs.SCA.Status == statusFail {
-		qwm(1, "project does not pass SCA release criteria")
+		qwm(ExitCodeError, "project does not pass SCA release criteria")
 	}
 
-	qwm(0, "project passes release criteria")
+	qwm(ExitCodeSuccess, "project passes release criteria")
 }

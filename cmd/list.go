@@ -16,7 +16,7 @@ var listCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			_ = cmd.Help()
-			qwm(0, "")
+			qwm(ExitCodeSuccess, "")
 		}
 	},
 }

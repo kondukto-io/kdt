@@ -431,8 +431,8 @@ func scanByFileImport(cmd *cobra.Command, c *client.Client) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fork-scan flag: %w", err)
 	}
-	if forkScan && override {
-		return "", errors.New("the fork-scan and override flags cannot be used together")
+	if forkScan && target != "" {
+		return "", errors.New("the fork-scan and pr-merge commands cannot be used together")
 	}
 
 	var form = client.ImportForm{

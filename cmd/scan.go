@@ -472,8 +472,8 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	}
 
 	params := &client.ScanSearchParams{
-		Tool:   tool,
 		Branch: branch,
+		Tool:   tool,
 		Limit:  1,
 	}
 

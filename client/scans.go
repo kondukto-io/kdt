@@ -109,7 +109,7 @@ func (c *Client) CreateNewScan(scan *Scan) (string, error) {
 		return "", errors.New("missing scan fields")
 	}
 
-	path := "/api/v1/scans/create"
+	path := "/api/v2/scans/create"
 	req, err := c.newRequest(http.MethodPost, path, scan)
 	if err != nil {
 		return "", err

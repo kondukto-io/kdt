@@ -40,13 +40,14 @@ type (
 	}
 
 	ScanSearchParams struct {
-		Branch  string `url:"branch,omitempty"`
-		Tool    string `url:"tool,omitempty"`
-		Meta    string `url:"meta,omitempty"`
-		PR      bool   `url:"pr"`
-		Manual  bool   `url:"manual"`
-		AgentID string `url:"agent_id"`
-		Limit   int    `url:"limit,omitempty"`
+		Branch   string `url:"branch,omitempty"`
+		Tool     string `url:"tool,omitempty"`
+		MetaData string `url:"meta_data,omitempty"`
+		PR       bool   `url:"pr"`
+		Manual   bool   `url:"manual"`
+		AgentID  string `url:"agent_id"`
+		ForkScan bool   `url:"fork_scan"`
+		Limit    int    `url:"limit,omitempty"`
 	}
 
 	ScanPROptions struct {
@@ -96,6 +97,8 @@ type (
 		Custom Custom `json:"custom"`
 		// ForkScan is holding value of baseline scan
 		ForkScan bool `json:"fork_scan"`
+		// MetaData is holding value of scanparam meta-data
+		MetaData string `json:"meta_data"`
 	}
 
 	PRInfo struct {
@@ -292,11 +295,9 @@ func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) 
 }
 
 func (c *Client) ListScans(project string, params *ScanSearchParams) ([]ScanDetail, error) {
-	// TODO: list scans call should be updated to take tool and metadata arguments
-	scans := make([]ScanDetail, 0)
-
 	klog.Debugf("retrieving scans of the project: %s", project)
 
+	scans := make([]ScanDetail, 0)
 	path := fmt.Sprintf("/api/v1/projects/%s/scans", project)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {

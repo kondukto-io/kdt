@@ -43,7 +43,7 @@ var listScannersCmd = &cobra.Command{
 			{Columns: []string{"----", "--", "----", "-------", "------"}},
 		}
 		for _, v := range activeScanners.ActiveScanners {
-			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.Id, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ",")}})
+			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.ID, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ",")}})
 		}
 		if len(scannerRows) == 2 {
 			scannerRows = append(scannerRows, Row{Columns: []string{"no found active scanner"}})

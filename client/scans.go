@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/google/go-querystring/query"
@@ -90,6 +89,8 @@ type (
 		PR PRInfo `json:"pr"`
 		// Custom is holding custom type of scanners that specified on the Kondukto side
 		Custom Custom `json:"custom"`
+		// ForkScan is holding value of baseline scan
+		ForkScan bool `json:"fork_scan"`
 	}
 
 	PRInfo struct {
@@ -219,8 +220,9 @@ func (c *Client) ScanByImage(project, branch, tool, image string) (string, error
 	return respBody.EventID, nil
 }
 
-func (c *Client) ImportScanResult(project, branch, tool string, file string, target string, override bool) (string, error) {
+type ImportForm map[string]string
 
+func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) {
 	klog.Debugf("importing scan results using the file:%s", file)
 
 	path := "/api/v1/scans/import"
@@ -247,21 +249,12 @@ func (c *Client) ImportScanResult(project, branch, tool string, file string, tar
 		return "", err
 	}
 
-	if err = writer.WriteField("project", project); err != nil {
-		return "", err
+	for k := range form {
+		if err = writer.WriteField(k, form[k]); err != nil {
+			return "", fmt.Errorf("failed to write form field [%s]: %w", k, err)
+		}
 	}
-	if err = writer.WriteField("branch", branch); err != nil {
-		return "", err
-	}
-	if err = writer.WriteField("tool", tool); err != nil {
-		return "", err
-	}
-	if err = writer.WriteField("target", target); err != nil {
-		return "", err
-	}
-	if err = writer.WriteField("override-old-analyze", strconv.FormatBool(override)); err != nil {
-		return "", err
-	}
+
 	_ = writer.Close()
 
 	req, err := http.NewRequest(http.MethodPost, u.String(), body)

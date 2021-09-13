@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/kondukto-io/kdt/client"
@@ -32,10 +33,11 @@ const (
 )
 
 const (
-	modeByFile = iota
+	modeByFileImport = iota
 	modeByScanID
 	modeByProjectTool
 	modeByProjectToolAndPR
+	modeByProjectToolAndForkScan
 	modeByProjectToolAndMetadata
 	modeByImage
 )
@@ -102,6 +104,7 @@ func init() {
 	scanCmd.Flags().StringP("file", "f", "", "scan file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull request")
+	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().String("image", "", "image to scan with container security products")
 
@@ -116,9 +119,9 @@ func init() {
 
 func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 	switch getScanMode(cmd) {
-	case modeByFile:
+	case modeByFileImport:
 		// scan mode to start a scan by importing a file
-		eventID, err := scanByFile(cmd, c)
+		eventID, err := scanByFileImport(cmd, c)
 		if err != nil {
 			return "", err
 		}
@@ -148,7 +151,13 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 			return "", err
 		}
 		return eventID, nil
-
+	case modeByProjectToolAndForkScan:
+		// scan mode to restart a scan with the given project, tool and pr params
+		eventID, err := findScanIDByProjectToolAndForkScan(cmd, c)
+		if err != nil {
+			return "", err
+		}
+		return eventID, nil
 	case modeByProjectToolAndMetadata:
 		// scan mode to restart a scan with the given project, tool and meta params
 		scanID, err := getScanIDByProjectToolAndMeta(cmd, c)
@@ -204,14 +213,16 @@ func getScanMode(cmd *cobra.Command) uint {
 	byScanId := cmd.Flag("scan-id").Changed
 	byProject := cmd.Flag("project").Changed
 	byBranch := cmd.Flag("merge-target").Changed
+	byForkScan := cmd.Flag("fork-scan").Changed
 	byMerge := cmd.Flag("branch").Changed
-	byPR := byBranch && byMerge
 	byImage := cmd.Flag("image").Changed
+	byPR := byBranch && byMerge
 
 	byProjectAndTool := byProject && byTool && !byMetaData
 	byProjectAndToolAndMeta := byProjectAndTool && byMetaData && !byPR
 	byProjectAndToolAndPullRequest := byProjectAndTool && byPR
 	byProjectAndToolAndFile := byProjectAndTool && byFile && !byMetaData
+	byProjectAndToolAndForkScan := byProjectAndTool && byForkScan && !byPR
 
 	mode := func() uint {
 		// sorted by priority
@@ -219,11 +230,13 @@ func getScanMode(cmd *cobra.Command) uint {
 		case byImage:
 			return modeByImage
 		case byProjectAndToolAndFile:
-			return modeByFile
+			return modeByFileImport
 		case byScanId:
 			return modeByScanID
 		case byProjectAndToolAndPullRequest:
 			return modeByProjectToolAndPR
+		case byProjectAndToolAndForkScan:
+			return modeByProjectToolAndForkScan
 		case byProjectAndTool:
 			return modeByProjectTool
 		case byProjectAndToolAndMeta:
@@ -376,7 +389,7 @@ func passTests(scan *client.ScanDetail, cmd *cobra.Command) error {
 	return nil
 }
 
-func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
+func scanByFileImport(cmd *cobra.Command, c *client.Client) (string, error) {
 	// Parse command line flags needed for file uploads
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
@@ -402,7 +415,6 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
-
 	target, err := cmd.Flags().GetString("merge-target")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse merge target flag: %w", err)
@@ -414,8 +426,24 @@ func scanByFile(cmd *cobra.Command, c *client.Client) (string, error) {
 	if override && target == "" {
 		return "", errors.New("overriding PR analysis requires a merge target")
 	}
+	forkScan, err := cmd.Flags().GetBool("fork-scan")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse fork-scan flag: %w", err)
+	}
+	if forkScan && override {
+		return "", errors.New("the fork-scan and override flags cannot be used together")
+	}
 
-	eventID, err := c.ImportScanResult(project, branch, tool, absoluteFilePath, target, override)
+	var form = client.ImportForm{
+		"project":              project,
+		"branch":               branch,
+		"tool":                 tool,
+		"target":               target,
+		"fork-scan":            strconv.FormatBool(forkScan),
+		"override-old-analyze": strconv.FormatBool(override),
+	}
+
+	eventID, err := c.ImportScanResult(absoluteFilePath, form)
 	if err != nil {
 		return "", fmt.Errorf("failed to import scan results: %w", err)
 	}
@@ -462,7 +490,7 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	}
 
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
-		ToolID: scanner.Id,
+		ToolID: scanner.ID,
 		Branch: branch,
 		Limit:  1,
 		Manual: false,
@@ -473,7 +501,7 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	scanData := &client.Scan{
 		Branch:  branch,
 		Project: project,
-		ToolID:  scanner.Id,
+		ToolID:  scanner.ID,
 		Custom: client.Custom{
 			Type: scanner.CustomType,
 		},
@@ -592,7 +620,7 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 	}
 
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
-		ToolID: scanner.Id,
+		ToolID: scanner.ID,
 		Branch: branch,
 		Limit:  1,
 	})
@@ -612,7 +640,7 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 		return &client.Scan{
 			Branch:  branch,
 			Project: project,
-			ToolID:  scanner.Id,
+			ToolID:  scanner.ID,
 			Custom: client.Custom{
 				Type: scanner.CustomType,
 			},
@@ -620,6 +648,85 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 				OK:     true,
 				Target: mergeTarget,
 			},
+		}
+	}()
+
+	return c.CreateNewScan(scanData)
+}
+
+func findScanIDByProjectToolAndForkScan(cmd *cobra.Command, c *client.Client) (string, error) {
+	rescanOnly, scanner, err := checkForRescanOnlyTool(cmd, c)
+	if err != nil {
+		return "", err
+	}
+	// Parse command line flags
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse project flag: %w", err)
+	}
+	tool, err := cmd.Flags().GetString("tool")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+	branch, err := cmd.Flags().GetString("branch")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
+	}
+	if branch == "" {
+		return "", errors.New("missing branch field")
+	}
+
+	meta, err := cmd.Flags().GetString("meta")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+
+	forkScan, err := cmd.Flags().GetBool("fork-scan")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse fork-scan flag: %w", err)
+	}
+
+	params := &client.ScanSearchParams{
+		Tool:  tool,
+		Meta:  meta,
+		Limit: 1,
+	}
+
+	scan, err := c.FindScan(project, params)
+	if err == nil {
+		eventID, err := c.RestartScanByScanID(scan.ID)
+		if err != nil {
+			qwe(1, err, "could not start scan")
+		}
+		return eventID, nil
+	} else {
+		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
+	}
+
+	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
+		ToolID: scanner.ID,
+		Branch: branch,
+		Limit:  1,
+	})
+	if err != nil {
+		klog.Debugf("failed to get scanparams: %v, trying to create a new scan", err)
+	}
+
+	var scanData = func() *client.Scan {
+		if sp != nil {
+			return &client.Scan{ScanparamsID: sp.Id}
+		}
+
+		if rescanOnly {
+			klog.Debugf("scanner tool %s is only allowing rescans", tool)
+			klog.Fatal("no scans found for given project, tool and PR configuration")
+		}
+		return &client.Scan{
+			Branch:   branch,
+			Project:  project,
+			ForkScan: forkScan,
+			ToolID:   scanner.ID,
+			Custom:   client.Custom{Type: scanner.CustomType},
 		}
 	}()
 

@@ -24,7 +24,7 @@ type (
 		Total          int           `json:"total"`
 	}
 	ScannerInfo struct {
-		Id          string   `json:"id"`
+		ID          string   `json:"id"`
 		Type        string   `json:"type"`
 		Slug        string   `json:"slug"`
 		DisplayName string   `json:"display_name"`

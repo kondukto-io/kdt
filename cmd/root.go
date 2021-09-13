@@ -27,6 +27,12 @@ var (
 	token    string
 )
 
+const (
+	ExitCodeSuccess = 0
+	ExitCodeError   = 1
+	ExitCodeWarning = 2
+)
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "kdt",
@@ -45,7 +51,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		qwe(1, err)
+		qwe(ExitCodeError, err, "failed to execute root command")
 	}
 }
 
@@ -57,6 +63,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&token, "token", "", "Kondukto API token")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "more logs")
 	rootCmd.PersistentFlags().BoolVar(&insecure, "insecure", false, "skip TLS verification and use insecure http client")
+	rootCmd.PersistentFlags().Int("exit-code", 0, "override the exit code")
 
 	_ = viper.BindPFlag("insecure", rootCmd.PersistentFlags().Lookup("insecure"))
 	_ = viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
@@ -73,7 +80,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			qwe(1, err)
+			qwe(ExitCodeError, err, "failed to get home dir")
 		}
 
 		// Search config in home directory with name ".cli" (without extension).
@@ -91,6 +98,6 @@ func initConfig() {
 	}
 
 	if viper.GetString("host") == "" || viper.GetString("token") == "" {
-		qwm(1, fmt.Sprintf("Host and token configuration is required. Provide them via a config file, environment variables or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL))
+		qwm(ExitCodeError, fmt.Sprintf("Host and token configuration is required. Provide them via a config file, environment variables or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL))
 	}
 }

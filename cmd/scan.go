@@ -51,12 +51,12 @@ var scanCmd = &cobra.Command{
 		// Initialize Kondukto client
 		c, err := client.New()
 		if err != nil {
-			qwe(1, err, "could not initialize Kondukto client")
+			qwe(ExitCodeError, err, "could not initialize Kondukto client")
 		}
 		t, _ := cmd.Flags().GetString("tool")
 		s, _ := cmd.Flags().GetString("scan-id")
 		if s == "" && !c.IsValidTool(t) {
-			klog.Fatal("invalid or inactive tool name. Run `kdt list scanners` to see the supported active scanner's list.")
+			qwm(ExitCodeError, "unknown or inactive tool name. Run `kdt list scanners` to see the supported active scanner's list.")
 		}
 	},
 }
@@ -65,17 +65,17 @@ func scanRootCommand(cmd *cobra.Command, _ []string) {
 	// Initialize Kondukto client
 	c, err := client.New()
 	if err != nil {
-		qwe(1, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Kondukto client")
 	}
 
 	eventID, err := startScan(cmd, c)
 	if err != nil {
-		klog.Fatalf("failed to start scan: %v", err)
+		qwe(ExitCodeError, err, "failed to start scan")
 	}
 
 	async, err := cmd.Flags().GetBool("async")
 	if err != nil {
-		klog.Fatalf("failed to parse async flag: %v", err)
+		qwe(ExitCodeError, err, "failed to parse async flag")
 	}
 
 	// Do not wait for scan to finish if async set to true
@@ -86,7 +86,7 @@ func scanRootCommand(cmd *cobra.Command, _ []string) {
 			{Columns: []string{eventID}},
 		}
 		TableWriter(eventRows...)
-		qwm(0, "scan has been started with async parameter, exiting.")
+		qwm(ExitCodeSuccess, "scan has been started with async parameter, exiting.")
 	}
 
 	waitTillScanEnded(cmd, c, eventID)
@@ -107,6 +107,7 @@ func init() {
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().String("image", "", "image to scan with container security products")
+	scanCmd.Flags().StringP("agent", "a", "", "specify the agent name for agent type scanners")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -146,7 +147,7 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		return eventID, nil
 	case modeByProjectToolAndPR:
 		// scan mode to restart a scan with the given project, tool and pr params
-		eventID, err := findScanIDByProjectToolAndPR(cmd, c)
+		eventID, err := startScanByProjectToolAndPR(cmd, c)
 		if err != nil {
 			return "", err
 		}
@@ -166,13 +167,13 @@ func startScan(cmd *cobra.Command, c *client.Client) (string, error) {
 		}
 		eventID, err := c.RestartScanByScanID(scanID)
 		if err != nil {
-			qwe(1, err, "could not start scan")
+			qwe(ExitCodeError, err, "could not start scan")
 		}
 		return eventID, nil
 	case modeByImage:
 		eventID, err := scanByImage(cmd, c)
 		if err != nil {
-			qwe(1, err, "could not start scan")
+			qwe(ExitCodeError, err, "could not start scan")
 		}
 		return eventID, nil
 	default:
@@ -252,7 +253,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 	start := time.Now()
 	timeoutFlag, err := cmd.Flags().GetInt("timeout")
 	if err != nil {
-		qwe(1, err, "failed to parse timeout flag")
+		qwe(ExitCodeError, err, "failed to parse timeout flag")
 	}
 	duration := time.Duration(timeoutFlag) * time.Minute
 
@@ -260,7 +261,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 	for {
 		event, err := c.GetScanStatus(eventID)
 		if err != nil {
-			klog.Fatalf("failed to get scan status: %v", err)
+			qwe(ExitCodeError, err, "failed to get scan status")
 		}
 
 		switch event.Active {
@@ -271,28 +272,28 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 				{Columns: []string{event.ID, "Failed", event.Links.HTML}},
 			}
 			TableWriter(eventRows...)
-			qwm(1, fmt.Sprintf("Scan failed. Reason: %s", event.Message))
+			qwm(ExitCodeError, fmt.Sprintf("Scan failed. Reason: %s", event.Message))
 		case eventInactive:
 			if event.Status == jobFinished {
 				klog.Println("scan finished successfully")
 				scan, err := c.FindScanByID(event.ScanId)
 				if err != nil {
-					qwe(1, err, "failed to fetch scan summary")
+					qwe(ExitCodeError, err, "failed to fetch scan summary")
 				}
 
 				// Printing scan results
 				printScanSummary(scan)
 
 				if err = passTests(scan, cmd); err != nil {
-					qwe(1, err, "scan could not pass security tests")
+					qwe(ExitCodeError, err, "scan could not pass security tests")
 				} else if err = checkRelease(scan); err != nil {
-					qwe(1, err, "scan failed to pass release criteria")
+					qwe(ExitCodeError, err, "scan failed to pass release criteria")
 				}
-				qwm(0, "scan passed security tests successfully")
+				qwm(ExitCodeSuccess, "scan passed security tests successfully")
 			}
 		case eventActive:
 			if duration != 0 && time.Now().Sub(start) > duration {
-				qwm(0, "scan duration exceeds timeout, it will continue running async in the background")
+				qwm(ExitCodeSuccess, "scan duration exceeds timeout, it will continue running async in the background")
 			}
 			if event.Status != lastStatus {
 				klog.Println(statusMsg(event.Status))
@@ -303,7 +304,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 			}
 			time.Sleep(10 * time.Second)
 		default:
-			qwm(1, "invalid event status")
+			qwm(ExitCodeError, "invalid event status")
 		}
 	}
 }
@@ -471,10 +472,27 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 
+	agent, err := cmd.Flags().GetString("agent")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse agent flag: %w", err)
+	}
+
+	var agentID string
+	if len(agent) > 0 {
+		agentDetail, err := c.FindAgentByLabel(agent)
+		if err != nil {
+			return "", fmt.Errorf("failed to get agent: %w", err)
+		}
+		agentID = agentDetail.ID
+	}
+
 	params := &client.ScanSearchParams{
-		Branch: branch,
-		Tool:   tool,
-		Limit:  1,
+		Tool:    tool,
+		Branch:  branch,
+		PR:      false,
+		Manual:  false,
+		AgentID: agentID,
+		Limit:   1,
 	}
 
 	scan, err := c.FindScan(project, params)
@@ -492,8 +510,10 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
 		ToolID: scanner.ID,
 		Branch: branch,
-		Limit:  1,
 		Manual: false,
+		PR:     false,
+		Agent:  agent,
+		Limit:  1,
 	})
 	if err != nil {
 		klog.Debugf("failed to get scanparams: %v, trying to create new scan", err)
@@ -502,20 +522,39 @@ func startScanByProjectTool(cmd *cobra.Command, c *client.Client) (string, error
 		Branch:  branch,
 		Project: project,
 		ToolID:  scanner.ID,
-		Custom: client.Custom{
-			Type: scanner.CustomType,
-		},
+		Custom:  client.Custom{Type: scanner.CustomType},
 	}
 
 	if sp != nil {
 		klog.Debug("a scanparams found with the same parameters")
 		scanData.ScanparamsID = sp.Id
-	} else {
-		if rescanOnly {
-			klog.Printf("scanner tool %s is only allowing rescans", tool)
-			klog.Fatal("no scans found for given project and tool configuration")
+		return c.CreateNewScan(scanData)
+	}
+
+	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+		klog.Debugf("scanner tool %s is only allowing rescans", tool)
+		qwm(ExitCodeError, "no scans found for given project and tool configuration")
+	}
+
+	klog.Debug("no scanparams found with the same parameters, creating a new scan")
+	if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
+		agents, err := c.ListActiveAgents(&client.AgentSearchParams{Label: agent})
+		if err != nil {
+			klog.Debugf("failed to get active agents: %v")
+			qwm(ExitCodeError, "failed to get active agents")
 		}
-		klog.Debug("no scanparams found with the same parameters, creating a new scan")
+		if agents.Total == 0 {
+			klog.Debugf("no found agent to start scan: %v")
+			qwm(ExitCodeError, "no found agent to start scan")
+		}
+		if agents.Total > 1 {
+			klog.Debugf("[%d] agents found. Please specify it which one should be selected", agents.Total)
+			qwm(ExitCodeError, "multiple agents found, please select one")
+		}
+
+		agent := agents.ActiveAgents.First()
+		klog.Debugf("agent [%s] found. Setting scan with agent", agent.Label)
+		scanData.AgentID = agent.ID
 	}
 
 	klog.Printf("creating a new scan")
@@ -546,19 +585,20 @@ func getScanIDByProjectToolAndMeta(cmd *cobra.Command, c *client.Client) (string
 		Tool:   tool,
 		Meta:   meta,
 		Branch: branch,
+		PR:     false,
 		Limit:  1,
 	}
 
 	scan, err := c.FindScan(project, params)
 	if err != nil {
-		klog.Fatal("no scans found for given project, tool and metadata configuration")
-		qwe(1, err, "could not get scans of the project")
+		klog.Debug("no scans found for given project, tool and metadata configuration")
+		qwe(ExitCodeError, err, "could not get scans of the project")
 	}
 
 	return scan.ID, nil
 }
 
-func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, error) {
+func startScanByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string, error) {
 	rescanOnly, scanner, err := checkForRescanOnlyTool(cmd, c)
 	if err != nil {
 		return "", err
@@ -597,10 +637,25 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
 
+	agent, err := cmd.Flags().GetString("agent")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse agent flag: %w", err)
+	}
+
+	var agentID string
+	if len(agent) > 0 {
+		agentDetail, err := c.FindAgentByLabel(agent)
+		if err != nil {
+			return "", fmt.Errorf("failed to get agent: %w", err)
+		}
+		agentID = agentDetail.ID
+	}
+
 	params := &client.ScanSearchParams{
-		Tool:  tool,
-		Meta:  meta,
-		Limit: 1,
+		Tool:    tool,
+		Meta:    meta,
+		AgentID: agentID,
+		Limit:   1,
 	}
 
 	scan, err := c.FindScan(project, params)
@@ -612,7 +667,7 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 		}
 		eventID, err := c.RestartScanWithOption(scan.ID, opt)
 		if err != nil {
-			qwe(1, err, "could not start scan")
+			qwe(ExitCodeError, err, "could not start scan")
 		}
 		return eventID, nil
 	} else {
@@ -620,8 +675,11 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 	}
 
 	sp, err := c.FindScanparams(project, &client.ScanparamSearchParams{
-		ToolID: scanner.ID,
 		Branch: branch,
+		ToolID: scanner.ID,
+		Agent:  agent,
+		Target: mergeTarget,
+		PR:     true,
 		Limit:  1,
 	})
 	if err != nil {
@@ -633,11 +691,12 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 			return &client.Scan{ScanparamsID: sp.Id}
 		}
 
-		if rescanOnly {
+		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
 			klog.Debugf("scanner tool %s is only allowing rescans", tool)
-			klog.Fatal("no scans found for given project, tool and PR configuration")
+			qwm(ExitCodeError, "no scans found for given project, tool and PR configuration")
 		}
-		return &client.Scan{
+
+		var scan = &client.Scan{
 			Branch:  branch,
 			Project: project,
 			ToolID:  scanner.ID,
@@ -649,6 +708,29 @@ func findScanIDByProjectToolAndPR(cmd *cobra.Command, c *client.Client) (string,
 				Target: mergeTarget,
 			},
 		}
+
+		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
+			agents, err := c.ListActiveAgents(&client.AgentSearchParams{Label: agent})
+			if err != nil {
+				klog.Debugf("failed to get active agents: %v")
+				qwm(ExitCodeError, "failed to get active agents")
+			}
+			if agents.Total == 0 {
+				klog.Debugf("no found agent to start scan: %v")
+				qwm(ExitCodeError, "no found agent to start scan")
+			}
+			if agents.Total > 1 {
+				klog.Debugf("[%d] agents found. Please specify it which one should be selected", agents.Total)
+				qwm(ExitCodeError, "multiple agents found, please select one")
+			}
+
+			agent := agents.ActiveAgents.First()
+			klog.Debugf("agent [%s] found. Setting scan with agent", agent.Label)
+			scan.AgentID = agent.ID
+		}
+
+		return scan
+
 	}()
 
 	return c.CreateNewScan(scanData)

@@ -24,7 +24,7 @@ func init() {
 func projectsRootCommand(_ *cobra.Command, args []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(1, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Kondukto client")
 	}
 
 	var search string
@@ -34,11 +34,11 @@ func projectsRootCommand(_ *cobra.Command, args []string) {
 
 	projects, err := c.ListProjects(search, "")
 	if err != nil {
-		qwe(1, err, "could not retrieve projects")
+		qwe(ExitCodeError, err, "could not retrieve projects")
 	}
 
 	if len(projects) < 1 {
-		qwm(1, "no projects found")
+		qwm(ExitCodeError, "no projects found")
 	}
 
 	projectRows := []Row{

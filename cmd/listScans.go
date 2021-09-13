@@ -27,17 +27,17 @@ func init() {
 func scanListRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(1, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Kondukto client")
 	}
 
 	pid := cmd.Flag("project").Value.String()
 	scans, err := c.ListScans(pid, nil)
 	if err != nil {
-		qwe(1, err, "could not retrieve scans of the project")
+		qwe(ExitCodeError, err, "could not retrieve scans of the project")
 	}
 
 	if len(scans) == 0 {
-		qwm(1, "no scans found with the project id/name")
+		qwm(ExitCodeError, "no scans found with the project id/name")
 	}
 
 	scanSummaryRows := []Row{

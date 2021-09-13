@@ -40,10 +40,13 @@ type (
 	}
 
 	ScanSearchParams struct {
-		Branch string `url:"branch,omitempty"`
-		Tool   string `url:"tool,omitempty"`
-		Meta   string `url:"meta,omitempty"`
-		Limit  int    `url:"limit,omitempty"`
+		Branch  string `url:"branch,omitempty"`
+		Tool    string `url:"tool,omitempty"`
+		Meta    string `url:"meta,omitempty"`
+		PR      bool   `url:"pr"`
+		Manual  bool   `url:"manual"`
+		AgentID string `url:"agent_id"`
+		Limit   int    `url:"limit,omitempty"`
 	}
 
 	ScanPROptions struct {
@@ -85,6 +88,8 @@ type (
 		Project string `json:"project"`
 		// ToolID is holding ID value of selected scanner
 		ToolID string `json:"tool_id,omitempty"`
+		// AgentID is holding ID value of selected agent
+		AgentID string `json:"agent_id,omitempty"`
 		// PR is holding detail of pull requests branches to be scanned
 		PR PRInfo `json:"pr"`
 		// Custom is holding custom type of scanners that specified on the Kondukto side

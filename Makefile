@@ -1,8 +1,9 @@
 .PHONY: all build help docker clean
 
 MODULE        = $(shell env GO111MODULE=on $(GO) list -m)
-VERSION       = $(shell git describe --tags)
-DATE          = $(shell date +%FT%T%z)
+COMMIT        = $(shell git rev-list --abbrev-commit --tags --max-count=1)
+TAG           = $(shell git describe --tags --abbrev=0)
+DATE          = $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
 BUILD_DIR     = "_release"
 OUT           = "$(BUILD_DIR)/kdt"
 PLATFORMS     := linux/amd64 windows/amd64 darwin/amd64
@@ -11,6 +12,8 @@ OS 	      = $(word 1, $(TEMP))
 ARCH 	      = $(word 2, $(TEMP))
 IMAGE_NAME    = "kondukto/kondukto-cli"
 IMAGE_VERSION = $(shell echo $(VERSION)|cut -d "-" -f1)
+
+VERSION      := $(TAG)+$(COMMIT)
 
 export GO111MODULE=on
 

@@ -14,13 +14,30 @@ import (
 )
 
 type Project struct {
-	ID     string         `json:"id,omitempty"`
-	Name   string         `json:"name,omitempty"`
-	Labels []ProjectLabel `json:"labels"`
-	Team   ProjectTeam    `json:"team"`
-	Links  struct {
+	ID            string         `json:"id,omitempty"`
+	Name          string         `json:"name,omitempty"`
+	DefaultBranch string         `json:"default_branch"`
+	Labels        []ProjectLabel `json:"labels"`
+	Team          ProjectTeam    `json:"team"`
+	Links         struct {
 		HTML string `json:"html"`
 	} `json:"links"`
+}
+
+func (p *Project) FieldsAsRow() []string {
+	return []string{p.Name, p.ID, p.DefaultBranch, p.Team.Name, p.LabelsAsString(), p.Links.HTML}
+}
+
+func (p *Project) LabelsAsString() string {
+	var l string
+	for i, label := range p.Labels {
+		if i == 0 {
+			l = label.Name
+			continue
+		}
+		l += fmt.Sprintf(",%s", label.Name)
+	}
+	return l
 }
 
 func (c *Client) ListProjects(search, alm string) ([]Project, error) {

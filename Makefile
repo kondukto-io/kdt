@@ -11,7 +11,7 @@ TEMP 	      = $(subst /, ,$@)
 OS 	      = $(word 1, $(TEMP))
 ARCH 	      = $(word 2, $(TEMP))
 IMAGE_NAME    = "kondukto/kondukto-cli"
-IMAGE_VERSION = $(shell echo $(VERSION)|cut -d "-" -f1)
+IMAGE_VERSION = $(shell echo $(VERSION)|cut -d "+" -f1)
 
 VERSION      := $(TAG)+$(COMMIT)
 
@@ -24,7 +24,7 @@ endef
 default: help
 
 image:
-	docker build . -t $(IMAGE_NAME):$(IMAGE_VERSION)
+	docker build -t $(IMAGE_NAME):$(IMAGE_VERSION) .
 
 push-image:
 	docker push $(IMAGE_NAME):$(IMAGE_VERSION)

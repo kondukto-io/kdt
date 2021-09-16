@@ -60,7 +60,7 @@ var rootCmd = &cobra.Command{
 func Execute(args []string) {
 
 	if len(args) > 0 && args[0] == "version" {
-		fmt.Printf("KDT version: %s", Version)
+		fmt.Printf("KDT version: %s\n", Version)
 		os.Exit(0)
 	}
 

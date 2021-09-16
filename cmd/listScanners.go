@@ -13,7 +13,7 @@ var listScannersCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		c, err := client.New()
 		if err != nil {
-			qwe(1, err, "could not initialize Kondukto client")
+			qwe(ExitCodeError, err, "could not initialize Kondukto client")
 		}
 
 		scannerType := cmd.Flag("type").Value.String()
@@ -23,7 +23,7 @@ var listScannersCmd = &cobra.Command{
 			Labels: scannerLabels,
 		})
 		if err != nil {
-			qwe(1, err, "could not get Kondukto active scanners")
+			qwe(ExitCodeError, err, "could not get Kondukto active scanners")
 		}
 
 		var rescanOnly = func(labels []string) string {
@@ -43,7 +43,7 @@ var listScannersCmd = &cobra.Command{
 			{Columns: []string{"----", "--", "----", "-------", "------"}},
 		}
 		for _, v := range activeScanners.ActiveScanners {
-			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.Id, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ",")}})
+			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.ID, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ",")}})
 		}
 		if len(scannerRows) == 2 {
 			scannerRows = append(scannerRows, Row{Columns: []string{"no found active scanner"}})

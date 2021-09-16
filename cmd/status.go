@@ -34,17 +34,17 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 	// Initialize Kondukto client
 	c, err := client.New()
 	if err != nil {
-		qwe(1, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Kondukto client")
 	}
 
 	pid := cmd.Flag("project").Value.String()
 	scans, err := c.ListScans(pid, nil)
 	if err != nil {
-		qwe(1, err, "could not retrieve scans of the project")
+		qwe(ExitCodeError, err, "could not retrieve scans of the project")
 	}
 
 	if len(scans) == 0 {
-		qwm(1, "no scans found")
+		qwm(ExitCodeError, "no scans found")
 	}
 
 	// Finding last scan by scan date
@@ -57,7 +57,7 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 
 	summary, err := c.FindScanByID(scan.ID)
 	if err != nil {
-		qwe(1, err, "failed to fetch scan summary")
+		qwe(ExitCodeError, err, "failed to fetch scan summary")
 	}
 
 	scan.Score = summary.Score
@@ -72,8 +72,8 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 	TableWriter(scanSummaryRows...)
 
 	if err = passTests(scan, cmd); err != nil {
-		qwe(1, err, "scan could not pass security tests")
+		qwe(ExitCodeError, err, "scan could not pass security tests")
 	} else {
-		qwm(0, "scan passed security tests successfully")
+		qwm(ExitCodeSuccess, "scan passed security tests successfully")
 	}
 }

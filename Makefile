@@ -24,7 +24,7 @@ endef
 default: help
 
 image:
-	docker build . -t $(IMAGE_NAME):$(IMAGE_VERSION)
+	docker build -t $(IMAGE_NAME):$(IMAGE_VERSION) .
 
 push-image:
 	docker push $(IMAGE_NAME):$(IMAGE_VERSION)

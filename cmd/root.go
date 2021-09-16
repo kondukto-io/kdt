@@ -7,12 +7,14 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/kondukto-io/kdt/klog"
-
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/kondukto-io/kdt/internal/pkg"
 )
 
 const (
@@ -25,6 +27,7 @@ var (
 	insecure bool
 	host     string
 	token    string
+	Version  string
 )
 
 const (
@@ -41,6 +44,11 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// check if there is update
+		if ok, v := pkg.CheckUpdate(Version); ok {
+			fmt.Printf("A new version of KDT v%s is available\nPlease run `curl -sSl cli.kondukto.io | sh`\n\n", v)
+		}
+
 		if verbose {
 			klog.DefaultLogger.Level = klog.LevelDebug
 		}
@@ -49,7 +57,15 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute(args []string) {
+
+	if len(args) > 0 && args[0] == "version" {
+		fmt.Printf("KDT version: %s", Version)
+		os.Exit(0)
+	}
+
+	rootCmd.SetArgs(args)
+
 	if err := rootCmd.Execute(); err != nil {
 		qwe(ExitCodeError, err, "failed to execute root command")
 	}

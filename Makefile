@@ -44,6 +44,6 @@ all: $(PLATFORMS)
 $(PLATFORMS):
 	CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build \
 			-tags prod \
-			-ldflags '-s -w -X main.Version=$(VERSION) -extldflags=-static' \
+			-ldflags '-s -w -X github.com/kondukto-io/kdt/cmd.Version=$(VERSION) -extldflags=-static' \
 			-o $(OUT)-$(OS)
 	$(call hash, kdt-$(OS))

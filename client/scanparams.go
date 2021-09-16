@@ -15,14 +15,15 @@ import (
 
 type (
 	ScanparamSearchParams struct {
-		ToolID string `url:"tool_id"`
-		Branch string `url:"branch"`
-		Limit  int    `url:"limit"`
-		Meta   string `url:"meta"`
-		Target string `url:"target"`
-		Manual bool   `url:"manual"`
-		Agent  string `url:"agent"`
-		PR     bool   `url:"pr"`
+		ToolID   string `url:"tool_id"`
+		Branch   string `url:"branch"`
+		Limit    int    `url:"limit"`
+		MetaData string `url:"meta_data"`
+		Target   string `url:"target"`
+		Manual   bool   `url:"manual"`
+		Agent    string `url:"agent"`
+		ForkScan bool   `url:"fork_scan"`
+		PR       bool   `url:"pr"`
 	}
 	ScanparamResponse struct {
 		Data  []ScanparamsDetail `json:"data"`

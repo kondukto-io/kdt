@@ -34,21 +34,9 @@ func init() {
 }
 
 func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
-	labelsToText := func(labels []client.ProjectLabel) string {
-		var l string
-		for i, label := range labels {
-			if i == 0 {
-				l = label.Name
-				continue
-			}
-			l += fmt.Sprintf(",%s", label.Name)
-		}
-		return l
-	}
-
 	projectRows := []Row{
-		{Columns: []string{"NAME", "ID", "TEAM", "LABELS", "UI Link"}},
-		{Columns: []string{"----", "--", "----", "------", "-------"}},
+		{Columns: []string{"NAME", "ID", "BRANCH", "TEAM", "LABELS", "UI Link"}},
+		{Columns: []string{"----", "--", "------", "----", "------", "-------"}},
 	}
 
 	c, err := client.New()
@@ -79,7 +67,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 
 		if len(projects) > 0 {
 			for _, project := range projects {
-				projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, labelsToText(project.Labels), project.Links.HTML}})
+				projectRows = append(projectRows, Row{Columns: project.FieldsAsRow()})
 			}
 			TableWriter(projectRows...)
 			qwm(ExitCodeError, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag", len(projects)))
@@ -150,7 +138,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		klog.Printf("failed to add some labels: %s", missingLabels)
 	}
 
-	projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, labelsToText(project.Labels), project.Links.HTML}})
+	projectRows = append(projectRows, Row{Columns: project.FieldsAsRow()})
 
 	TableWriter(projectRows...)
 	qwm(ExitCodeSuccess, "project created successfully")

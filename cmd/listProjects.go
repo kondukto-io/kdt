@@ -6,8 +6,6 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
 )
@@ -43,25 +41,13 @@ func projectsRootCommand(_ *cobra.Command, args []string) {
 		qwm(ExitCodeError, "no projects found")
 	}
 
-	labels := func(labels []client.ProjectLabel) string {
-		var l string
-		for i, label := range labels {
-			if i == 0 {
-				l = label.Name
-				continue
-			}
-			l += fmt.Sprintf(",%s", label.Name)
-		}
-		return l
-	}
-
 	projectRows := []Row{
-		{Columns: []string{"NAME", "ID", "TEAM", "LABELS", "UI Link"}},
-		{Columns: []string{"----", "--", "----", "------", "-------"}},
+		{Columns: []string{"NAME", "ID", "BRANCH", "TEAM", "LABELS", "UI Link"}},
+		{Columns: []string{"----", "--", "------", "----", "------", "-------"}},
 	}
 
 	for _, project := range projects {
-		projectRows = append(projectRows, Row{Columns: []string{project.Name, project.ID, project.Team.Name, labels(project.Labels), project.Links.HTML}})
+		projectRows = append(projectRows, Row{Columns: project.FieldsAsRow()})
 	}
 	TableWriter(projectRows...)
 }

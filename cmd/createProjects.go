@@ -59,8 +59,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	if !force {
-		var alm = repositoryID
-		projects, err := c.ListProjects("", alm)
+		projects, err := c.ListProjects("", repositoryID)
 		if err != nil {
 			qwe(ExitCodeError, err, "failed to check project with alm info")
 		}
@@ -97,7 +96,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	pd := client.ProjectDetail{
 		Source: func() client.ProjectSource {
 			s := client.ProjectSource{Tool: tool}
-			_, err := url.Parse(repositoryID)
+			_, err = url.Parse(repositoryID)
 			if err != nil {
 				s.ID = repositoryID
 			} else {

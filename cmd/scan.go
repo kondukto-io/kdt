@@ -219,10 +219,10 @@ func getScanMode(cmd *cobra.Command) uint {
 	byImage := cmd.Flag("image").Changed
 	byPR := byBranch && byMerge
 
-	byProjectAndTool := byProject && byTool && !byMetaData
+	byProjectAndTool := byProject && byTool
 	byProjectAndToolAndMeta := byProjectAndTool && byMetaData && !byPR
 	byProjectAndToolAndPullRequest := byProjectAndTool && byPR
-	byProjectAndToolAndFile := byProjectAndTool && byFile && !byMetaData
+	byProjectAndToolAndFile := byProjectAndTool && byFile
 	byProjectAndToolAndForkScan := byProjectAndTool && byForkScan && !byPR
 
 	mode := func() uint {
@@ -434,6 +434,10 @@ func scanByFileImport(cmd *cobra.Command, c *client.Client) (string, error) {
 	if forkScan && target != "" {
 		return "", errors.New("the fork-scan and pr-merge commands cannot be used together")
 	}
+	meta, err := cmd.Flags().GetString("meta")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse meta flag: %w", err)
+	}
 
 	var form = client.ImportForm{
 		"project":              project,
@@ -442,6 +446,7 @@ func scanByFileImport(cmd *cobra.Command, c *client.Client) (string, error) {
 		"target":               target,
 		"fork-scan":            strconv.FormatBool(forkScan),
 		"override-old-analyze": strconv.FormatBool(override),
+		"meta":                 meta,
 	}
 
 	eventID, err := c.ImportScanResult(absoluteFilePath, form)

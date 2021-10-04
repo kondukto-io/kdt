@@ -33,15 +33,22 @@ func init() {
 
 }
 
-func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
-	projectRows := []Row{
-		{Columns: []string{"NAME", "ID", "BRANCH", "TEAM", "LABELS", "UI Link"}},
-		{Columns: []string{"----", "--", "------", "----", "------", "-------"}},
-	}
+type Project struct {
+	cmd       *cobra.Command
+	client    *client.Client
+	printRows []Row
+}
 
+func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
 		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+	}
+
+	var p = Project{
+		cmd:       cmd,
+		client:    c,
+		printRows: projectPrintHeaders(),
 	}
 
 	repositoryID, err := cmd.Flags().GetString("repo-id")
@@ -53,32 +60,40 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeError, "missing required flag repo-id")
 	}
 
-	force, err := cmd.Flags().GetBool("force-create")
+	force, err := p.cmd.Flags().GetBool("force-create")
 	if err != nil {
 		qwm(ExitCodeError, fmt.Sprintf("failed to parse the force-create flag: %v", err))
 	}
 
 	if !force {
-		projects, err := c.ListProjects("", repositoryID)
+		projects, err := p.client.ListProjects("", repositoryID)
 		if err != nil {
 			qwe(ExitCodeError, err, "failed to check project with alm info")
 		}
 
 		if len(projects) > 0 {
 			for _, project := range projects {
-				projectRows = append(projectRows, Row{Columns: project.FieldsAsRow()})
+				p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
 			}
-			TableWriter(projectRows...)
+			TableWriter(p.printRows...)
 			qwm(ExitCodeError, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag", len(projects)))
 		}
 	}
 
-	team, err := cmd.Flags().GetString("team")
+	p.createProject(repositoryID, force)
+}
+
+func (p *Project) createProject(repo string, force bool) {
+	if len(p.printRows) == 0 {
+		p.printRows = projectPrintHeaders()
+	}
+
+	team, err := p.cmd.Flags().GetString("team")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse the team flag: %v")
 	}
 
-	labels, err := cmd.Flags().GetString("labels")
+	labels, err := p.cmd.Flags().GetString("labels")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse the labels flag")
 	}
@@ -88,7 +103,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		parsedLabels = append(parsedLabels, client.ProjectLabel{Name: l})
 	}
 
-	tool, err := cmd.Flags().GetString("alm-tool")
+	tool, err := p.cmd.Flags().GetString("alm-tool")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse the alm flag")
 	}
@@ -96,11 +111,11 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	pd := client.ProjectDetail{
 		Source: func() client.ProjectSource {
 			s := client.ProjectSource{Tool: tool}
-			_, err = url.Parse(repositoryID)
+			_, err = url.Parse(repo)
 			if err != nil {
-				s.ID = repositoryID
+				s.ID = repo
 			} else {
-				s.URL = repositoryID
+				s.URL = repo
 			}
 			return s
 		}(),
@@ -111,7 +126,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		Override: force,
 	}
 
-	project, err := c.CreateProject(pd)
+	project, err := p.client.CreateProject(pd)
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to create project")
 	}
@@ -137,8 +152,15 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		klog.Printf("failed to add some labels: %s", missingLabels)
 	}
 
-	projectRows = append(projectRows, Row{Columns: project.FieldsAsRow()})
+	p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
 
-	TableWriter(projectRows...)
+	TableWriter(p.printRows...)
 	qwm(ExitCodeSuccess, "project created successfully")
+}
+
+func projectPrintHeaders() []Row {
+	return []Row{
+		{Columns: []string{"NAME", "ID", "BRANCH", "TEAM", "LABELS", "UI Link"}},
+		{Columns: []string{"----", "--", "------", "----", "------", "-------"}},
+	}
 }

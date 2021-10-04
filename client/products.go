@@ -41,7 +41,7 @@ func (c *Client) ListProducts(name string) ([]Product, error) {
 	req.URL.RawQuery = queryParams.Encode()
 
 	type getProductsResponse struct {
-		Products []Product `json:"data"`
+		Products []Product `json:"products"`
 		Total    int       `json:"total"`
 		Error    string    `json:"error"`
 	}

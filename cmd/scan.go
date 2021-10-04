@@ -46,7 +46,6 @@ func init() {
 	rootCmd.AddCommand(scanCmd)
 
 	scanCmd.Flags().Bool("async", false, "does not block build process")
-
 	scanCmd.Flags().StringP("project", "p", "", "kondukto project id or name")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
@@ -54,17 +53,16 @@ func init() {
 	scanCmd.Flags().StringP("file", "f", "", "scan result file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull-request")
-	scanCmd.Flags().String("image", "", "image to scan with container security products")
+	scanCmd.Flags().String("image", "I", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
-	scanCmd.Flags().StringP("repo", "r", "", "ALM repo id or path")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
 
-	scanCmd.Flags().String("labels", "", "comma separated label names [create-project]")
-	scanCmd.Flags().String("team", "", "project team name [create-project]")
-	scanCmd.Flags().String("repo-id", "", "URL or ID of ALM repository [create-project]")
-	scanCmd.Flags().String("alm-tool", "", "ALM tool name [create-project]")
+	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
+	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")
+	scanCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository [create-project]")
+	scanCmd.Flags().String("alm-tool", "A", "ALM tool name [create-project]")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -685,11 +683,11 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 }
 
 func (s *Scan) findORCreateProject() (*client.Project, error) {
-	if !s.cmd.Flags().Changed("repo") && !s.cmd.Flags().Changed("project") {
+	if !s.cmd.Flags().Changed("repo-id") && !s.cmd.Flags().Changed("project") {
 		return nil, errors.New("missing a required flag(repo or project) to get project detail")
 	}
 
-	repo, err := s.cmd.Flags().GetString("repo")
+	repo, err := s.cmd.Flags().GetString("repo-id")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get repo flag: %w", err)
 	}
@@ -720,7 +718,7 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 		return nil, errors.New("no projects were found according to the given parameters")
 	}
 
-	if !s.cmd.Flags().Changed("repo") {
+	if !s.cmd.Flags().Changed("repo-id") {
 		return nil, errors.New("missing a required repo flag to create project")
 	}
 
@@ -762,7 +760,7 @@ func getScanMode(cmd *cobra.Command) uint {
 	byForkScan := cmd.Flag("fork-scan").Changed
 	byMerge := cmd.Flag("branch").Changed
 	byImage := cmd.Flag("image").Changed
-	byRepo := cmd.Flag("repo").Changed
+	byRepo := cmd.Flag("repo-id").Changed
 	byProjectORRepo := byProject || byRepo
 	byPR := byBranch && byMerge
 

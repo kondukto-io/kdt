@@ -8,9 +8,11 @@ package client
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/kondukto-io/kdt/klog"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Product struct {
@@ -24,6 +26,47 @@ type Product struct {
 
 func (p *Product) FieldsAsRow() []string {
 	return []string{p.Name, p.ID, strconv.Itoa(p.ProjectsCount), p.Links.HTML}
+}
+
+func (c *Client) FindProductByName(name string) (*Product, error) {
+	products, err := c.ListProducts(name)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range products {
+		if p.Name == name {
+			return &p, nil
+		}
+	}
+
+	return nil, ProductNotFound
+}
+
+func (c *Client) GetProductDetail(id string) (*ProductDetail, error) {
+	klog.Debug("retrieving product list...")
+
+	req, err := c.newRequest("GET", filepath.Join("/api/v2/products", id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	type getProductsResponse struct {
+		Product ProductDetail `json:"product"`
+		Error   string        `json:"error"`
+	}
+
+	var ps getProductsResponse
+	resp, err := c.do(req, &ps)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP response not OK : %s", ps.Error)
+	}
+
+	return &ps.Product, nil
 }
 
 func (c *Client) ListProducts(name string) ([]Product, error) {
@@ -60,14 +103,36 @@ func (c *Client) ListProducts(name string) ([]Product, error) {
 }
 
 type ProductDetail struct {
-	Name     string    `json:"name"`
-	Projects []Project `json:"projects"`
+	ID       primitive.ObjectID `json:"id"`
+	Name     string             `json:"name"`
+	Projects []Project          `json:"projects"`
 }
 
 func (c *Client) CreateProduct(pd ProductDetail) (*Product, error) {
 	klog.Debug("creating a product")
 
 	req, err := c.newRequest(http.MethodPost, "/api/v2/products", pd)
+	if err != nil {
+		return nil, err
+	}
+
+	type productResponse struct {
+		Product Product `json:"product"`
+		Message string  `json:"message"`
+	}
+	var pr productResponse
+	_, err = c.do(req, &pr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pr.Product, nil
+}
+
+func (c *Client) UpdateProduct(id string, pd ProductDetail) (*Product, error) {
+	klog.Debug("updating a product")
+
+	req, err := c.newRequest(http.MethodPatch, filepath.Join("/api/v2/products", id), pd)
 	if err != nil {
 		return nil, err
 	}

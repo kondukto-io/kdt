@@ -81,10 +81,13 @@ func (c *Client) FindProjectByName(name string) (*Project, error) {
 		return nil, err
 	}
 
-	if len(projects) == 0 {
-		return nil, errors.New("project not found")
+	for _, p := range projects {
+		if p.Name == name {
+			return &p, nil
+		}
 	}
-	return &projects[0], nil
+
+	return nil, ProjectNotFound
 }
 
 type ProjectDetail struct {

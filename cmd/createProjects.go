@@ -81,9 +81,10 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	p.createProject(repositoryID, force)
+	qwm(ExitCodeSuccess, "project created successfully")
 }
 
-func (p *Project) createProject(repo string, force bool) {
+func (p *Project) createProject(repo string, force bool) *client.Project {
 	if len(p.printRows) == 0 {
 		p.printRows = projectPrintHeaders()
 	}
@@ -100,6 +101,9 @@ func (p *Project) createProject(repo string, force bool) {
 
 	parsedLabels := make([]client.ProjectLabel, 0)
 	for _, l := range strings.Split(labels, ",") {
+		if l == "" {
+			continue
+		}
 		parsedLabels = append(parsedLabels, client.ProjectLabel{Name: l})
 	}
 
@@ -111,8 +115,8 @@ func (p *Project) createProject(repo string, force bool) {
 	pd := client.ProjectDetail{
 		Source: func() client.ProjectSource {
 			s := client.ProjectSource{Tool: tool}
-			_, err = url.Parse(repo)
-			if err != nil {
+			u, err := url.Parse(repo)
+			if err != nil || u.Host == "" || u.Scheme == "" {
 				s.ID = repo
 			} else {
 				s.URL = repo
@@ -155,7 +159,8 @@ func (p *Project) createProject(repo string, force bool) {
 	p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
 
 	TableWriter(p.printRows...)
-	qwm(ExitCodeSuccess, "project created successfully")
+
+	return project
 }
 
 func projectPrintHeaders() []Row {

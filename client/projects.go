@@ -11,21 +11,22 @@ import (
 	"net/http"
 
 	"github.com/kondukto-io/kdt/klog"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Project struct {
-	ID            string         `json:"id,omitempty"`
-	Name          string         `json:"name,omitempty"`
-	DefaultBranch string         `json:"default_branch"`
-	Labels        []ProjectLabel `json:"labels"`
-	Team          ProjectTeam    `json:"team"`
+	ID            primitive.ObjectID `json:"id,omitempty"`
+	Name          string             `json:"name,omitempty"`
+	DefaultBranch string             `json:"default_branch"`
+	Labels        []ProjectLabel     `json:"labels"`
+	Team          ProjectTeam        `json:"team"`
 	Links         struct {
 		HTML string `json:"html"`
 	} `json:"links"`
 }
 
 func (p *Project) FieldsAsRow() []string {
-	return []string{p.Name, p.ID, p.DefaultBranch, p.Team.Name, p.LabelsAsString(), p.Links.HTML}
+	return []string{p.Name, p.ID.Hex(), p.DefaultBranch, p.Team.Name, p.LabelsAsString(), p.Links.HTML}
 }
 
 func (p *Project) LabelsAsString() string {
@@ -72,6 +73,18 @@ func (c *Client) ListProjects(name, repo string) ([]Project, error) {
 	}
 
 	return ps.Projects, nil
+}
+
+func (c *Client) FindProjectByName(name string) (*Project, error) {
+	projects, err := c.ListProjects(name, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(projects) == 0 {
+		return nil, errors.New("project not found")
+	}
+	return &projects[0], nil
 }
 
 type ProjectDetail struct {

@@ -61,10 +61,10 @@ func init() {
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
 
-	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
-	scanCmd.Flags().StringP("team", "t", "", "project team name [create-project]")
+	scanCmd.Flags().String("labels", "", "comma separated label names [create-project]")
+	scanCmd.Flags().String("team", "", "project team name [create-project]")
 	scanCmd.Flags().String("repo-id", "", "URL or ID of ALM repository [create-project]")
-	scanCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name [create-project]")
+	scanCmd.Flags().String("alm-tool", "", "ALM tool name [create-project]")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -729,8 +729,9 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 		client: s.client,
 	}
 
-	p.createProject(repo, false)
-	return nil, nil
+	var project = p.createProject(repo, false)
+	klog.Printf("project [%s] created successfully", project.Name)
+	return project, nil
 }
 
 func statusMsg(s int) string {

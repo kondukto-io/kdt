@@ -47,18 +47,24 @@ func init() {
 
 	scanCmd.Flags().Bool("async", false, "does not block build process")
 
-	scanCmd.Flags().StringP("project", "p", "", "project name or id")
+	scanCmd.Flags().StringP("project", "p", "", "kondukto project id or name")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
 	scanCmd.Flags().StringP("meta", "m", "", "meta data")
-	scanCmd.Flags().StringP("file", "f", "", "scan file")
+	scanCmd.Flags().StringP("file", "f", "", "scan result file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
-	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull request")
+	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull-request")
+	scanCmd.Flags().String("image", "", "image to scan with container security products")
+	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
+	scanCmd.Flags().StringP("repo", "r", "", "ALM repo id or path")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
-	scanCmd.Flags().String("image", "", "image to scan with container security products")
-	scanCmd.Flags().StringP("agent", "a", "", "specify the agent name for agent type scanners")
-	scanCmd.Flags().StringP("repo", "r", "", "ALM repo id or path")
+	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
+
+	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
+	scanCmd.Flags().StringP("team", "t", "", "project team name [create-project]")
+	scanCmd.Flags().String("repo-id", "", "URL or ID of ALM repository [create-project]")
+	scanCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name [create-project]")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -191,10 +197,11 @@ func (s *Scan) startScan() (string, error) {
 
 func (s *Scan) scanByFileImport() (string, error) {
 	// Parse command line flags needed for file uploads
-	project, err := s.cmd.Flags().GetString("project")
+	project, err := s.findORCreateProject()
 	if err != nil {
 		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
+
 	tool, err := s.cmd.Flags().GetString("tool")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
@@ -238,7 +245,7 @@ func (s *Scan) scanByFileImport() (string, error) {
 	}
 
 	var form = client.ImportForm{
-		"project":              project,
+		"project":              project.Name,
 		"branch":               branch,
 		"tool":                 tool,
 		"meta_data":            meta,
@@ -675,6 +682,55 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 	}
 
 	return false, &scanner, nil
+}
+
+func (s *Scan) findORCreateProject() (*client.Project, error) {
+	if !s.cmd.Flags().Changed("repo") && !s.cmd.Flags().Changed("project") {
+		return nil, errors.New("missing a required flag(repo or project) to get project detail")
+	}
+
+	repo, err := s.cmd.Flags().GetString("repo")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get repo flag: %w", err)
+	}
+	var name string
+	if repo == "" {
+		project, err := s.cmd.Flags().GetString("project")
+		if err != nil {
+			return nil, fmt.Errorf("failed to get project flag: %w", err)
+		}
+		name = project
+	}
+
+	projects, err := s.client.ListProjects(name, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(projects) == 1 {
+		return &projects[0], nil
+	}
+
+	createProject, err := s.cmd.Flags().GetBool("create-project")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get create-project flag: %w", err)
+	}
+
+	if !createProject {
+		return nil, errors.New("no projects were found according to the given parameters")
+	}
+
+	if !s.cmd.Flags().Changed("repo") {
+		return nil, errors.New("missing a required repo flag to create project")
+	}
+
+	var p = Project{
+		cmd:    s.cmd,
+		client: s.client,
+	}
+
+	p.createProject(repo, false)
+	return nil, nil
 }
 
 func statusMsg(s int) string {

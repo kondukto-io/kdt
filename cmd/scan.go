@@ -269,7 +269,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	// Parse command line flags
-	project, err := s.cmd.Flags().GetString("project")
+	project, err := s.findORCreateProject()
 	if err != nil {
 		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
@@ -309,7 +309,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		Limit:    1,
 	}
 
-	scan, err := s.client.FindScan(project, params)
+	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
 		klog.Print("a completed scan found with the same parameters, restarting")
 		eventID, err := s.client.RestartScanByScanID(scan.ID)
@@ -321,7 +321,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 	}
 
-	sp, err := s.client.FindScanparams(project, &client.ScanparamSearchParams{
+	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
 		ToolID:   scanner.ID,
 		Branch:   branch,
 		Manual:   false,
@@ -336,7 +336,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	scanData := &client.Scan{
 		MetaData: meta,
 		Branch:   branch,
-		Project:  project,
+		Project:  project.Name,
 		ToolID:   scanner.ID,
 		Custom:   client.Custom{Type: scanner.CustomType},
 	}
@@ -379,7 +379,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 
 func (s *Scan) getScanIDByProjectToolAndMeta() (string, error) {
 	// Parse command line flags
-	project, err := s.cmd.Flags().GetString("project")
+	project, err := s.findORCreateProject()
 	if err != nil {
 		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
@@ -404,7 +404,7 @@ func (s *Scan) getScanIDByProjectToolAndMeta() (string, error) {
 		Limit:    1,
 	}
 
-	scan, err := s.client.FindScan(project, params)
+	scan, err := s.client.FindScan(project.Name, params)
 	if err != nil {
 		klog.Debug("no scans found for given project, tool and metadata configuration")
 		qwe(ExitCodeError, err, "could not get scans of the project")
@@ -419,7 +419,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		return "", err
 	}
 	// Parse command line flags
-	project, err := s.cmd.Flags().GetString("project")
+	project, err := s.findORCreateProject()
 	if err != nil {
 		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
@@ -470,7 +470,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		Limit:    1,
 	}
 
-	scan, err := s.client.FindScan(project, params)
+	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
 		opt := &client.ScanPROptions{
 			From:               branch,
@@ -486,7 +486,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 	}
 
-	sp, err := s.client.FindScanparams(project, &client.ScanparamSearchParams{
+	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
 		Branch: branch,
 		ToolID: scanner.ID,
 		Agent:  agent,
@@ -510,7 +510,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 		var scan = &client.Scan{
 			Branch:  branch,
-			Project: project,
+			Project: project.Name,
 			ToolID:  scanner.ID,
 			Custom: client.Custom{
 				Type: scanner.CustomType,
@@ -554,7 +554,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 		return "", err
 	}
 	// Parse command line flags
-	project, err := s.cmd.Flags().GetString("project")
+	project, err := s.findORCreateProject()
 	if err != nil {
 		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
@@ -586,7 +586,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 		Limit:    1,
 	}
 
-	scan, err := s.client.FindScan(project, params)
+	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
 		eventID, err := s.client.RestartScanByScanID(scan.ID)
 		if err != nil {
@@ -597,7 +597,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 	}
 
-	sp, err := s.client.FindScanparams(project, &client.ScanparamSearchParams{
+	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
 		ToolID:   scanner.ID,
 		Branch:   branch,
 		ForkScan: forkScan,
@@ -620,7 +620,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 		return &client.Scan{
 			Branch:   branch,
 			MetaData: meta,
-			Project:  project,
+			Project:  project.Name,
 			ForkScan: forkScan,
 			ToolID:   scanner.ID,
 			Custom:   client.Custom{Type: scanner.CustomType},
@@ -631,7 +631,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 }
 
 func (s *Scan) scanByImage() (string, error) {
-	project, err := s.cmd.Flags().GetString("project")
+	project, err := s.findORCreateProject()
 	if err != nil {
 		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
@@ -651,7 +651,7 @@ func (s *Scan) scanByImage() (string, error) {
 		return "", errors.New("image name is required")
 	}
 
-	eventID, err := s.client.ScanByImage(project, branch, tool, image)
+	eventID, err := s.client.ScanByImage(project.Name, branch, tool, image)
 	if err != nil {
 		return "", err
 	}

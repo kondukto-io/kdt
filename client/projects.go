@@ -40,7 +40,7 @@ func (p *Project) LabelsAsString() string {
 	return l
 }
 
-func (c *Client) ListProjects(search, alm string) ([]Project, error) {
+func (c *Client) ListProjects(name, repo string) ([]Project, error) {
 	projects := make([]Project, 0)
 
 	klog.Debug("retrieving project list...")
@@ -51,8 +51,8 @@ func (c *Client) ListProjects(search, alm string) ([]Project, error) {
 	}
 
 	queryParams := req.URL.Query()
-	queryParams.Add("search", search)
-	queryParams.Add("alm", alm)
+	queryParams.Add("name", name)
+	queryParams.Add("alm", repo)
 	req.URL.RawQuery = queryParams.Encode()
 
 	type getProjectsResponse struct {

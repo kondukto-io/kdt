@@ -30,6 +30,7 @@ func init() {
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
 	createProjectCmd.Flags().String("repo-id", "r", "URL or ID of ALM repository")
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
+	createProjectCmd.Flags().StringP("product-name", "P", "", "name of product")
 }
 
 type Project struct {
@@ -79,8 +80,24 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		}
 	}
 
-	p.createProject(repositoryID, force)
-	qwm(ExitCodeSuccess, "project created successfully")
+	project := p.createProject(repositoryID, force)
+
+	if !p.cmd.Flags().Changed("product-name") {
+		qwm(ExitCodeSuccess, "project created successfully")
+	}
+	var pr = Product{
+		cmd:       cmd,
+		client:    c,
+		printRows: productPrintHeaders(),
+	}
+
+	name, err := p.cmd.Flags().GetString("product-name")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the name flag: %v")
+	}
+
+	pr.createProduct(name, []client.Project{*project})
+	qwm(ExitCodeSuccess, "project assigned to the product")
 }
 
 func (p *Project) createProject(repo string, force bool) *client.Project {

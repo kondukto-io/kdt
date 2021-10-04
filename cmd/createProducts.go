@@ -6,6 +6,7 @@ Copyright © 2021 Kondukto
 package cmd
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/kondukto-io/kdt/client"
@@ -46,20 +47,6 @@ func createProductsRootCommand(cmd *cobra.Command, _ []string) {
 		printRows: productPrintHeaders(),
 	}
 
-	p.createProduct()
-	qwm(ExitCodeSuccess, "product created successfully")
-}
-
-func (p *Product) createProduct() *client.Product {
-	if len(p.printRows) == 0 {
-		p.printRows = productPrintHeaders()
-	}
-
-	name, err := p.cmd.Flags().GetString("name")
-	if err != nil {
-		qwe(ExitCodeError, err, "failed to parse the namme flag: %v")
-	}
-
 	projects, err := p.cmd.Flags().GetString("projects")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse the projects flag")
@@ -92,12 +79,42 @@ func (p *Product) createProduct() *client.Product {
 		parsedProjects = append(parsedProjects, pd)
 	}
 
-	var pd = client.ProductDetail{
-		Name:     name,
-		Projects: parsedProjects,
+	name, err := p.cmd.Flags().GetString("name")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the name flag: %v")
 	}
 
-	product, err := p.client.CreateProduct(pd)
+	product, created := p.createProduct(name, parsedProjects)
+	if created {
+		qwm(ExitCodeSuccess, "product created successfully")
+	}
+
+	klog.Printf("product name alredy exist, updating")
+	p.updateProduct(product, parsedProjects)
+
+	qwm(ExitCodeSuccess, "product updated successfully")
+}
+
+func (p *Product) createProduct(name string, projects []client.Project) (*client.Product, bool) {
+	if len(p.printRows) == 0 {
+		p.printRows = productPrintHeaders()
+	}
+	product, err := p.client.FindProductByName(name)
+	if err != nil && !errors.Is(err, client.ProductNotFound) {
+		qwe(ExitCodeError, err, "failed to get product by name: %v")
+	}
+
+	if product != nil {
+		klog.Println("product found by given name parameter")
+		return product, false
+	}
+
+	var pd = client.ProductDetail{
+		Name:     name,
+		Projects: projects,
+	}
+
+	product, err = p.client.CreateProduct(pd)
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to create product")
 	}
@@ -106,7 +123,45 @@ func (p *Product) createProduct() *client.Product {
 
 	TableWriter(p.printRows...)
 
-	return product
+	return product, true
+}
+
+func (p *Product) updateProduct(product *client.Product, projects []client.Project) (*client.Product, bool) {
+	if len(p.printRows) == 0 {
+		p.printRows = productPrintHeaders()
+	}
+
+	detail, err := p.client.GetProductDetail(product.ID)
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to get product detail")
+	}
+
+	for _, pr := range projects {
+		var add = func() bool {
+			for _, pd := range detail.Projects {
+				if pd.ID == pr.ID {
+					return false
+				}
+			}
+			return true
+		}
+
+		if add() {
+			detail.Projects = append(detail.Projects, client.Project{ID: pr.ID})
+		}
+	}
+
+	product, err = p.client.UpdateProduct(detail.ID.Hex(), *detail)
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to update product")
+	}
+	product.ProjectsCount = len(detail.Projects)
+
+	p.printRows = append(p.printRows, Row{Columns: product.FieldsAsRow()})
+
+	TableWriter(p.printRows...)
+
+	return product, true
 }
 
 func productPrintHeaders() []Row {

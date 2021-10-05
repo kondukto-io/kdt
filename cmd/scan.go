@@ -734,7 +734,8 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	var parsedProjects = []client.Project{*project}
 	product, created := pr.createProduct(productName, parsedProjects)
 	if created {
-		qwm(ExitCodeSuccess, "product created successfully")
+		klog.Println("product created successfully")
+		return project, nil
 	}
 
 	pr.updateProduct(product, parsedProjects)

@@ -12,7 +12,6 @@ import (
 	"strconv"
 
 	"github.com/kondukto-io/kdt/klog"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Product struct {
@@ -103,9 +102,9 @@ func (c *Client) ListProducts(name string) ([]Product, error) {
 }
 
 type ProductDetail struct {
-	ID       primitive.ObjectID `json:"id"`
-	Name     string             `json:"name"`
-	Projects []Project          `json:"projects"`
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	Projects []Project `json:"projects"`
 }
 
 func (c *Client) CreateProduct(pd ProductDetail) (*Product, error) {

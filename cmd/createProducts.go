@@ -63,18 +63,17 @@ func createProductsRootCommand(cmd *cobra.Command, _ []string) {
 		}
 		pMap[pr] = true
 		pd := client.Project{}
-		pd.ID, err = primitive.ObjectIDFromHex(pr)
-		if err != nil {
+		if !primitive.IsValidObjectID(pr) {
 			project, err := p.client.FindProjectByName(pr)
 			if err != nil {
 				klog.Debugf("failed to get [%s] project details: %v", pr, err)
 				continue
 			}
 			pd.ID = project.ID
-			if exist, ok := pMap[pd.ID.Hex()]; ok && exist {
+			if exist, ok := pMap[pd.ID]; ok && exist {
 				continue
 			}
-			pMap[pd.ID.Hex()] = true
+			pMap[pd.ID] = true
 		}
 		parsedProjects = append(parsedProjects, pd)
 	}
@@ -149,7 +148,7 @@ func (p *Product) updateProduct(product *client.Product, projects []client.Proje
 		}
 	}
 
-	product, err = p.client.UpdateProduct(detail.ID.Hex(), *detail)
+	product, err = p.client.UpdateProduct(detail.ID, *detail)
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to update product")
 	}

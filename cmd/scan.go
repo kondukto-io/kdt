@@ -208,7 +208,7 @@ func (s *Scan) scanByImage() (string, error) {
 		return "", errors.New("image name is required")
 	}
 	var pr = &client.ImageScanParams{
-		Project:  project.ID.Hex(),
+		Project:  project.ID,
 		Tool:     tool,
 		Branch:   branch,
 		Image:    image,
@@ -392,7 +392,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 			ID: scanData.AgentID,
 		},
 		Project: &client.ScanparamsItem{
-			ID: project.ID.Hex(),
+			ID: project.ID,
 		},
 	}
 
@@ -418,7 +418,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	klog.Printf("creating a new scanparams")
-	scanparams, err := s.client.CreateScanparams(project.ID.Hex(), scanparamsData)
+	scanparams, err := s.client.CreateScanparams(project.ID, scanparamsData)
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to create scanparams")
 	}

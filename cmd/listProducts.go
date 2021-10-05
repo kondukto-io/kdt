@@ -12,7 +12,7 @@ import (
 
 // listProductsCmd represents the listProductsCmd command
 var listProductsCmd = &cobra.Command{
-	Use:   "product",
+	Use:   "products",
 	Short: "lists products in Kondukto",
 	Run:   productsRootCommand,
 }

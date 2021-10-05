@@ -731,24 +731,26 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	var project = p.createProject(repo, false)
 	klog.Printf("project [%s] created successfully", project.Name)
 
-	if p.cmd.Flags().Changed("product-name") {
-		var pr = Product{
-			cmd:    s.cmd,
-			client: s.client,
-		}
-		name, err := p.cmd.Flags().GetString("product-name")
-		if err != nil {
-			qwe(ExitCodeError, err, "failed to parse the name flag: %v")
-		}
-		var parsedProjects = []client.Project{*project}
-		product, created := pr.createProduct(name, parsedProjects)
-		if created {
-			qwm(ExitCodeSuccess, "product created successfully")
-		}
-
-		pr.updateProduct(product, parsedProjects)
-		qwm(ExitCodeSuccess, "product updated successfully")
+	if !p.cmd.Flags().Changed("product-name") {
+		return project, nil
 	}
+	var pr = Product{
+		cmd:    s.cmd,
+		client: s.client,
+	}
+
+	productName, err := p.cmd.Flags().GetString("product-name")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the product-name flag: %v")
+	}
+	var parsedProjects = []client.Project{*project}
+	product, created := pr.createProduct(productName, parsedProjects)
+	if created {
+		qwm(ExitCodeSuccess, "product created successfully")
+	}
+
+	pr.updateProduct(product, parsedProjects)
+	qwm(ExitCodeSuccess, "product updated successfully")
 
 	return project, nil
 }

@@ -89,9 +89,7 @@ func createProductsRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeSuccess, "product created successfully")
 	}
 
-	klog.Printf("product name alredy exist, updating")
 	p.updateProduct(product, parsedProjects)
-
 	qwm(ExitCodeSuccess, "product updated successfully")
 }
 

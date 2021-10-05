@@ -501,12 +501,13 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	}
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
-		Branch: branch,
-		ToolID: scanner.ID,
-		Agent:  agent,
-		Target: mergeTarget,
-		PR:     true,
-		Limit:  1,
+		MetaData: meta,
+		Branch:   branch,
+		ToolID:   scanner.ID,
+		Agent:    agent,
+		Target:   mergeTarget,
+		PR:       true,
+		Limit:    1,
 	})
 	if err != nil {
 		klog.Debugf("failed to get scanparams: %v, trying to create a new scan", err)
@@ -523,9 +524,10 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		}
 
 		var scan = &client.Scan{
-			Branch:  branch,
-			Project: project.Name,
-			ToolID:  scanner.ID,
+			MetaData: meta,
+			Branch:   branch,
+			Project:  project.Name,
+			ToolID:   scanner.ID,
 			Custom: client.Custom{
 				Type: scanner.CustomType,
 			},
@@ -736,8 +738,6 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	}
 
 	pr.updateProduct(product, parsedProjects)
-	qwm(ExitCodeSuccess, "product updated successfully")
-
 	return project, nil
 }
 

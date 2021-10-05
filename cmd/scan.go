@@ -14,6 +14,7 @@ import (
 
 	"github.com/kondukto-io/kdt/client"
 	"github.com/kondukto-io/kdt/klog"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/spf13/cobra"
 )
@@ -145,6 +146,9 @@ func (s *Scan) startScan() (string, error) {
 		scanID, err := s.cmd.Flags().GetString("scan-id")
 		if err != nil {
 			return "", err
+		}
+		if !primitive.IsValidObjectID(scanID) {
+			return "", errors.New("invalid object id")
 		}
 		eventID, err := s.client.RestartScanByScanID(scanID)
 		if err != nil {
@@ -774,9 +778,9 @@ func getScanMode(cmd *cobra.Command) uint {
 	byPR := byBranch && byMerge
 
 	byProjectAndTool := byProjectORRepo && byTool && !byPR
-	byProjectAndToolAndPullRequest := byProjectAndTool && byPR
-	byProjectAndToolAndFile := byProjectAndTool && byFile
-	byProjectAndToolAndForkScan := byProjectAndTool && byForkScan && !byPR
+	byProjectAndToolAndPullRequest := byProjectORRepo && byTool && byPR && !byFile
+	byProjectAndToolAndFile := byProjectORRepo && byTool && byFile
+	byProjectAndToolAndForkScan := byProjectORRepo && byTool && byForkScan && !byPR
 
 	mode := func() uint {
 		// sorted by priority

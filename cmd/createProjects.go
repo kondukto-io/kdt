@@ -96,8 +96,13 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "failed to parse the name flag: %v")
 	}
 
-	pr.createProduct(name, []client.Project{*project})
-	qwm(ExitCodeSuccess, "project assigned to the product")
+	product, created := pr.createProduct(name, []client.Project{*project})
+	if created {
+		qwm(ExitCodeSuccess, "product created successfully")
+	}
+
+	pr.updateProduct(product, []client.Project{*project})
+	qwm(ExitCodeSuccess, "the project assigned to the product")
 }
 
 func (p *Project) createProject(repo string, force bool) *client.Project {
@@ -173,9 +178,9 @@ func (p *Project) createProject(repo string, force bool) *client.Project {
 	}
 
 	p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
-
 	TableWriter(p.printRows...)
 
+	klog.Printf("project [%s] created successfully", project.Name)
 	return project
 }
 

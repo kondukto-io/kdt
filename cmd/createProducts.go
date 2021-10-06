@@ -88,8 +88,11 @@ func createProductsRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeSuccess, "product created successfully")
 	}
 
-	p.updateProduct(product, parsedProjects)
-	qwm(ExitCodeSuccess, "product updated successfully")
+	if len(parsedProjects) > 0 {
+		p.updateProduct(product, parsedProjects)
+		qwm(ExitCodeSuccess, "product updated successfully")
+	}
+	qwm(ExitCodeSuccess, "product already exists")
 }
 
 func (p *Product) createProduct(name string, projects []client.Project) (*client.Product, bool) {
@@ -119,11 +122,11 @@ func (p *Product) createProduct(name string, projects []client.Project) (*client
 	p.printRows = append(p.printRows, Row{Columns: product.FieldsAsRow()})
 
 	TableWriter(p.printRows...)
-
+	klog.Printf("product [%s] created successfully", product.Name)
 	return product, true
 }
 
-func (p *Product) updateProduct(product *client.Product, projects []client.Project) (*client.Product, bool) {
+func (p *Product) updateProduct(product *client.Product, projects []client.Project) *client.Product {
 	if len(p.printRows) == 0 {
 		p.printRows = productPrintHeaders()
 	}
@@ -155,10 +158,9 @@ func (p *Product) updateProduct(product *client.Product, projects []client.Proje
 	product.ProjectsCount = len(detail.Projects)
 
 	p.printRows = append(p.printRows, Row{Columns: product.FieldsAsRow()})
-
 	TableWriter(p.printRows...)
 
-	return product, true
+	return product
 }
 
 func productPrintHeaders() []Row {

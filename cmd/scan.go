@@ -721,7 +721,6 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	}
 
 	var project = p.createProject(repo, false)
-	klog.Printf("project [%s] created successfully", project.Name)
 
 	if !p.cmd.Flags().Changed("product-name") {
 		return project, nil
@@ -743,6 +742,7 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	}
 
 	pr.updateProduct(product, parsedProjects)
+	qwm(ExitCodeSuccess, "the project assigned to the product")
 	return project, nil
 }
 

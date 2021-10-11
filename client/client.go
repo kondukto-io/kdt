@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,6 +22,11 @@ import (
 
 const (
 	userAgent = "KDT"
+)
+
+var (
+	ProductNotFound = errors.New("product not found")
+	ProjectNotFound = errors.New("project not found")
 )
 
 type Client struct {

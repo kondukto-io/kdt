@@ -189,23 +189,18 @@ func (c *Client) RestartScanWithOption(id string, opt *ScanPROptions) (string, e
 	return rsr.Event, nil
 }
 
-func (c *Client) ScanByImage(project, branch, tool, image string) (string, error) {
+type ImageScanParams struct {
+	Project  string `json:"project"`
+	Tool     string `json:"tool"`
+	Branch   string `json:"branch"`
+	Image    string `json:"image"`
+	MetaData string `json:"meta_data"`
+}
+
+func (c *Client) ScanByImage(pr *ImageScanParams) (string, error) {
 	path := "/api/v1/scans/image"
 
-	type imageScanBody struct {
-		Project string
-		Tool    string
-		Branch  string
-		Image   string
-	}
-	reqBody := imageScanBody{
-		Project: project,
-		Tool:    tool,
-		Branch:  branch,
-		Image:   image,
-	}
-
-	req, err := c.newRequest(http.MethodPost, path, &reqBody)
+	req, err := c.newRequest(http.MethodPost, path, pr)
 	if err != nil {
 		return "", fmt.Errorf("failed to create HTTP request: %w", err)
 	}

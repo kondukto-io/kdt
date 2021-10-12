@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 
 	"github.com/google/go-querystring/query"
 	"github.com/kondukto-io/kdt/klog"
@@ -26,17 +27,37 @@ type (
 		PR       bool   `url:"pr"`
 	}
 	ScanparamResponse struct {
-		Data  []ScanparamsDetail `json:"data"`
-		Total int                `json:"total"`
+		Scanparams []Scanparams `json:"scanparams"`
+		Limit      int          `json:"limit"`
+		Start      int          `json:"start"`
+		Total      int          `json:"total"`
 	}
-	ScanparamsDetail struct {
-		Id       string `json:"id"`
+	Scanparams struct {
+		ID       string `json:"id"`
 		Branch   string `json:"branch"`
 		BindName string `json:"bind_name"`
 	}
+
+	ScanparamsDetail struct {
+		Tool     *ScanparamsItem `json:"tool"`
+		Project  *ScanparamsItem `json:"project"`
+		Agent    *ScanparamsItem `json:"agent"`
+		BindName string          `json:"bind_name"`
+		Branch   string          `json:"branch"`
+		ScanType string          `json:"scan_type"`
+		MetaData string          `json:"meta_data"`
+		ForkScan bool            `json:"fork_scan"`
+		PR       PRInfo          `json:"pr"`
+		Manual   bool            `json:"manual"`
+		Custom   *Custom         `json:"custom"`
+	}
+
+	ScanparamsItem struct {
+		ID string `json:"id,omitempty"`
+	}
 )
 
-func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (*ScanparamsDetail, error) {
+func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (*Scanparams, error) {
 	klog.Debugf("retrieving scanparams")
 	if project == "" {
 		return nil, errors.New("missing project identifier")
@@ -54,15 +75,37 @@ func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (
 	}
 	req.URL.RawQuery = v.Encode()
 
-	var scanparams ScanparamResponse
-	_, err = c.do(req, &scanparams)
+	var scanparamsResponse ScanparamResponse
+	_, err = c.do(req, &scanparamsResponse)
 	if err != nil {
 		return nil, err
 	}
 
-	if scanparams.Total == 0 {
+	if scanparamsResponse.Total == 0 {
 		return nil, errors.New("scanparams not found")
 	}
 
-	return &scanparams.Data[0], nil
+	return &scanparamsResponse.Scanparams[0], nil
+}
+
+func (c *Client) CreateScanparams(pID string, sp ScanparamsDetail) (*Scanparams, error) {
+	klog.Debug("creating a project")
+
+	req, err := c.newRequest(http.MethodPost, filepath.Join("/api/v2/projects", pID, "scanparams"), sp)
+	if err != nil {
+		return nil, err
+	}
+
+	type scanparamsResponse struct {
+		Scanparams Scanparams `json:"scanparams"`
+		Message    string     `json:"message"`
+	}
+
+	var pr scanparamsResponse
+	_, err = c.do(req, &pr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pr.Scanparams, nil
 }

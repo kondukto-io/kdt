@@ -702,6 +702,10 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 		return &projects[0], nil
 	}
 
+	if len(projects) > 1 {
+		return nil, errors.New("multiple projects found for given parameters")
+	}
+
 	createProject, err := s.cmd.Flags().GetBool("create-project")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get create-project flag: %w", err)

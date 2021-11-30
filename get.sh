@@ -67,6 +67,13 @@ checkHash(){
 getPackage() {
     uname=$(uname)
     userid=$(id -u)
+    arch=$(uname -m)
+
+    if [ $arch  == "x86_64" ]; then
+	arch="amd64"
+    elif [ $arch  == "arm64" ]; then
+	arch="arm64"
+    fi
 
     suffix=""
     case $uname in
@@ -84,6 +91,8 @@ getPackage() {
 
     ;;
     esac
+
+    suffix="$suffix-$arch"
 
     targetFile="/tmp/$REPO$suffix"
     

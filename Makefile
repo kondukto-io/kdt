@@ -39,7 +39,6 @@ help:
 	@echo " make all   -- to build kdt in all supported environments"
 	@echo " make image -- to build docker image"
 
-#all: $(PLATFORMS) m1
 all: $(PLATFORMS)
 
 $(PLATFORMS):

@@ -6,7 +6,7 @@ TAG           = $(shell git describe --tags --abbrev=0)
 DATE          = $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
 BUILD_DIR     = "_release"
 OUT           = "$(BUILD_DIR)/kdt"
-PLATFORMS     := linux/amd64 windows/amd64 darwin/amd64
+PLATFORMS     := linux/amd64 windows/amd64 darwin/amd64 darwin/arm64
 TEMP 	      = $(subst /, ,$@)
 OS 	      = $(word 1, $(TEMP))
 ARCH 	      = $(word 2, $(TEMP))
@@ -39,11 +39,12 @@ help:
 	@echo " make all   -- to build kdt in all supported environments"
 	@echo " make image -- to build docker image"
 
+#all: $(PLATFORMS) m1
 all: $(PLATFORMS)
 
 $(PLATFORMS):
 	CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build \
 			-tags prod \
 			-ldflags '-s -w -X github.com/kondukto-io/kdt/cmd.Version=$(VERSION) -extldflags=-static' \
-			-o $(OUT)-$(OS)
-	$(call hash, kdt-$(OS))
+			-o $(OUT)-$(OS)-$(ARCH)
+	$(call hash, kdt-$(OS)-$(ARCH))

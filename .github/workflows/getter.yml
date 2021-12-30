@@ -1,4 +1,4 @@
-name: Build and Release KDT
+name: Deploy getter srv
 
 # Controls when the action will run. 
 on:

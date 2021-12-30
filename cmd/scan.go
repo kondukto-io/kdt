@@ -665,6 +665,11 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 	}
 	scanner := scanners.ActiveScanners[0]
 	for _, label := range scanner.Labels {
+		if label == client.ScannerLabelCreatableOnTool {
+			return false, &scanner, nil
+		}
+	}
+	for _, label := range scanner.Labels {
 		if label == client.ScannerLabelBind ||
 			label == client.ScannerLabelAgent ||
 			label == client.ScannerLabelTemplate {

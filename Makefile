@@ -18,7 +18,7 @@ VERSION      := $(TAG)+$(COMMIT)
 export GO111MODULE=on
 
 define hash
-	sha256sum $(BUILD_DIR)/$(1) > $(BUILD_DIR)/$(1).sha256
+	cd $(BUILD_DIR) && sha256sum $(1) > $(1).sha256
 endef
 
 default: help

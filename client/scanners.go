@@ -43,12 +43,13 @@ func (s ScannerInfo) HasLabel(l string) bool {
 }
 
 const (
-	ScannerLabelKDT      = "kdt"
-	ScannerLabelBind     = "bind"
-	ScannerLabelAgent    = "agent"
-	ScannerLabelDocker   = "docker"
-	ScannerLabelImport   = "import"
-	ScannerLabelTemplate = "template"
+	ScannerLabelKDT             = "kdt"
+	ScannerLabelBind            = "bind"
+	ScannerLabelAgent           = "agent"
+	ScannerLabelDocker          = "docker"
+	ScannerLabelImport          = "import"
+	ScannerLabelTemplate        = "template"
+	ScannerLabelCreatableOnTool = "creatable-on-tool"
 )
 
 func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResponse, error) {

@@ -53,7 +53,9 @@ type (
 	ScanPROptions struct {
 		From               string `json:"from"`
 		To                 string `json:"to"`
-		OverrideOldAnalyze bool   `json:"override-old-analyze"`
+		OverrideOldAnalyze bool   `json:"override_old_analyze"`
+		PRNumber           string `json:"pr_number"`
+		NoDecoration       bool   `json:"no_decoration"`
 	}
 
 	ResultSet struct {
@@ -102,8 +104,10 @@ type (
 	}
 
 	PRInfo struct {
-		OK     bool   `json:"ok" json:"ok"`
-		Target string `json:"target" bson:"target" valid:"Branch"`
+		OK           bool   `json:"ok" json:"ok"`
+		Target       string `json:"target" bson:"target" valid:"Branch"`
+		PRNumber     string `json:"pr_number"`
+		NoDecoration bool   `json:"no_decoration"`
 	}
 
 	Custom struct {

@@ -38,6 +38,7 @@ const (
 	modeByScanID
 	modeByProjectTool
 	modeByProjectToolAndPR
+	modeByProjectToolAndPRNumber
 	modeByProjectToolAndForkScan
 	modeByProjectToolAndMetadata
 	modeByImage
@@ -54,6 +55,8 @@ func init() {
 	scanCmd.Flags().StringP("file", "f", "", "scan result file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull-request")
+	scanCmd.Flags().StringP("github-pr-number", "", "", "github pull-request number")
+	scanCmd.Flags().Bool("no-decoration", false, "no decoration for pr number")
 	scanCmd.Flags().String("image", "I", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
@@ -165,6 +168,13 @@ func (s *Scan) startScan() (string, error) {
 	case modeByProjectToolAndPR:
 		// scan mode to restart a scan with the given project, tool and pr params
 		eventID, err := s.startScanByProjectToolAndPR()
+		if err != nil {
+			return "", err
+		}
+		return eventID, nil
+	case modeByProjectToolAndPRNumber:
+		// scan mode to restart a scan with the given project, tool and pr number
+		eventID, err := s.startScanByProjectToolAndPRNumber()
 		if err != nil {
 			return "", err
 		}
@@ -282,7 +292,7 @@ func (s *Scan) scanByFileImport() (string, error) {
 		"meta_data":            meta,
 		"target":               target,
 		"fork-scan":            strconv.FormatBool(forkScan),
-		"override-old-analyze": strconv.FormatBool(override),
+		"override_old_analyze": strconv.FormatBool(override),
 	}
 
 	eventID, err := s.client.ImportScanResult(absoluteFilePath, form)
@@ -568,6 +578,144 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	return s.client.CreateNewScan(scanData)
 }
 
+func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
+	rescanOnly, scanner, err := s.checkForRescanOnlyTool()
+	if err != nil {
+		return "", err
+	}
+	// Parse command line flags
+	project, err := s.findORCreateProject()
+	if err != nil {
+		return "", fmt.Errorf("failed to parse project flag: %w", err)
+	}
+	tool, err := s.cmd.Flags().GetString("tool")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse tool flag: %w", err)
+	}
+	noDecoration, err := s.cmd.Flags().GetBool("no-decoration")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse no-decoration flag: %w", err)
+	}
+	prNumber, err := s.cmd.Flags().GetString("github-pr-number")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse pr-number flag: %w", err)
+	}
+	if prNumber == "" {
+		return "", errors.New("missing pr-number fields")
+	}
+	override, err := s.cmd.Flags().GetBool("override")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse override flag: %w", err)
+	}
+	meta, err := s.cmd.Flags().GetString("meta")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse meta flag: %w", err)
+	}
+	agent, err := s.cmd.Flags().GetString("agent")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse agent flag: %w", err)
+	}
+
+	var agentID string
+	if len(agent) > 0 {
+		agentDetail, err := s.client.FindAgentByLabel(agent)
+		if err != nil {
+			return "", fmt.Errorf("failed to get agent: %w", err)
+		}
+		agentID = agentDetail.ID
+	}
+
+	params := &client.ScanSearchParams{
+		Tool:     tool,
+		MetaData: meta,
+		AgentID:  agentID,
+		Limit:    1,
+	}
+
+	scan, err := s.client.FindScan(project.Name, params)
+	if err == nil {
+		opt := &client.ScanPROptions{
+			OverrideOldAnalyze: override,
+			PRNumber:           prNumber,
+			NoDecoration:       noDecoration,
+		}
+		eventID, err := s.client.RestartScanWithOption(scan.ID, opt)
+		if err != nil {
+			qwe(ExitCodeError, err, "could not start scan")
+		}
+		return eventID, nil
+	} else {
+		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
+	}
+
+	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
+		MetaData: meta,
+		ToolID:   scanner.ID,
+		Agent:    agent,
+		PR:       true,
+		Limit:    1,
+	})
+	if err != nil {
+		klog.Debugf("failed to get scanparams: %v, trying to create a new scan", err)
+	}
+
+	var scanData = func() *client.Scan {
+		if sp != nil {
+			return &client.Scan{
+				ScanparamsID: sp.ID,
+				PR: client.PRInfo{
+					OK:           true,
+					PRNumber:     prNumber,
+					NoDecoration: noDecoration,
+				},
+			}
+		}
+
+		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+			klog.Debugf("scanner tool %s is only allowing rescans", tool)
+			qwm(ExitCodeError, "no scans found for given project, tool and PR configuration")
+		}
+
+		var scan = &client.Scan{
+			MetaData: meta,
+			Project:  project.Name,
+			ToolID:   scanner.ID,
+			Custom: client.Custom{
+				Type: scanner.CustomType,
+			},
+			PR: client.PRInfo{
+				OK:           true,
+				PRNumber:     prNumber,
+				NoDecoration: noDecoration,
+			},
+		}
+
+		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
+			agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
+			if err != nil {
+				klog.Debugf("failed to get active agents: %v")
+				qwm(ExitCodeError, "failed to get active agents")
+			}
+			if agents.Total == 0 {
+				klog.Debugf("no found agent to start scan: %v")
+				qwm(ExitCodeError, "no found agent to start scan")
+			}
+			if agents.Total > 1 {
+				klog.Debugf("[%d] agents found. Please specify it which one should be selected", agents.Total)
+				qwm(ExitCodeError, "multiple agents found, please select one")
+			}
+
+			agent := agents.ActiveAgents.First()
+			klog.Debugf("agent [%s] found. Setting scan with agent", agent.Label)
+			scan.AgentID = agent.ID
+		}
+
+		return scan
+	}()
+
+	return s.client.CreateNewScan(scanData)
+}
+
 func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	rescanOnly, scanner, err := s.checkForRescanOnlyTool()
 	if err != nil {
@@ -781,6 +929,7 @@ func getScanMode(cmd *cobra.Command) uint {
 	byBranch := cmd.Flag("merge-target").Changed
 	byForkScan := cmd.Flag("fork-scan").Changed
 	byMerge := cmd.Flag("branch").Changed
+	byGithubPRNumber := cmd.Flag("github-pr-number").Changed
 	byImage := cmd.Flag("image").Changed
 	byRepo := cmd.Flag("repo-id").Changed
 	byProjectORRepo := byProject || byRepo
@@ -790,6 +939,7 @@ func getScanMode(cmd *cobra.Command) uint {
 	byProjectAndToolAndPullRequest := byProjectORRepo && byTool && byPR && !byFile
 	byProjectAndToolAndFile := byProjectORRepo && byTool && byFile
 	byProjectAndToolAndForkScan := byProjectORRepo && byTool && byForkScan && !byPR
+	byProjectAndToolAndPullRequestNumber := byProjectORRepo && byTool && byGithubPRNumber && !byFile
 
 	mode := func() uint {
 		// sorted by priority
@@ -802,6 +952,8 @@ func getScanMode(cmd *cobra.Command) uint {
 			return modeByScanID
 		case byProjectAndToolAndPullRequest:
 			return modeByProjectToolAndPR
+		case byProjectAndToolAndPullRequestNumber:
+			return modeByProjectToolAndPRNumber
 		case byProjectAndToolAndForkScan:
 			return modeByProjectToolAndForkScan
 		case byProjectAndTool:

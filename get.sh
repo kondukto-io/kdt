@@ -81,7 +81,7 @@ getPackage() {
     suffix="-darwin"
     ;;
     "MINGW"*)
-    suffix=".exe"
+    suffix="-windows"
     BINLOCATION="$HOME/bin"
     mkdir -p $BINLOCATION
 

@@ -55,7 +55,7 @@ func init() {
 	scanCmd.Flags().StringP("file", "f", "", "scan result file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull-request")
-	scanCmd.Flags().StringP("pr-number", "", "", "pull-request number. supported alms[github, gitlab, azure cloud]")
+	scanCmd.Flags().StringP("pr-number", "", "", "pull-request number. supported alms[github, gitlab, azure, bitbucket]")
 	scanCmd.Flags().Bool("no-decoration", false, "no decoration for pr number")
 	scanCmd.Flags().String("image", "I", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")

@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -14,8 +15,40 @@ import (
 	"github.com/spf13/viper"
 )
 
-func (c *Client) ImportSBOM(file string, projectId string, branch string, form ImportForm) error {
+func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	klog.Debugf("importing sbom content using file:%s", file)
+
+	projectId := form["project"]
+
+	if projectId != "" {
+		projects, err := c.ListProjects(form["project"], repo)
+		if err != nil {
+			return err
+		}
+
+		if len(projects) == 1 {
+			projectId = projects[0].ID
+			form["project"] = projects[0].Name
+		}
+
+		if len(projects) > 1 {
+			return errors.New("multiple projects found for given parameters")
+		}
+	} else if repo != "" {
+		projects, err := c.ListProjects(form["project"], repo)
+		if err != nil {
+			return err
+		}
+
+		if len(projects) == 1 {
+			projectId = projects[0].ID
+			form["project"] = projects[0].Name
+		}
+
+		if len(projects) > 1 {
+			return errors.New("multiple projects found for given parameters")
+		}
+	}
 
 	path := fmt.Sprintf("/api/v2/%s/sbom/upload", projectId)
 	rel := &url.URL{Path: path}
@@ -53,6 +86,7 @@ func (c *Client) ImportSBOM(file string, projectId string, branch string, form I
 	if err != nil {
 		return err
 	}
+
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
 	req.Header.Set("Accept", "application/json")

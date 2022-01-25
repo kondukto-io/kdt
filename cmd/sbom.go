@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/kondukto-io/kdt/client"
+	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/cobra"
 )
 
-// sbomCmd represents the list command
+// sbomCmd represents the sbom root command
 var sbomCmd = &cobra.Command{
 	Use:   "sbom",
 	Short: "base command for SBOM(Software bill of materials) imports",
@@ -22,17 +24,15 @@ var sbomCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(sbomCmd)
 
-	//sbomCmd.Flags().StringP("import", "", "", "import SBOM file(optional. if omitted, will work in import mode)")
-	// sbomCmd.Flags().Bool("import", false, "import SBOM file(optional. if omitted, will work in import mode)")
-
 	sbomCmd.AddCommand(importSbomCmd)
 
 	importSbomCmd.Flags().StringP("file", "f", "", "SBOM file to be imported. currently only .json format is supported")
 	importSbomCmd.Flags().StringP("project", "p", "", "kondukto project id or name")
+	importSbomCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository")
 	importSbomCmd.Flags().StringP("branch", "b", "", "branch name for the project receiving the sbom")
 }
 
-// importSbomCmd represents the listProjects command
+// importSbomCmd represents the sbom import command
 var importSbomCmd = &cobra.Command{
 	Use:   "import",
 	Short: "imports sbom file to Kondukto",
@@ -67,6 +67,10 @@ func (s *SBOMImport) sbomImport() error {
 		return fmt.Errorf("failed to parse file flag: %w", err)
 	}
 
+	if !s.cmd.Flags().Changed("repo-id") && !s.cmd.Flags().Changed("project") {
+		return errors.New("missing a required flag(repo or project) to get project detail")
+	}
+
 	projectName, err := s.cmd.Flags().GetString("project")
 	if err != nil {
 		return fmt.Errorf("failed to get project flag: %w", err)
@@ -77,15 +81,29 @@ func (s *SBOMImport) sbomImport() error {
 		return fmt.Errorf("failed to parse branch flag: %w", err)
 	}
 
+	repo, err := s.cmd.Flags().GetString("repo-id")
+	if err != nil {
+		return fmt.Errorf("failed to parse repo-id flag: %w", err)
+	}
+
 	var form = client.ImportForm{
 		"project": projectName,
 		"branch":  branch,
 	}
 
-	err = s.client.ImportSBOM(file, projectName, branch, form)
+	err = s.client.ImportSBOM(file, repo, form)
 	if err != nil {
 		return fmt.Errorf("failed to import scan results: %w", err)
 	}
+
+	importInfo := ""
+	if projectName == "" {
+		importInfo = fmt.Sprintf("%s(ALM)", repo)
+	} else {
+		importInfo = fmt.Sprintf("%s(kondukto project)", projectName)
+	}
+
+	klog.Printf("sbom file imported successfully for: [%s]", importInfo)
 
 	return nil
 }

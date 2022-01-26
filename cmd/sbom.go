@@ -29,6 +29,7 @@ func init() {
 	importSbomCmd.Flags().StringP("file", "f", "", "SBOM file to be imported. currently only .json format is supported")
 	importSbomCmd.Flags().StringP("project", "p", "", "kondukto project id or name")
 	importSbomCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository")
+	importSbomCmd.Flags().StringP("sbom-type", "s", "", "Custom type(optional). Passing a different value than existing type(i.e application, container etc.) is advised")
 	importSbomCmd.Flags().StringP("branch", "b", "", "branch name for the project receiving the sbom")
 }
 
@@ -86,9 +87,15 @@ func (s *SBOMImport) sbomImport() error {
 		return fmt.Errorf("failed to parse repo-id flag: %w", err)
 	}
 
+	sbomType, err := s.cmd.Flags().GetString("sbom-type")
+	if err != nil {
+		return fmt.Errorf("failed to parse sbom-type flag: %w", err)
+	}
+
 	var form = client.ImportForm{
-		"project": projectName,
-		"branch":  branch,
+		"project":   projectName,
+		"branch":    branch,
+		"sbom_type": sbomType,
 	}
 
 	err = s.client.ImportSBOM(file, repo, form)

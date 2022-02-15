@@ -20,10 +20,12 @@ type (
 		Limit  int    `url:"limit"`
 	}
 	ScannersResponse struct {
-		ActiveScanners []ScannerInfo `json:"active_scanners"`
-		Total          int           `json:"total"`
+		ActiveScanners ActiveScanners `json:"active_scanners"`
+		Total          int            `json:"total"`
 	}
-	ScannerInfo struct {
+
+	ActiveScanners []ScannerInfo
+	ScannerInfo    struct {
 		ID          string   `json:"id"`
 		Type        string   `json:"type"`
 		Slug        string   `json:"slug"`
@@ -33,6 +35,7 @@ type (
 	}
 )
 
+// HasLabel returns true if the given label is present in the receiver's labels
 func (s ScannerInfo) HasLabel(l string) bool {
 	for _, label := range s.Labels {
 		if label == l {
@@ -40,6 +43,14 @@ func (s ScannerInfo) HasLabel(l string) bool {
 		}
 	}
 	return false
+}
+
+// First returns the first element in the list.
+func (s ActiveScanners) First() *ScannerInfo {
+	if len(s) == 0 {
+		return nil
+	}
+	return &s[0]
 }
 
 const (
@@ -95,4 +106,12 @@ func (c *Client) IsValidTool(tool string) bool {
 	}
 
 	return true
+}
+
+// IsRescanOnlyLabel returns true if the given label is a rescan only label
+func IsRescanOnlyLabel(label string) bool {
+	if label == ScannerLabelBind || label == ScannerLabelAgent || label == ScannerLabelTemplate {
+		return true
+	}
+	return false
 }

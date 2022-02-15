@@ -811,21 +811,22 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 	if scanners.Total == 0 {
 		return false, nil, fmt.Errorf("invalid or inactive scanner tool name: %s", name)
 	}
-	scanner := scanners.ActiveScanners[0]
-	for _, label := range scanner.Labels {
-		if label == client.ScannerLabelCreatableOnTool {
-			return false, &scanner, nil
-		}
+	if scanners.Total > 1 {
+		return false, nil, fmt.Errorf("multiple scanners found for tool: %s", name)
 	}
+
+	scanner := scanners.ActiveScanners.First()
+	if scanner.HasLabel(client.ScannerLabelCreatableOnTool) {
+		return false, scanner, nil
+	}
+
 	for _, label := range scanner.Labels {
-		if label == client.ScannerLabelBind ||
-			label == client.ScannerLabelAgent ||
-			label == client.ScannerLabelTemplate {
-			return true, &scanner, nil
+		if client.IsRescanOnlyLabel(label) {
+			return true, scanner, nil
 		}
 	}
 
-	return false, &scanner, nil
+	return false, scanner, nil
 }
 
 func (s *Scan) findORCreateProject() (*client.Project, error) {

@@ -85,12 +85,12 @@ func (c *Client) IsValidTool(tool string) bool {
 
 	scanners, err := c.ListActiveScanners(&ScannersSearchParams{Name: tool})
 	if err != nil {
-		klog.Debugf("failed to get active scanners: %v", err)
+		klog.Debugf("failed to get active tools: %v", err)
 		return false
 	}
 
 	if scanners.Total == 0 {
-		klog.Debugf("invalid or inactive tool name: %s", tool)
+		klog.Debugf("no tool found by given tool name. invalid or inactive tool name: %s", tool)
 		return false
 	}
 

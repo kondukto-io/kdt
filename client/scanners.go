@@ -45,6 +45,7 @@ const (
 	ScannerLabelCreatableOnTool = "creatable-on-tool"
 )
 
+// ListActiveScanners returns a list of active scanners
 func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResponse, error) {
 	klog.Debugf("retrieving active scanners")
 
@@ -73,6 +74,7 @@ func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResp
 	return &scanners, nil
 }
 
+// IsValidTool returns true if the given tool name is a valid tool
 func (c *Client) IsValidTool(tool string) bool {
 	klog.Debugf("validating given tool name [%s]", tool)
 

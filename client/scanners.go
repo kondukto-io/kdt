@@ -35,24 +35,6 @@ type (
 	}
 )
 
-// HasLabel returns true if the given label is present in the receiver's labels
-func (s ScannerInfo) HasLabel(l string) bool {
-	for _, label := range s.Labels {
-		if label == l {
-			return true
-		}
-	}
-	return false
-}
-
-// First returns the first element in the list.
-func (s ActiveScanners) First() *ScannerInfo {
-	if len(s) == 0 {
-		return nil
-	}
-	return &s[0]
-}
-
 const (
 	ScannerLabelKDT             = "kdt"
 	ScannerLabelBind            = "bind"
@@ -114,4 +96,22 @@ func IsRescanOnlyLabel(label string) bool {
 		return true
 	}
 	return false
+}
+
+// HasLabel returns true if the given label is present in the receiver's labels
+func (s ScannerInfo) HasLabel(l string) bool {
+	for _, label := range s.Labels {
+		if label == l {
+			return true
+		}
+	}
+	return false
+}
+
+// First returns the first element in the list.
+func (s ActiveScanners) First() *ScannerInfo {
+	if len(s) == 0 {
+		return nil
+	}
+	return &s[0]
 }

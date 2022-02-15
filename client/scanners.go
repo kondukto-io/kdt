@@ -81,7 +81,7 @@ func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResp
 }
 
 func (c *Client) IsValidTool(tool string) bool {
-	klog.Debugf("validating tool name")
+	klog.Debugf("validating given tool name [%s]", tool)
 
 	scanners, err := c.ListActiveScanners(&ScannersSearchParams{Name: tool})
 	if err != nil {

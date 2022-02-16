@@ -111,7 +111,8 @@ type (
 	}
 
 	Custom struct {
-		Type int `json:"type" bson:"type"`
+		Type   int                    `json:"type" bson:"type"`
+		Params map[string]interface{} `json:"params" bson:"params"`
 	}
 )
 

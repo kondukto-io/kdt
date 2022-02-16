@@ -106,6 +106,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 }
 
 func (p *Project) createProject(repo string, force bool) *client.Project {
+	klog.Debugf("creating project with repo-id: %s", repo)
 	if len(p.printRows) == 0 {
 		p.printRows = projectPrintHeaders()
 	}

@@ -57,11 +57,13 @@ func init() {
 	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull-request")
 	scanCmd.Flags().StringP("github-pr-number", "", "", "github pull-request number")
 	scanCmd.Flags().Bool("no-decoration", false, "no decoration for pr number")
-	scanCmd.Flags().String("image", "I", "image to scan with container security products")
+	scanCmd.Flags().StringP("image", "I", "", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
+	scanCmd.Flags().String("sonatype-app-id", "", "public id of sonatype application")
+	scanCmd.Flags().String("sonatype-report-id", "", "report id of sonatype application")
 
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
 	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")
@@ -308,7 +310,6 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	// Parse command line flags
 	project, err := s.findORCreateProject()
 	if err != nil {
@@ -351,7 +352,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
-	if err == nil {
+	if err == nil && !s.cmd.Flags().Changed("sonatype-report-id") {
 		klog.Print("a completed scan found with the same parameters, restarting")
 		eventID, err := s.client.RestartScanByScanID(scan.ID)
 		if err != nil {
@@ -375,12 +376,28 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		klog.Debugf("failed to get scanparams: %v, trying to create new scan", err)
 	}
 
+	var custom = client.Custom{Type: scanner.CustomType}
+	if scanner.Slug == "sonatypenl" {
+		reportID, err := s.cmd.Flags().GetString("sonatype-report-id")
+		if err != nil {
+			return "", fmt.Errorf("failed to parse sonatype-report-id flag: %w", err)
+		}
+		appID, err := s.cmd.Flags().GetString("sonatype-app-id")
+		if err != nil {
+			return "", fmt.Errorf("failed to parse sonatype-app-id flag: %w", err)
+		}
+		custom.Params = map[string]interface{}{
+			"report_id": reportID,
+			"public_id": appID,
+		}
+	}
+
 	scanData := &client.Scan{
 		MetaData: meta,
 		Branch:   branch,
 		Project:  project.Name,
 		ToolID:   scanner.ID,
-		Custom:   client.Custom{Type: scanner.CustomType},
+		Custom:   custom,
 	}
 
 	if sp != nil {
@@ -390,14 +407,14 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
-		klog.Debugf("scanner tool %s is only allowing rescans", tool)
+		klog.Debugf("scanner tool [%s] is only allowing rescans", tool)
 		qwm(ExitCodeError, "no scans found for given project and tool configuration")
 	}
 
 	scanparamsData := client.ScanparamsDetail{
 		Branch:   branch,
 		MetaData: meta,
-		Custom:   &client.Custom{Type: scanner.CustomType},
+		Custom:   &custom,
 		ScanType: "kdt",
 		Tool: &client.ScanparamsItem{
 			ID: scanner.ID,

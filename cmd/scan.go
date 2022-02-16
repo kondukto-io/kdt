@@ -560,6 +560,8 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	var scanData = func() *client.Scan {
 		if sp != nil {
 			return &client.Scan{
+				Project:      project.Name,
+				ToolID:       scanner.ID,
 				ScanparamsID: sp.ID,
 				Custom:       custom,
 			}
@@ -700,6 +702,8 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		if sp != nil {
 			return &client.Scan{
 				ScanparamsID: sp.ID,
+				ToolID:       scanner.ID,
+				Project:      project.Name,
 				PR: client.PRInfo{
 					OK:           true,
 					PRNumber:     prNumber,

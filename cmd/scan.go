@@ -57,11 +57,13 @@ func init() {
 	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull-request")
 	scanCmd.Flags().StringP("pr-number", "", "", "pull-request number. supported alms[github, gitlab, azure, bitbucket]")
 	scanCmd.Flags().Bool("no-decoration", false, "no decoration for pr number")
-	scanCmd.Flags().String("image", "I", "image to scan with container security products")
+	scanCmd.Flags().StringP("image", "I", "", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
+	scanCmd.Flags().String("sonatype-app-id", "", "public id of sonatype application")
+	scanCmd.Flags().String("sonatype-report-id", "", "report id of sonatype application")
 
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
 	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")
@@ -308,7 +310,6 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	// Parse command line flags
 	project, err := s.findORCreateProject()
 	if err != nil {
@@ -351,16 +352,16 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
-	if err == nil {
+	if err == nil && !s.cmd.Flags().Changed("sonatype-report-id") {
 		klog.Print("a completed scan found with the same parameters, restarting")
 		eventID, err := s.client.RestartScanByScanID(scan.ID)
 		if err != nil {
 			return "", err
 		}
 		return eventID, nil
-	} else {
-		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 	}
+
+	klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
 		ToolID:   scanner.ID,
@@ -375,12 +376,17 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		klog.Debugf("failed to get scanparams: %v, trying to create new scan", err)
 	}
 
+	var custom = client.Custom{Type: scanner.CustomType}
+	if scanner.Slug == "sonatypenl" {
+		custom = s.parseSonatypeParams(custom)
+	}
+
 	scanData := &client.Scan{
 		MetaData: meta,
 		Branch:   branch,
 		Project:  project.Name,
 		ToolID:   scanner.ID,
-		Custom:   client.Custom{Type: scanner.CustomType},
+		Custom:   custom,
 	}
 
 	if sp != nil {
@@ -390,14 +396,14 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
-		klog.Debugf("scanner tool %s is only allowing rescans", tool)
+		klog.Debugf("scanner tool [%s] is only allowing rescans", tool)
 		qwm(ExitCodeError, "no scans found for given project and tool configuration")
 	}
 
 	scanparamsData := client.ScanparamsDetail{
 		Branch:   branch,
 		MetaData: meta,
-		Custom:   &client.Custom{Type: scanner.CustomType},
+		Custom:   &custom,
 		ScanType: "kdt",
 		Tool: &client.ScanparamsItem{
 			ID: scanner.ID,
@@ -439,6 +445,25 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	scanData.ScanparamsID = scanparams.ID
 	klog.Printf("creating a new scan")
 	return s.client.CreateNewScan(scanData)
+}
+
+func (s *Scan) parseSonatypeParams(custom client.Custom) client.Custom {
+	reportID, err := s.cmd.Flags().GetString("sonatype-report-id")
+	if err != nil {
+		klog.Debugf("failed to parse sonatype-report-id flag: %v", err)
+		qwm(ExitCodeError, "failed to parse sonatype sonatype-report-id flag")
+	}
+	appID, err := s.cmd.Flags().GetString("sonatype-app-id")
+	if err != nil {
+		klog.Debugf("failed to parse sonatype-app-id flag: %v", err)
+		qwm(ExitCodeError, "failed to parse sonatype-app-id flag")
+
+	}
+	custom.Params = map[string]interface{}{
+		"report_id": reportID,
+		"public_id": appID,
+	}
+	return custom
 }
 
 func (s *Scan) startScanByProjectToolAndPR() (string, error) {
@@ -498,21 +523,26 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		Limit:    1,
 	}
 
+	var custom = client.Custom{Type: scanner.CustomType}
+	if scanner.Slug == "sonatypenl" {
+		custom = s.parseSonatypeParams(custom)
+	}
+
 	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
 		opt := &client.ScanPROptions{
 			From:               branch,
 			To:                 mergeTarget,
 			OverrideOldAnalyze: override,
+			Custom:             custom,
 		}
 		eventID, err := s.client.RestartScanWithOption(scan.ID, opt)
 		if err != nil {
 			qwe(ExitCodeError, err, "could not start scan")
 		}
 		return eventID, nil
-	} else {
-		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 	}
+	klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
 		MetaData: meta,
@@ -529,7 +559,12 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 	var scanData = func() *client.Scan {
 		if sp != nil {
-			return &client.Scan{ScanparamsID: sp.ID}
+			return &client.Scan{
+				Project:      project.Name,
+				ToolID:       scanner.ID,
+				ScanparamsID: sp.ID,
+				Custom:       custom,
+			}
 		}
 
 		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
@@ -540,11 +575,9 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		var scan = &client.Scan{
 			MetaData: meta,
 			Branch:   branch,
+			Custom:   custom,
 			Project:  project.Name,
 			ToolID:   scanner.ID,
-			Custom: client.Custom{
-				Type: scanner.CustomType,
-			},
 			PR: client.PRInfo{
 				OK:     true,
 				Target: mergeTarget,
@@ -629,21 +662,27 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		Limit:    1,
 	}
 
+	var custom = client.Custom{Type: scanner.CustomType}
+	if scanner.Slug == "sonatypenl" {
+		custom = s.parseSonatypeParams(custom)
+	}
 	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
 		opt := &client.ScanPROptions{
 			OverrideOldAnalyze: override,
 			PRNumber:           prNumber,
 			NoDecoration:       noDecoration,
+			Custom:             custom,
 		}
+
 		eventID, err := s.client.RestartScanWithOption(scan.ID, opt)
 		if err != nil {
 			qwe(ExitCodeError, err, "could not start scan")
 		}
 		return eventID, nil
-	} else {
-		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 	}
+
+	klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
 		MetaData: meta,
@@ -660,11 +699,14 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		if sp != nil {
 			return &client.Scan{
 				ScanparamsID: sp.ID,
+				ToolID:       scanner.ID,
+				Project:      project.Name,
 				PR: client.PRInfo{
 					OK:           true,
 					PRNumber:     prNumber,
 					NoDecoration: noDecoration,
 				},
+				Custom: custom,
 			}
 		}
 
@@ -674,12 +716,10 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		}
 
 		var scan = &client.Scan{
-			MetaData: meta,
 			Project:  project.Name,
 			ToolID:   scanner.ID,
-			Custom: client.Custom{
-				Type: scanner.CustomType,
-			},
+			Custom:   custom,
+			MetaData: meta,
 			PR: client.PRInfo{
 				OK:           true,
 				PRNumber:     prNumber,
@@ -808,21 +848,22 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 	if scanners.Total == 0 {
 		return false, nil, fmt.Errorf("invalid or inactive scanner tool name: %s", name)
 	}
-	scanner := scanners.ActiveScanners[0]
-	for _, label := range scanner.Labels {
-		if label == client.ScannerLabelCreatableOnTool {
-			return false, &scanner, nil
-		}
+	if scanners.Total > 1 {
+		return false, nil, fmt.Errorf("multiple scanners found for tool: %s", name)
 	}
+
+	scanner := scanners.ActiveScanners.First()
+	if scanner.HasLabel(client.ScannerLabelCreatableOnTool) {
+		return false, scanner, nil
+	}
+
 	for _, label := range scanner.Labels {
-		if label == client.ScannerLabelBind ||
-			label == client.ScannerLabelAgent ||
-			label == client.ScannerLabelTemplate {
-			return true, &scanner, nil
+		if client.IsRescanOnlyLabel(label) {
+			return true, scanner, nil
 		}
 	}
 
-	return false, &scanner, nil
+	return false, scanner, nil
 }
 
 func (s *Scan) findORCreateProject() (*client.Project, error) {
@@ -919,7 +960,7 @@ func statusMsg(s int) string {
 
 func getScanMode(cmd *cobra.Command) uint {
 	// Check scan method
-	byFile := cmd.Flag("file").Changed
+	byImportFile := cmd.Flag("file").Changed
 	byTool := cmd.Flag("tool").Changed
 	byScanID := cmd.Flag("scan-id").Changed
 	byProject := cmd.Flag("project").Changed
@@ -932,11 +973,11 @@ func getScanMode(cmd *cobra.Command) uint {
 	byProjectORRepo := byProject || byRepo
 	byPR := byBranch && byMerge
 
-	byProjectAndTool := byProjectORRepo && byTool && !byPR
-	byProjectAndToolAndPullRequest := byProjectORRepo && byTool && byPR && !byFile
-	byProjectAndToolAndFile := byProjectORRepo && byTool && byFile
+	byProjectAndTool := byProjectORRepo && byTool && !byPR //
+	byProjectAndToolAndFile := byProjectAndTool && byImportFile
 	byProjectAndToolAndForkScan := byProjectORRepo && byTool && byForkScan && !byPR
-	byProjectAndToolAndPullRequestNumber := byProjectORRepo && byTool && byPRNumber && !byFile
+	byProjectAndToolAndPullRequestNumber := byProjectORRepo && byTool && byPRNumber && !byImportFile
+	byProjectAndToolAndPullRequest := byProjectORRepo && byTool && byPR && !byImportFile //
 
 	mode := func() uint {
 		// sorted by priority

@@ -20,10 +20,12 @@ type (
 		Limit  int    `url:"limit"`
 	}
 	ScannersResponse struct {
-		ActiveScanners []ScannerInfo `json:"active_scanners"`
-		Total          int           `json:"total"`
+		ActiveScanners ActiveScanners `json:"active_scanners"`
+		Total          int            `json:"total"`
 	}
-	ScannerInfo struct {
+
+	ActiveScanners []ScannerInfo
+	ScannerInfo    struct {
 		ID          string   `json:"id"`
 		Type        string   `json:"type"`
 		Slug        string   `json:"slug"`
@@ -32,15 +34,6 @@ type (
 		CustomType  int      `json:"custom_type"`
 	}
 )
-
-func (s ScannerInfo) HasLabel(l string) bool {
-	for _, label := range s.Labels {
-		if label == l {
-			return true
-		}
-	}
-	return false
-}
 
 const (
 	ScannerLabelKDT             = "kdt"
@@ -52,6 +45,7 @@ const (
 	ScannerLabelCreatableOnTool = "creatable-on-tool"
 )
 
+// ListActiveScanners returns a list of active scanners
 func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResponse, error) {
 	klog.Debugf("retrieving active scanners")
 
@@ -80,19 +74,46 @@ func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResp
 	return &scanners, nil
 }
 
+// IsValidTool returns true if the given tool name is a valid tool
 func (c *Client) IsValidTool(tool string) bool {
-	klog.Debugf("validating tool name")
+	klog.Debugf("validating given tool name [%s]", tool)
 
 	scanners, err := c.ListActiveScanners(&ScannersSearchParams{Name: tool})
 	if err != nil {
-		klog.Debugf("failed to get active scanners: %v", err)
+		klog.Debugf("failed to get active tools: %v", err)
 		return false
 	}
 
 	if scanners.Total == 0 {
-		klog.Debugf("invalid or inactive tool name: %s", tool)
+		klog.Debugf("no tool found by given tool name. invalid or inactive tool name: %s", tool)
 		return false
 	}
 
 	return true
+}
+
+// IsRescanOnlyLabel returns true if the given label is a rescan only label
+func IsRescanOnlyLabel(label string) bool {
+	if label == ScannerLabelBind || label == ScannerLabelAgent || label == ScannerLabelTemplate {
+		return true
+	}
+	return false
+}
+
+// HasLabel returns true if the given label is present in the receiver's labels
+func (s ScannerInfo) HasLabel(l string) bool {
+	for _, label := range s.Labels {
+		if label == l {
+			return true
+		}
+	}
+	return false
+}
+
+// First returns the first element in the list.
+func (s ActiveScanners) First() *ScannerInfo {
+	if len(s) == 0 {
+		return nil
+	}
+	return &s[0]
 }

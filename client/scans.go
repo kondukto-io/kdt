@@ -56,6 +56,7 @@ type (
 		OverrideOldAnalyze bool   `json:"override_old_analyze"`
 		PRNumber           string `json:"pr_number"`
 		NoDecoration       bool   `json:"no_decoration"`
+		Custom             Custom `json:"custom"`
 	}
 
 	ResultSet struct {
@@ -111,7 +112,8 @@ type (
 	}
 
 	Custom struct {
-		Type int `json:"type" bson:"type"`
+		Type   int                    `json:"type" bson:"type"`
+		Params map[string]interface{} `json:"params" bson:"params"`
 	}
 )
 

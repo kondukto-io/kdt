@@ -89,7 +89,7 @@ func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (
 }
 
 func (c *Client) CreateScanparams(pID string, sp ScanparamsDetail) (*Scanparams, error) {
-	klog.Debug("creating a project")
+	klog.Debug("creating a scanparams")
 
 	req, err := c.newRequest(http.MethodPost, filepath.Join("/api/v2/projects", pID, "scanparams"), sp)
 	if err != nil {

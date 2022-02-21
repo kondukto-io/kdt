@@ -21,9 +21,13 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	projectId := form["project"]
 
 	if projectId != "" {
-		projects, err := c.ListProjects(form["project"], repo)
+		projects, err := c.ListProjects(projectId, repo)
 		if err != nil {
 			return err
+		}
+
+		if len(projects) == 0 {
+			return errors.New("no projects found for given parameters")
 		}
 
 		if len(projects) == 1 {
@@ -34,10 +38,14 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 		if len(projects) > 1 {
 			return errors.New("multiple projects found for given parameters")
 		}
-	} else if repo != "" {
-		projects, err := c.ListProjects(form["project"], repo)
+	} else {
+		projects, err := c.ListProjects(projectId, repo)
 		if err != nil {
 			return err
+		}
+
+		if len(projects) == 0 {
+			return errors.New("no projects found for given parameters")
 		}
 
 		if len(projects) == 1 {
@@ -105,7 +113,7 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to import sbom: %s", importResponse.Error)
+		return fmt.Errorf("failed to import sbom: %s, status code: %s", importResponse.Error, resp.StatusCode)
 	}
 
 	return nil

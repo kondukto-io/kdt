@@ -26,11 +26,11 @@ func init() {
 
 	sbomCmd.AddCommand(importSbomCmd)
 
-	importSbomCmd.Flags().StringP("file", "f", "", "SBOM file to be imported. currently only .json format is supported")
-	importSbomCmd.Flags().StringP("project", "p", "", "kondukto project id or name")
+	importSbomCmd.Flags().StringP("file", "f", "", "SBOM file to be imported. Currently only .json format is supported")
+	importSbomCmd.Flags().StringP("project", "p", "", "Kondukto project id or name")
 	importSbomCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository")
 	importSbomCmd.Flags().StringP("sbom-type", "s", "", "Custom type(optional). Passing a different value than existing type(i.e application, container etc.) is advised")
-	importSbomCmd.Flags().StringP("branch", "b", "", "branch name for the project receiving the sbom")
+	importSbomCmd.Flags().StringP("branch", "b", "", "Branch name for the project receiving the sbom")
 }
 
 // importSbomCmd represents the sbom import command
@@ -50,8 +50,7 @@ func importSbomRootCommand(cmd *cobra.Command, _ []string) {
 		cmd:    cmd,
 		client: c,
 	}
-	err = sbomImport.sbomImport()
-	if err != nil {
+	if err = sbomImport.sbomImport(); err != nil {
 		qwe(ExitCodeError, err, "failed to import sbom file")
 	}
 }

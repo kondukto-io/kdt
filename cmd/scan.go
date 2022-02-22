@@ -55,7 +55,7 @@ func init() {
 	scanCmd.Flags().StringP("file", "f", "", "scan result file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull-request")
-	scanCmd.Flags().StringP("github-pr-number", "", "", "github pull-request number")
+	scanCmd.Flags().StringP("pr-number", "", "", "pull-request number. supported alms[github, gitlab, azure, bitbucket]")
 	scanCmd.Flags().Bool("no-decoration", false, "no decoration for pr number")
 	scanCmd.Flags().StringP("image", "I", "", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
@@ -629,12 +629,9 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse no-decoration flag: %w", err)
 	}
-	prNumber, err := s.cmd.Flags().GetString("github-pr-number")
+	prNumber, err := s.cmd.Flags().GetString("pr-number")
 	if err != nil {
-		return "", fmt.Errorf("failed to parse pr-number flag: %w", err)
-	}
-	if prNumber == "" {
-		return "", errors.New("missing pr-number fields")
+		return "", fmt.Errorf("failed to get request number: %w", err)
 	}
 	override, err := s.cmd.Flags().GetBool("override")
 	if err != nil {
@@ -970,7 +967,7 @@ func getScanMode(cmd *cobra.Command) uint {
 	byBranch := cmd.Flag("merge-target").Changed
 	byForkScan := cmd.Flag("fork-scan").Changed
 	byMerge := cmd.Flag("branch").Changed
-	byGithubPRNumber := cmd.Flag("github-pr-number").Changed
+	byPRNumber := cmd.Flag("pr-number").Changed
 	byImage := cmd.Flag("image").Changed
 	byRepo := cmd.Flag("repo-id").Changed
 	byProjectORRepo := byProject || byRepo
@@ -979,8 +976,8 @@ func getScanMode(cmd *cobra.Command) uint {
 	byProjectAndTool := byProjectORRepo && byTool && !byPR //
 	byProjectAndToolAndFile := byProjectAndTool && byImportFile
 	byProjectAndToolAndForkScan := byProjectORRepo && byTool && byForkScan && !byPR
-	byProjectAndToolAndPullRequest := byProjectORRepo && byTool && byPR && !byImportFile                   //
-	byProjectAndToolAndPullRequestNumber := byProjectORRepo && byTool && byGithubPRNumber && !byImportFile //
+	byProjectAndToolAndPullRequestNumber := byProjectORRepo && byTool && byPRNumber && !byImportFile
+	byProjectAndToolAndPullRequest := byProjectORRepo && byTool && byPR && !byImportFile //
 
 	mode := func() uint {
 		// sorted by priority

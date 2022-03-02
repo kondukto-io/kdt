@@ -480,14 +480,14 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		// validate the given key parameter
 		fieldDetail := scanner.Params.Find(key)
 		if fieldDetail == nil {
-			klog.Debugf("param [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
-			qwm(ExitCodeError, "param key is not allowed by the scanner tool")
+			klog.Debugf("params [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
+			qwm(ExitCodeError, "params key is not allowed by the scanner tool")
 		}
 
 		parsedValue, err := fieldDetail.Parse(value)
 		if err != nil {
-			klog.Debugf("failed to parse param [%s] value [%s]: %v", key, value, err)
-			qwm(ExitCodeError, "invalid value for custom param key")
+			klog.Debugf("failed to parse params key [%s] value [%s]: %v", key, value, err)
+			qwm(ExitCodeError, "invalid value for custom params key")
 		}
 
 		custom.Params[key] = parsedValue

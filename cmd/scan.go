@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kondukto-io/kdt/client"
@@ -62,8 +63,9 @@ func init() {
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
-	scanCmd.Flags().String("sonatype-app-id", "", "public id of sonatype application")
+	scanCmd.Flags().String("sonatype-app-id", "", "public id of sonatype application]")
 	scanCmd.Flags().String("sonatype-report-id", "", "report id of sonatype application")
+	scanCmd.Flags().StringSlice("params", nil, "parameters for the scan")
 
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
 	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")
@@ -377,8 +379,8 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	var custom = client.Custom{Type: scanner.CustomType}
-	if scanner.Slug == "sonatypenl" {
-		custom = s.parseSonatypeParams(custom)
+	if s.cmd.Flags().Changed("params") {
+		custom = s.parseCustomParams(custom, *scanner)
 	}
 
 	scanData := &client.Scan{
@@ -447,21 +449,53 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	return s.client.CreateNewScan(scanData)
 }
 
-func (s *Scan) parseSonatypeParams(custom client.Custom) client.Custom {
-	reportID, err := s.cmd.Flags().GetString("sonatype-report-id")
+func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInfo) client.Custom {
+	if len(scanner.Params) == 0 {
+		klog.Debug("the scanner tool [%s] does not allow custom parameter", scanner.DisplayName)
+		qwm(ExitCodeError, "the scanner tool does not allow custom parameter")
+	}
+
+	params, err := s.cmd.Flags().GetStringSlice("params")
 	if err != nil {
 		klog.Debugf("failed to parse sonatype-report-id flag: %v", err)
 		qwm(ExitCodeError, "failed to parse sonatype sonatype-report-id flag")
 	}
-	appID, err := s.cmd.Flags().GetString("sonatype-app-id")
-	if err != nil {
-		klog.Debugf("failed to parse sonatype-app-id flag: %v", err)
-		qwm(ExitCodeError, "failed to parse sonatype-app-id flag")
 
+	custom.Params = map[string]interface{}{}
+
+	for _, v := range params {
+		keyValuePair := strings.Split(v, ":")
+		if len(keyValuePair) != 2 {
+			klog.Debug("invalid params flag: it should be key:value pairs: [%s]", keyValuePair)
+			qwm(ExitCodeError, "invalid params flag, the flag is should be a pair of [key:value]")
+		}
+
+		key := keyValuePair[0]
+		value := keyValuePair[1]
+		if _, ok := custom.Params[key]; ok {
+			klog.Debugf("params keys are not unique [%s]", key)
+			qwm(ExitCodeError, "params keys are not unique")
+		}
+
+		// validate the given key parameter
+		fieldDetail := scanner.Params.Find(key)
+		if fieldDetail == nil {
+			klog.Debugf("param [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
+			qwm(ExitCodeError, "param key is not allowed by the scanner tool")
+		}
+
+		parsedValue, err := fieldDetail.Parse(value)
+		if err != nil {
+			klog.Debugf("failed to parse param [%s] value [%s]: %v", key, value, err)
+			qwm(ExitCodeError, "invalid value for custom param key")
+		}
+
+		custom.Params[key] = parsedValue
 	}
-	custom.Params = map[string]interface{}{
-		"report_id": reportID,
-		"public_id": appID,
+
+	if len(custom.Params) < len(scanner.Params) {
+		klog.Debug("missing parameters for the scanner tool [%s]", scanner.DisplayName)
+		qwm(ExitCodeError, "missing parameters for the scanner tool")
 	}
 	return custom
 }
@@ -524,8 +558,8 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	}
 
 	var custom = client.Custom{Type: scanner.CustomType}
-	if scanner.Slug == "sonatypenl" {
-		custom = s.parseSonatypeParams(custom)
+	if s.cmd.Flags().Changed("params") {
+		custom = s.parseCustomParams(custom, *scanner)
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
@@ -663,8 +697,8 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	}
 
 	var custom = client.Custom{Type: scanner.CustomType}
-	if scanner.Slug == "sonatypenl" {
-		custom = s.parseSonatypeParams(custom)
+	if s.cmd.Flags().Changed("params") {
+		custom = s.parseCustomParams(custom, *scanner)
 	}
 	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {

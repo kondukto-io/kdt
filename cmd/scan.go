@@ -397,7 +397,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		return s.client.CreateNewScan(scanData)
 	}
 
-	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
 		klog.Debugf("scanner tool [%s] is only allowing rescans", tool)
 		qwm(ExitCodeError, "no scans found for given project and tool configuration")
 	}
@@ -422,11 +422,11 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
 		agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
 		if err != nil {
-			klog.Debugf("failed to get active agents: %v")
+			klog.Debugf("failed to get active agents: %v", err)
 			qwm(ExitCodeError, "failed to get active agents")
 		}
 		if agents.Total == 0 {
-			klog.Debugf("no found agent to start scan: %v")
+			klog.Debug("no found agent to start scan")
 			qwm(ExitCodeError, "no found agent to start scan")
 		}
 		if agents.Total > 1 {
@@ -435,7 +435,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		}
 
 		activeAgent := agents.ActiveAgents.First()
-		klog.Debugf("agent [%s] found. Setting scan with agent", activeAgent)
+		klog.Debugf("agent [%s] found. Setting scan with agent", activeAgent.Label)
 		scanparamsData.Agent = &client.ScanparamsItem{ID: activeAgent.ID}
 	}
 
@@ -451,7 +451,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 
 func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInfo) client.Custom {
 	if len(scanner.Params) == 0 {
-		klog.Debug("the scanner tool [%s] does not allow custom parameter", scanner.DisplayName)
+		klog.Debugf("the scanner tool [%s] does not allow custom parameter", scanner.DisplayName)
 		qwm(ExitCodeError, "the scanner tool does not allow custom parameter")
 	}
 
@@ -461,21 +461,21 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		qwm(ExitCodeError, "failed to parse sonatype sonatype-report-id flag")
 	}
 
-	custom.Params = map[string]interface{}{}
+	if len(scanner.Params) > len(params) {
+		klog.Debugf("missing parameters for the scanner tool [%s]", scanner.DisplayName)
+		qwm(ExitCodeError, "missing parameters for the scanner tool")
+	}
 
+	custom.Params = map[string]interface{}{}
 	for _, v := range params {
 		keyValuePair := strings.Split(v, ":")
 		if len(keyValuePair) != 2 {
-			klog.Debug("invalid params flag: it should be key:value pairs: [%s]", keyValuePair)
+			klog.Debugf("invalid params flag: it should be key:value pairs: [%s]", keyValuePair)
 			qwm(ExitCodeError, "invalid params flag, the flag is should be a pair of [key:value]")
 		}
 
 		key := keyValuePair[0]
 		value := keyValuePair[1]
-		if _, ok := custom.Params[key]; ok {
-			klog.Debugf("params keys are not unique [%s]", key)
-			qwm(ExitCodeError, "params keys are not unique")
-		}
 
 		// validate the given key parameter
 		fieldDetail := scanner.Params.Find(key)
@@ -490,12 +490,61 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 			qwm(ExitCodeError, "invalid value for custom params key")
 		}
 
-		custom.Params[key] = parsedValue
+		custom = s.appendKeyToParamsMap(key, custom, parsedValue)
 	}
 
-	if len(custom.Params) < len(scanner.Params) {
-		klog.Debug("missing parameters for the scanner tool [%s]", scanner.DisplayName)
-		qwm(ExitCodeError, "missing parameters for the scanner tool")
+	return custom
+}
+
+// appendKeyToParamsMap appends the key to the custom params map
+// generates a map objects if the key is contians a dot
+// for example: if key:"image.tag" and value:"latest" will generate a map object {"image": {"tag": "value"}}
+func (*Scan) appendKeyToParamsMap(key string, custom client.Custom, parsedValue interface{}) client.Custom {
+	var splitted = strings.Split(key, ".")
+	switch len(splitted) {
+	case 1:
+		custom.Params[key] = parsedValue
+	case 2:
+		key0 := splitted[0]
+		key1 := splitted[1]
+		if _, ok := custom.Params[key0]; !ok {
+			custom.Params[key0] = map[string]interface{}{}
+		}
+
+		key0map := custom.Params[key0].(map[string]interface{})
+		if _, ok := key0map[key1]; ok {
+			klog.Debugf("params keys are not unique [%s]", key)
+			qwm(ExitCodeError, "params keys are not unique")
+		}
+
+		key0map[key1] = parsedValue
+		custom.Params[key0] = key0map
+
+	case 3:
+		key0 := splitted[0]
+		key1 := splitted[1]
+		key2 := splitted[2]
+		if _, ok := custom.Params[key0]; !ok {
+			custom.Params[key0] = map[string]interface{}{}
+		}
+
+		key0map := custom.Params[key0].(map[string]interface{})
+		if _, ok := key0map[key1]; !ok {
+			key0map[key1] = map[string]interface{}{}
+		}
+
+		key1map := key0map[key1].(map[string]interface{})
+		if _, ok := key1map[key2]; ok {
+			klog.Debugf("params keys are not unique [%s]", key)
+			qwm(ExitCodeError, "params keys are not unique")
+		}
+		key1map[key2] = parsedValue
+		key0map[key1] = key1map
+		custom.Params[key0] = key0map
+
+	default:
+		klog.Debugf("unsupportted key: [%s]", key)
+		qwm(ExitCodeError, "unsupportted key, key can only contain one or two dots")
 	}
 	return custom
 }
@@ -601,7 +650,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 			}
 		}
 
-		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
 			klog.Debugf("scanner tool %s is only allowing rescans", tool)
 			qwm(ExitCodeError, "no scans found for given project, tool and PR configuration")
 		}
@@ -621,11 +670,11 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
 			agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
 			if err != nil {
-				klog.Debugf("failed to get active agents: %v")
+				klog.Debugf("failed to get active agents: %v", err)
 				qwm(ExitCodeError, "failed to get active agents")
 			}
 			if agents.Total == 0 {
-				klog.Debugf("no found agent to start scan: %v")
+				klog.Debug("no found agent to start scan")
 				qwm(ExitCodeError, "no found agent to start scan")
 			}
 			if agents.Total > 1 {
@@ -744,7 +793,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 			}
 		}
 
-		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
 			klog.Debugf("scanner tool %s is only allowing rescans", tool)
 			qwm(ExitCodeError, "no scans found for given project, tool and PR configuration")
 		}
@@ -764,11 +813,11 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
 			agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
 			if err != nil {
-				klog.Debugf("failed to get active agents: %v")
+				klog.Debugf("failed to get active agents: %v", err)
 				qwm(ExitCodeError, "failed to get active agents")
 			}
 			if agents.Total == 0 {
-				klog.Debugf("no found agent to start scan: %v")
+				klog.Debug("no found agent to start scan")
 				qwm(ExitCodeError, "no found agent to start scan")
 			}
 			if agents.Total > 1 {

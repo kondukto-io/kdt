@@ -52,6 +52,7 @@ type scannerCustomParamsType string
 const (
 	scannerCustomParamsTypeString  scannerCustomParamsType = "string"
 	scannerCustomParamsTypeInt     scannerCustomParamsType = "int"
+	scannerCustomParamsTypeUInt    scannerCustomParamsType = "uint"
 	scannerCustomParamsTypeBoolean scannerCustomParamsType = "bool"
 )
 
@@ -70,6 +71,12 @@ func (s ScannerCustomParams) Parse(k string) (interface{}, error) {
 		return k, nil
 	case scannerCustomParamsTypeInt:
 		i, err := strconv.Atoi(k)
+		if err != nil {
+			return nil, err
+		}
+		return i, nil
+	case scannerCustomParamsTypeUInt:
+		i, err := strconv.ParseUint(k, 10, 64)
 		if err != nil {
 			return nil, err
 		}

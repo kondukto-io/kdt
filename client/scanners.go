@@ -67,7 +67,7 @@ func (s ScannerParams) Find(k string) *ScannerCustomParams {
 func (s ScannerCustomParams) Parse(k string) (interface{}, error) {
 	switch s.Type {
 	case scannerCustomParamsTypeString:
-		return &s, nil
+		return k, nil
 	case scannerCustomParamsTypeInt:
 		i, err := strconv.Atoi(k)
 		if err != nil {

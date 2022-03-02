@@ -490,62 +490,9 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 			qwm(ExitCodeError, "invalid value for custom params key")
 		}
 
-		custom = s.appendKeyToParamsMap(key, custom, parsedValue)
+		custom = appendKeyToParamsMap(key, custom, parsedValue)
 	}
 
-	return custom
-}
-
-// appendKeyToParamsMap appends the key to the custom params map
-// generates a map objects if the key is contians a dot
-// for example: if key:"image.tag" and value:"latest" will generate a map object {"image": {"tag": "value"}}
-func (*Scan) appendKeyToParamsMap(key string, custom client.Custom, parsedValue interface{}) client.Custom {
-	var splitted = strings.Split(key, ".")
-	switch len(splitted) {
-	case 1:
-		custom.Params[key] = parsedValue
-	case 2:
-		key0 := splitted[0]
-		key1 := splitted[1]
-		if _, ok := custom.Params[key0]; !ok {
-			custom.Params[key0] = map[string]interface{}{}
-		}
-
-		key0map := custom.Params[key0].(map[string]interface{})
-		if _, ok := key0map[key1]; ok {
-			klog.Debugf("params keys are not unique [%s]", key)
-			qwm(ExitCodeError, "params keys are not unique")
-		}
-
-		key0map[key1] = parsedValue
-		custom.Params[key0] = key0map
-
-	case 3:
-		key0 := splitted[0]
-		key1 := splitted[1]
-		key2 := splitted[2]
-		if _, ok := custom.Params[key0]; !ok {
-			custom.Params[key0] = map[string]interface{}{}
-		}
-
-		key0map := custom.Params[key0].(map[string]interface{})
-		if _, ok := key0map[key1]; !ok {
-			key0map[key1] = map[string]interface{}{}
-		}
-
-		key1map := key0map[key1].(map[string]interface{})
-		if _, ok := key1map[key2]; ok {
-			klog.Debugf("params keys are not unique [%s]", key)
-			qwm(ExitCodeError, "params keys are not unique")
-		}
-		key1map[key2] = parsedValue
-		key0map[key1] = key1map
-		custom.Params[key0] = key0map
-
-	default:
-		klog.Debugf("unsupportted key: [%s]", key)
-		qwm(ExitCodeError, "unsupportted key, key can only contain one or two dots")
-	}
 	return custom
 }
 
@@ -1241,4 +1188,57 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 			qwm(ExitCodeError, "invalid event status")
 		}
 	}
+}
+
+// appendKeyToParamsMap appends the key to the custom params map
+// generates a nested map object if the key is contians a dot
+// for example: if key:"image.tag" and value:"latest" will generate a map object {"image": {"tag": "value"}}
+func appendKeyToParamsMap(key string, custom client.Custom, parsedValue interface{}) client.Custom {
+	var splitted = strings.Split(key, ".")
+	switch len(splitted) {
+	case 1:
+		custom.Params[key] = parsedValue
+	case 2:
+		key0 := splitted[0]
+		key1 := splitted[1]
+		if _, ok := custom.Params[key0]; !ok {
+			custom.Params[key0] = map[string]interface{}{}
+		}
+
+		key0map := custom.Params[key0].(map[string]interface{})
+		if _, ok := key0map[key1]; ok {
+			klog.Debugf("params keys are not unique [%s]", key)
+			qwm(ExitCodeError, "params keys are not unique")
+		}
+
+		key0map[key1] = parsedValue
+		custom.Params[key0] = key0map
+
+	case 3:
+		key0 := splitted[0]
+		key1 := splitted[1]
+		key2 := splitted[2]
+		if _, ok := custom.Params[key0]; !ok {
+			custom.Params[key0] = map[string]interface{}{}
+		}
+
+		key0map := custom.Params[key0].(map[string]interface{})
+		if _, ok := key0map[key1]; !ok {
+			key0map[key1] = map[string]interface{}{}
+		}
+
+		key1map := key0map[key1].(map[string]interface{})
+		if _, ok := key1map[key2]; ok {
+			klog.Debugf("params keys are not unique [%s]", key)
+			qwm(ExitCodeError, "params keys are not unique")
+		}
+		key1map[key2] = parsedValue
+		key0map[key1] = key1map
+		custom.Params[key0] = key0map
+
+	default:
+		klog.Debugf("unsupportted key: [%s]", key)
+		qwm(ExitCodeError, "unsupportted key, key can only contain one or two dots")
+	}
+	return custom
 }

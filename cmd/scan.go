@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kondukto-io/kdt/client"
@@ -62,8 +63,9 @@ func init() {
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
-	scanCmd.Flags().String("sonatype-app-id", "", "public id of sonatype application")
+	scanCmd.Flags().String("sonatype-app-id", "", "public id of sonatype application]")
 	scanCmd.Flags().String("sonatype-report-id", "", "report id of sonatype application")
+	scanCmd.Flags().StringSlice("params", nil, "parameters for the scan")
 
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
 	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")
@@ -377,8 +379,8 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	var custom = client.Custom{Type: scanner.CustomType}
-	if scanner.Slug == "sonatypenl" {
-		custom = s.parseSonatypeParams(custom)
+	if s.cmd.Flags().Changed("params") {
+		custom = s.parseCustomParams(custom, *scanner)
 	}
 
 	scanData := &client.Scan{
@@ -395,7 +397,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		return s.client.CreateNewScan(scanData)
 	}
 
-	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
 		klog.Debugf("scanner tool [%s] is only allowing rescans", tool)
 		qwm(ExitCodeError, "no scans found for given project and tool configuration")
 	}
@@ -420,11 +422,11 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
 		agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
 		if err != nil {
-			klog.Debugf("failed to get active agents: %v")
+			klog.Debugf("failed to get active agents: %v", err)
 			qwm(ExitCodeError, "failed to get active agents")
 		}
 		if agents.Total == 0 {
-			klog.Debugf("no found agent to start scan: %v")
+			klog.Debug("no found agent to start scan")
 			qwm(ExitCodeError, "no found agent to start scan")
 		}
 		if agents.Total > 1 {
@@ -433,7 +435,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		}
 
 		activeAgent := agents.ActiveAgents.First()
-		klog.Debugf("agent [%s] found. Setting scan with agent", activeAgent)
+		klog.Debugf("agent [%s] found. Setting scan with agent", activeAgent.Label)
 		scanparamsData.Agent = &client.ScanparamsItem{ID: activeAgent.ID}
 	}
 
@@ -447,22 +449,50 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	return s.client.CreateNewScan(scanData)
 }
 
-func (s *Scan) parseSonatypeParams(custom client.Custom) client.Custom {
-	reportID, err := s.cmd.Flags().GetString("sonatype-report-id")
+func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInfo) client.Custom {
+	if len(scanner.Params) == 0 {
+		klog.Debugf("the scanner tool [%s] does not allow custom parameter", scanner.DisplayName)
+		qwm(ExitCodeError, "the scanner tool does not allow custom parameter")
+	}
+
+	params, err := s.cmd.Flags().GetStringSlice("params")
 	if err != nil {
 		klog.Debugf("failed to parse sonatype-report-id flag: %v", err)
 		qwm(ExitCodeError, "failed to parse sonatype sonatype-report-id flag")
 	}
-	appID, err := s.cmd.Flags().GetString("sonatype-app-id")
-	if err != nil {
-		klog.Debugf("failed to parse sonatype-app-id flag: %v", err)
-		qwm(ExitCodeError, "failed to parse sonatype-app-id flag")
 
+	if len(scanner.Params) > len(params) {
+		klog.Debugf("missing parameters for the scanner tool [%s]", scanner.DisplayName)
+		qwm(ExitCodeError, "missing parameters for the scanner tool")
 	}
-	custom.Params = map[string]interface{}{
-		"report_id": reportID,
-		"public_id": appID,
+
+	custom.Params = map[string]interface{}{}
+	for _, v := range params {
+		keyValuePair := strings.Split(v, ":")
+		if len(keyValuePair) != 2 {
+			klog.Debugf("invalid params flag: it should be key:value pairs: [%s]", keyValuePair)
+			qwm(ExitCodeError, "invalid params flag, the flag is should be a pair of [key:value]")
+		}
+
+		key := keyValuePair[0]
+		value := keyValuePair[1]
+
+		// validate the given key parameter
+		fieldDetail := scanner.Params.Find(key)
+		if fieldDetail == nil {
+			klog.Debugf("params [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
+			qwm(ExitCodeError, "params key is not allowed by the scanner tool")
+		}
+
+		parsedValue, err := fieldDetail.Parse(value)
+		if err != nil {
+			klog.Debugf("failed to parse params key [%s] value [%s]: %v", key, value, err)
+			qwm(ExitCodeError, "invalid value for custom params key")
+		}
+
+		custom = appendKeyToParamsMap(key, custom, parsedValue)
 	}
+
 	return custom
 }
 
@@ -524,8 +554,8 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	}
 
 	var custom = client.Custom{Type: scanner.CustomType}
-	if scanner.Slug == "sonatypenl" {
-		custom = s.parseSonatypeParams(custom)
+	if s.cmd.Flags().Changed("params") {
+		custom = s.parseCustomParams(custom, *scanner)
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
@@ -567,7 +597,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 			}
 		}
 
-		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
 			klog.Debugf("scanner tool %s is only allowing rescans", tool)
 			qwm(ExitCodeError, "no scans found for given project, tool and PR configuration")
 		}
@@ -587,11 +617,11 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
 			agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
 			if err != nil {
-				klog.Debugf("failed to get active agents: %v")
+				klog.Debugf("failed to get active agents: %v", err)
 				qwm(ExitCodeError, "failed to get active agents")
 			}
 			if agents.Total == 0 {
-				klog.Debugf("no found agent to start scan: %v")
+				klog.Debug("no found agent to start scan")
 				qwm(ExitCodeError, "no found agent to start scan")
 			}
 			if agents.Total > 1 {
@@ -663,8 +693,8 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	}
 
 	var custom = client.Custom{Type: scanner.CustomType}
-	if scanner.Slug == "sonatypenl" {
-		custom = s.parseSonatypeParams(custom)
+	if s.cmd.Flags().Changed("params") {
+		custom = s.parseCustomParams(custom, *scanner)
 	}
 	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
@@ -710,7 +740,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 			}
 		}
 
-		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) {
+		if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
 			klog.Debugf("scanner tool %s is only allowing rescans", tool)
 			qwm(ExitCodeError, "no scans found for given project, tool and PR configuration")
 		}
@@ -730,11 +760,11 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
 			agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
 			if err != nil {
-				klog.Debugf("failed to get active agents: %v")
+				klog.Debugf("failed to get active agents: %v", err)
 				qwm(ExitCodeError, "failed to get active agents")
 			}
 			if agents.Total == 0 {
-				klog.Debugf("no found agent to start scan: %v")
+				klog.Debug("no found agent to start scan")
 				qwm(ExitCodeError, "no found agent to start scan")
 			}
 			if agents.Total > 1 {
@@ -1158,4 +1188,57 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 			qwm(ExitCodeError, "invalid event status")
 		}
 	}
+}
+
+// appendKeyToParamsMap appends the key to the custom params map
+// generates a nested map object if the key is contians a dot
+// for example: if key:"image.tag" and value:"latest" will generate a map object {"image": {"tag": "value"}}
+func appendKeyToParamsMap(key string, custom client.Custom, parsedValue interface{}) client.Custom {
+	var splitted = strings.Split(key, ".")
+	switch len(splitted) {
+	case 1:
+		custom.Params[key] = parsedValue
+	case 2:
+		key0 := splitted[0]
+		key1 := splitted[1]
+		if _, ok := custom.Params[key0]; !ok {
+			custom.Params[key0] = map[string]interface{}{}
+		}
+
+		key0map := custom.Params[key0].(map[string]interface{})
+		if _, ok := key0map[key1]; ok {
+			klog.Debugf("params keys are not unique [%s]", key)
+			qwm(ExitCodeError, "params keys are not unique")
+		}
+
+		key0map[key1] = parsedValue
+		custom.Params[key0] = key0map
+
+	case 3:
+		key0 := splitted[0]
+		key1 := splitted[1]
+		key2 := splitted[2]
+		if _, ok := custom.Params[key0]; !ok {
+			custom.Params[key0] = map[string]interface{}{}
+		}
+
+		key0map := custom.Params[key0].(map[string]interface{})
+		if _, ok := key0map[key1]; !ok {
+			key0map[key1] = map[string]interface{}{}
+		}
+
+		key1map := key0map[key1].(map[string]interface{})
+		if _, ok := key1map[key2]; ok {
+			klog.Debugf("params keys are not unique [%s]", key)
+			qwm(ExitCodeError, "params keys are not unique")
+		}
+		key1map[key2] = parsedValue
+		key0map[key1] = key1map
+		custom.Params[key0] = key0map
+
+	default:
+		klog.Debugf("unsupportted key: [%s]", key)
+		qwm(ExitCodeError, "unsupportted key, key can only contain one or two dots")
+	}
+	return custom
 }

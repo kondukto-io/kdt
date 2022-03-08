@@ -7,6 +7,7 @@ package client
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 	"github.com/kondukto-io/kdt/klog"
@@ -26,14 +27,65 @@ type (
 
 	ActiveScanners []ScannerInfo
 	ScannerInfo    struct {
-		ID          string   `json:"id"`
-		Type        string   `json:"type"`
-		Slug        string   `json:"slug"`
-		DisplayName string   `json:"display_name"`
-		Labels      []string `json:"labels"`
-		CustomType  int      `json:"custom_type"`
+		ID          string        `json:"id"`
+		Type        string        `json:"type"`
+		Slug        string        `json:"slug"`
+		DisplayName string        `json:"display_name"`
+		Labels      []string      `json:"labels"`
+		CustomType  int           `json:"custom_type"`
+		Params      ScannerParams `json:"params"`
+	}
+
+	// ScannerParams holds the custom parameters for a scanner
+	ScannerParams map[string]ScannerCustomParams
+
+	// ScannerCustomParams holds the details of a custom parameter
+	ScannerCustomParams struct {
+		Examples    string                  `json:"examples,omitempty"`
+		Description string                  `json:"description"`
+		Type        scannerCustomParamsType `json:"type"`
 	}
 )
+
+type scannerCustomParamsType string
+
+const (
+	scannerCustomParamsTypeString  scannerCustomParamsType = "string"
+	scannerCustomParamsTypeInt     scannerCustomParamsType = "int"
+	scannerCustomParamsTypeUInt    scannerCustomParamsType = "uint"
+	scannerCustomParamsTypeBoolean scannerCustomParamsType = "bool"
+)
+
+// Find returns the given key detail when present, otherwise nil.
+func (s ScannerParams) Find(k string) *ScannerCustomParams {
+	if v, ok := s[k]; ok {
+		return &v
+	}
+	return nil
+}
+
+// Parse parses the given string into expected type
+func (s ScannerCustomParams) Parse(k string) (interface{}, error) {
+	switch s.Type {
+	case scannerCustomParamsTypeString:
+		return k, nil
+	case scannerCustomParamsTypeInt:
+		i, err := strconv.Atoi(k)
+		if err != nil {
+			return nil, err
+		}
+		return i, nil
+	case scannerCustomParamsTypeUInt:
+		i, err := strconv.ParseUint(k, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return i, nil
+	case scannerCustomParamsTypeBoolean:
+		return strconv.ParseBool(k)
+	}
+	return nil, fmt.Errorf("unknown scanner custom param type: %s", s.Type)
+}
 
 const (
 	ScannerLabelKDT             = "kdt"

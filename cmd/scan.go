@@ -63,8 +63,6 @@ func init() {
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
-	scanCmd.Flags().String("sonatype-app-id", "", "public id of sonatype application]")
-	scanCmd.Flags().String("sonatype-report-id", "", "report id of sonatype application")
 	scanCmd.Flags().StringSlice("params", nil, "parameters for the scan")
 
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
@@ -354,7 +352,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
-	if err == nil && !s.cmd.Flags().Changed("sonatype-report-id") {
+	if err == nil && !s.cmd.Flags().Changed("params") {
 		klog.Print("a completed scan found with the same parameters, restarting")
 		eventID, err := s.client.RestartScanByScanID(scan.ID)
 		if err != nil {
@@ -457,8 +455,8 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 
 	params, err := s.cmd.Flags().GetStringSlice("params")
 	if err != nil {
-		klog.Debugf("failed to parse sonatype-report-id flag: %v", err)
-		qwm(ExitCodeError, "failed to parse sonatype sonatype-report-id flag")
+		klog.Debugf("failed to parse param flag: %v", err)
+		qwm(ExitCodeError, "failed to parse params flag")
 	}
 
 	if len(scanner.Params) > len(params) {

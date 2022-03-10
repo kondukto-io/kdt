@@ -11,31 +11,21 @@ import (
 	"testing"
 
 	"github.com/kondukto-io/kdt/client"
-	"github.com/spf13/cobra"
 )
 
 func TestScan_prepareCustomParams(t *testing.T) {
-	type fields struct {
-		cmd    *cobra.Command
-		client *client.Client
-	}
 	type args struct {
 		key         string
 		custom      client.Custom
 		parsedValue interface{}
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   client.Custom
+		name string
+		args args
+		want client.Custom
 	}{
 		{
 			name: "valid - path with one dot",
-			fields: fields{
-				cmd:    &cobra.Command{},
-				client: &client.Client{},
-			},
 			args: args{
 				key: "ruleset_options.exclude",
 				custom: client.Custom{
@@ -58,10 +48,6 @@ func TestScan_prepareCustomParams(t *testing.T) {
 		},
 		{
 			name: "valid - path without dot",
-			fields: fields{
-				cmd:    &cobra.Command{},
-				client: &client.Client{},
-			},
 			args: args{
 				key: "ruleset_type",
 				custom: client.Custom{
@@ -84,10 +70,6 @@ func TestScan_prepareCustomParams(t *testing.T) {
 		},
 		{
 			name: "valid - path with two dot",
-			fields: fields{
-				cmd:    &cobra.Command{},
-				client: &client.Client{},
-			},
 			args: args{
 				key: "image.image_detail.hash",
 				custom: client.Custom{
@@ -115,11 +97,7 @@ func TestScan_prepareCustomParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Scan{
-				cmd:    tt.fields.cmd,
-				client: tt.fields.client,
-			}
-			got := s.appendKeyToParamsMap(tt.args.key, tt.args.custom, tt.args.parsedValue)
+			got := appendKeyToParamsMap(tt.args.key, tt.args.custom, tt.args.parsedValue)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Scan.prepareCustomParams() = %v, want %v", got, tt.want)
 			}

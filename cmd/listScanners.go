@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/kondukto-io/kdt/client"
@@ -39,11 +40,14 @@ var listScannersCmd = &cobra.Command{
 		}
 
 		scannerRows := []Row{
-			{Columns: []string{"Name", "ID", "Type", "Trigger", "Labels"}},
-			{Columns: []string{"----", "--", "----", "-------", "------"}},
+			{Columns: []string{"Name", "ID", "Type", "Trigger", "Labels", "Flags"}},
+			{Columns: []string{"----", "--", "----", "-------", "------", "-----"}},
 		}
 		for _, v := range activeScanners.ActiveScanners {
-			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.ID, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ",")}})
+			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.ID, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ","), ""}})
+			for k, v := range v.Params {
+				scannerRows = append(scannerRows, Row{Columns: []string{"", "", "", "", "", fmt.Sprintf("--params=%s: %s", k, v.Description)}})
+			}
 		}
 		if len(scannerRows) == 2 {
 			scannerRows = append(scannerRows, Row{Columns: []string{"no found active scanner"}})

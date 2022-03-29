@@ -466,7 +466,7 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 
 	custom.Params = map[string]interface{}{}
 	for _, v := range params {
-		keyValuePair := strings.Split(v, ":")
+		keyValuePair := strings.SplitN(v, ":", 2)
 		if len(keyValuePair) != 2 {
 			klog.Debugf("invalid params flag: it should be key:value pairs: [%s]", keyValuePair)
 			qwm(ExitCodeError, "invalid params flag, the flag is should be a pair of [key:value]")

@@ -43,6 +43,7 @@ type (
 	ScannerCustomParams struct {
 		Examples    string                  `json:"examples,omitempty"`
 		Description string                  `json:"description"`
+		Optional    bool                    `json:"optional"`
 		Type        scannerCustomParamsType `json:"type"`
 	}
 )
@@ -62,6 +63,18 @@ func (s ScannerParams) Find(k string) *ScannerCustomParams {
 		return &v
 	}
 	return nil
+}
+
+// ReturnsOptionalsLen returns the optionals length.
+func (s ScannerParams) ReturnsOptionalsLen() int {
+	var count int
+	for _, v := range s {
+		if v.Optional {
+			count++
+		}
+	}
+
+	return count
 }
 
 // Parse parses the given string into expected type

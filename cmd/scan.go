@@ -864,7 +864,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 }
 
 func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
-	klog.Debugf("checking for rescan only tools")
+	klog.Debug("checking for rescan only tools")
 	name, err := s.cmd.Flags().GetString("tool")
 	if err != nil || name == "" {
 		return false, nil, errors.New("missing require tool flag")

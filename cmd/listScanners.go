@@ -39,6 +39,13 @@ var listScannersCmd = &cobra.Command{
 			return "new scan"
 		}
 
+		var requirement = func(optional bool) string {
+			if optional {
+				return "optional"
+			}
+			return "required"
+		}
+
 		scannerRows := []Row{
 			{Columns: []string{"Name", "ID", "Type", "Trigger", "Labels", "Flags"}},
 			{Columns: []string{"----", "--", "----", "-------", "------", "-----"}},
@@ -46,7 +53,7 @@ var listScannersCmd = &cobra.Command{
 		for _, v := range activeScanners.ActiveScanners {
 			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.ID, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ","), ""}})
 			for k, v := range v.Params {
-				scannerRows = append(scannerRows, Row{Columns: []string{"", "", "", "", "", fmt.Sprintf("--params=%s: %s", k, v.Description)}})
+				scannerRows = append(scannerRows, Row{Columns: []string{"", "", "", "", "", fmt.Sprintf("--params=%s: %s [%s]", k, v.Description, requirement(v.Optional))}})
 			}
 		}
 		if len(scannerRows) == 2 {

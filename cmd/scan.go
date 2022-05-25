@@ -459,24 +459,25 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		qwm(ExitCodeError, "failed to parse params flag")
 	}
 
-	if len(scanner.Params) > len(params) {
+	var optionalsKeysLen = scanner.Params.ReturnsOptionalsLen()
+	if (len(scanner.Params) - optionalsKeysLen) > (len(params)) {
 		klog.Debugf("missing parameters for the scanner tool [%s]", scanner.DisplayName)
 		qwm(ExitCodeError, "missing parameters for the scanner tool")
 	}
 
 	custom.Params = map[string]interface{}{}
 	for _, v := range params {
-		keyValuePair := strings.SplitN(v, ":", 2)
+		var keyValuePair = strings.SplitN(v, ":", 2)
 		if len(keyValuePair) != 2 {
 			klog.Debugf("invalid params flag: it should be key:value pairs: [%s]", keyValuePair)
 			qwm(ExitCodeError, "invalid params flag, the flag is should be a pair of [key:value]")
 		}
 
-		key := keyValuePair[0]
-		value := keyValuePair[1]
+		var key = keyValuePair[0]
+		var value = keyValuePair[1]
 
 		// validate the given key parameter
-		fieldDetail := scanner.Params.Find(key)
+		var fieldDetail = scanner.Params.Find(key)
 		if fieldDetail == nil {
 			klog.Debugf("params [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
 			qwm(ExitCodeError, "params key is not allowed by the scanner tool")

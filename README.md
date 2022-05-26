@@ -1,4 +1,4 @@
-<p align="center"><a href="https://kondukto.io" target="_blank" rel="noopener noreferrer"><img width="200" src="https://kondukto.io/wp-content/uploads/2018/10/header-logo.png" alt="Kondukto logo"></a></p>
+<p align="center"><a href="https://kondukto.io" target="_blank" rel="noopener noreferrer"><img width="200" src="https://kondukto.io/logo.png" alt="Kondukto logo"></a></p>
 
 # KDT
 KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go](https://golang.org). It interacts with Kondukto engine through public API. 
@@ -6,7 +6,7 @@ KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go]
 With KDT, you can list projects and their scans in **Kondukto**, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD pipelines to trigger scans and break releases if a scan fails or scan results don't met specified release criteria. 
 
 ### What is Kondukto?
-[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
+[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration and DevSecOps platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
 
 ## Installation
 You can install the CLI with a `curl` utility script or by downloading the pre-compiled binary from the Github release page.
@@ -41,7 +41,7 @@ go install
 ## Configuration
 KDT needs Kondukto host and an API token for authentication. API tokens can be created under Integrations/API Tokens menu.
 
-You can provide configuration by:
+You can provide configuration via three different ways:
 
 ##### 1) Setting environment variables: 
 
@@ -53,11 +53,17 @@ $ export KONDUKTO_TOKEN=WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JO
 It is always better to set environment variables in shell profile files(`~/.bashrc`, `~/.zshrc`, `~/.profile` etc.)
 ##### 2) Providing a configuration file.
 
-Default path for config file is `$HOME/.kdt.yaml`. Another file can be provided with `--config` command line flag.
+Default path for config file is `$HOME/.kdt.yaml`. If you put your config file with this name`.kdt.yaml`, the binary will load the configuration without explicitly pointing the config file. Otherwise a custom config file can be provided with `--config` command line flag.
+```
+kdt --config=config.yaml list projects
+```
+
+A config file example.
 ```
 // $HOME/.kdt.yaml 
 host: http://localhost:8088
 token: WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
+insecure: true 
 ```
 
 ##### 3) Using command line flags
@@ -66,9 +72,12 @@ kdt list projects --host http://localhost:8088 --token WmQ2eHFDRzE3elplN0ZRbUVsR
 ```
 
 ## Running
-Most KDT commands are straightforward.
+KDT comes with an internal documentation. To see the documentation just type `kdt --help`. 
+Most KDT commands are straightforward but for the details of a command you can always take a peak to the documentation. `kdt <command> --help` or `kdt <command> <sub-command> --help`. 
 
 To list projects: `kdt list projects`
+
+To list the supported scanners and scan methods: `kdt list scanners`
 
 To list scans of a project: `kdt list scans -p ExampleProject`
 
@@ -78,7 +87,7 @@ To restart a scan, you can use one of the following:
 
 - project and tool names: `kdt scan -p ExampleProject -t ExampleTool`
 
-To import scan results as a file: `kdt scan -p ExampleProject -t ExampleTool -b master`
+To import scan results as a file: `kdt scan -p ExampleProject -t ExampleTool -f results.json -b master`
 
 ## Command Line Flags
 KDT has several helpful flags to manage scans.
@@ -134,41 +143,34 @@ Example Usage:
 `kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10 --threshold-risk`
 
 ## Supported scanners (tools)
-KDT supports all scanners enabled in Kondukto server, to see the list simply run `kdt list scanners`.
+KDT supports all scanners enabled in Kondukto server, to see the list simply run `kdt list scanners`. Kondukto may provide slightly different triggering options for some scanners. This command also shows the `custom parameters` and alternative trigger options for each enabled scanner
 
 Example Usage:
 
 ```
 ./kdt --config kondukto.yaml list scanners
-Name       ID                          Type    Trigger     Labels
-----       --                          ----    -------     ------
+Name       ID                          Type    Trigger     Labels                      Custom Parameters
+----       --                          ----    -------     ------                      -----------------
 gosec      60eec8a83e9e5e6e2ae52d06    sast    new scan    docker,kdt
 semgrep    60eec8a53e9e5e6e2ae52d05    sast    rescan      template,docker,kdt
+semgrep    5fbf6836f65176f39df675c4    sast    rescan      template,docker,kdt,import                                          
+                                                                                     --params=ruleset_type: the type of rulesets, allowed values are known_ruleset: 0, ruleset_url: 1 and ruleset_path: 2
+                                                                                     --params=ruleset_options.exclude: excludes the given path from the scanning scope
+                                                                                     --params=ruleset_options.ruleset: a ruleset value. i.e: gosec, bandit, golang, https://semgrep.com/example ...
 ```
 
-### Tool list (full)
+### Custom Parameters
+For some tools the default behaviour of KDT is re-triggering or re-scanning of an existing scan. This means that, there should be a configured scan on Kondukto for KDT to run re-run this operation
+from the CLI. However, by passing some custom arguments to the scanner, Kondukto server can create and start a scan without having a configuration. 
+
+The scanners that supports customer parameters are shown with `--params` arguments.
+A customized scan example:
 ```
-checkmarx
-checkmarxsca
-owaspzap
-webinspect
-netsparker
-appspider
-bandit
-findsecbugs
-dependencycheck
-fortify
-gosec
-brakeman
-securitycodescan
-trivy
-hclappscan
-owaspzapheadless
-nancy
-semgrep
-veracode
-burpsuite
-burpsuiteenterprise
+# Run a scan using semgrep on a develop branch
+# with a custom rule path
+kdt scan -p SampleProject \
+         -b develop -t semgrep \
+	 --params=ruleset_type:2 --params=ruleset_options.ruleset:/rules/
 ```
 
 ## Advanced usage examples
@@ -201,7 +203,7 @@ kdt --config kondukto-config.yml \
     --project SampleProject \
     --tool trivy \
     --image ubuntu@256:ab02134176aecfe0c0974ab4d3db43ca91eb6483a6b7fe6556b480489edd04a1 \
-    --branch develop \
+    --branch develop
 ```
 - --config: Kondukto configuration file in yaml format
 - scan: start scan 
@@ -215,7 +217,7 @@ kdt --config kondukto-config.yml \
     project \ 
     --repo-id https://github.com/kondukto-io/kdt \
     --labels GDPR,Internal \
-    --alm-tool github \
+    --alm-tool github
 ```
 - --config: Kondukto configuration file in yaml format
 - create: Base command for create operation.
@@ -227,6 +229,21 @@ kdt --config kondukto-config.yml \
 
 This command will create a project on Kondukto with the same name in your ALM(Application Lifecycle Management) tool. If there is another project
 with the same name, command will print an error message and exit with a status code. You can pass `--force-create` flag to overwrite this behaviour.
+
+```
+kdt --config kondukto-config.yml \
+    sbom import \
+    --file cyclonedx-sbom.json \
+    --project SampleProject \
+    --branch develop
+```
+- --config: Kondukto configuration file in yaml format
+- sbom import: import an SBOM file  
+- --file: CycloneDX SBOM output in JSON format.
+- --project: Application's name in Kondukto server. 
+- --branch: the branch of the application
+
+
 
 ## Contributing to KDT
 If you wish to get involved in KDT development, create issues for problems and missing features or fork the repository and create pull requests to help the development directly.

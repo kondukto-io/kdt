@@ -243,7 +243,7 @@ kdt --config kondukto-config.yml \
 - --project: Application's name in Kondukto server. 
 - --branch: the branch of the application
 
-
+This command will update a generated SBOM file to Kondukto. Currently only [CycloneDX](https://cyclonedx.org/) standard is supported. 
 
 ## Contributing to KDT
 If you wish to get involved in KDT development, create issues for problems and missing features or fork the repository and create pull requests to help the development directly.

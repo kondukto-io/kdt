@@ -23,7 +23,7 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync ./get.sh s3://${{ secrets.AWS_S3_BUCKET_ID }}/index.html
+          aws s3 cp ./get.sh s3://${{ secrets.AWS_S3_BUCKET_ID }}/index.html
 
       - name: Invalidate CDN
         run: |

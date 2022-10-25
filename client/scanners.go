@@ -51,11 +51,11 @@ type (
 type scannerCustomParamsType string
 
 const (
-	scannerCustomParamsTypeString  scannerCustomParamsType = "string"
-	scannerCustomParamsTypeSlice   scannerCustomParamsType = "slice"
-	scannerCustomParamsTypeInt     scannerCustomParamsType = "int"
-	scannerCustomParamsTypeUInt    scannerCustomParamsType = "uint"
-	scannerCustomParamsTypeBoolean scannerCustomParamsType = "bool"
+	scannerCustomParamsTypeString      scannerCustomParamsType = "string"
+	scannerCustomParamsTypeStringSlice scannerCustomParamsType = "string_slice"
+	scannerCustomParamsTypeInt         scannerCustomParamsType = "int"
+	scannerCustomParamsTypeUInt        scannerCustomParamsType = "uint"
+	scannerCustomParamsTypeBoolean     scannerCustomParamsType = "bool"
 )
 
 // Find returns the given key detail when present, otherwise nil.
@@ -69,7 +69,7 @@ func (s ScannerParams) Find(k string) *ScannerCustomParams {
 // Parse parses the given string into expected type
 func (s ScannerCustomParams) Parse(k string) (interface{}, error) {
 	switch s.Type {
-	case scannerCustomParamsTypeSlice:
+	case scannerCustomParamsTypeStringSlice:
 		return strings.Replace(k, ";", ",", -1), nil
 	case scannerCustomParamsTypeString:
 		return k, nil

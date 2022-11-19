@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.17'
+          go-version: '1.18'
 
       - name: Version
         run: |
@@ -62,3 +62,18 @@ jobs:
           docker push kondukto/kondukto-cli:${{ env.GIT_TAG }}
           docker tag kondukto/kondukto-cli:${{ env.GIT_TAG }} kondukto/kondukto-cli:latest
           docker push kondukto/kondukto-cli:latest
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Deploy to S3
+        run: |
+          aws s3 cp ./get.sh s3://${{ secrets.AWS_S3_BUCKET_ID }}/index.html
+
+      - name: Invalidate CDN
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"          

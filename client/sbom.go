@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/viper"
@@ -18,47 +19,35 @@ import (
 func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	klog.Debugf("importing sbom content using file:%s", file)
 
-	projectId := form["project"]
-
-	if projectId != "" {
-		projects, err := c.ListProjects(projectId, repo)
-		if err != nil {
-			return err
-		}
-
-		if len(projects) == 0 {
-			return errors.New("no projects found for given parameters")
-		}
-
-		if len(projects) == 1 {
-			projectId = projects[0].ID
-			form["project"] = projects[0].Name
-		}
-
-		if len(projects) > 1 {
-			return errors.New("multiple projects found for given parameters")
-		}
-	} else {
-		projects, err := c.ListProjects(projectId, repo)
-		if err != nil {
-			return err
-		}
-
-		if len(projects) == 0 {
-			return errors.New("no projects found for given parameters")
-		}
-
-		if len(projects) == 1 {
-			projectId = projects[0].ID
-			form["project"] = projects[0].Name
-		}
-
-		if len(projects) > 1 {
-			return errors.New("multiple projects found for given parameters")
-		}
+	projectName := form["project"]
+	if projectName == "" && repo == "" {
+		return errors.New("project and repo parameter values can not be empty same time")
 	}
 
-	path := fmt.Sprintf("/api/v2/%s/sbom/upload", projectId)
+	projects, err := c.ListProjects(projectName, repo)
+	if err != nil {
+		return fmt.Errorf("no projects found for name [%s] and repo [%s]", projectName, repo)
+	}
+
+	if len(projects) == 0 {
+		return fmt.Errorf("no projects found for name [%s] and repo [%s]", projectName, repo)
+	}
+
+	if len(projects) > 1 {
+		return fmt.Errorf("multiple projects found for name [%s] and repo [%s]", projectName, repo)
+	}
+
+	allowEmptyParam := form["allow_empty"]
+	if allowEmptyParam == "" {
+		allowEmptyParam = "false"
+	}
+
+	_, err = strconv.ParseBool(allowEmptyParam)
+	if err != nil {
+		return fmt.Errorf("can not parse allow_empty parameter value [%s]", allowEmptyParam)
+	}
+
+	path := fmt.Sprintf("/api/v2/projects/%s/sbom/upload", projects[0].ID)
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)
 
@@ -113,7 +102,7 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to import sbom: %s, status code: %s", importResponse.Error, resp.StatusCode)
+		return fmt.Errorf("failed to import sbom: %s, status code: %d", importResponse.Error, resp.StatusCode)
 	}
 
 	return nil

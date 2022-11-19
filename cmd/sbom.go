@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/kondukto-io/kdt/client"
 	"github.com/kondukto-io/kdt/klog"
@@ -31,6 +32,7 @@ func init() {
 	importSbomCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository")
 	importSbomCmd.Flags().StringP("sbom-type", "s", "", "Custom type(optional). Passing a different value than existing type(i.e application, container etc.) is advised")
 	importSbomCmd.Flags().StringP("branch", "b", "", "Branch name for the project receiving the sbom")
+	importSbomCmd.Flags().BoolP("allow-empty", "a", false, "Allow empty components in sbom")
 }
 
 // importSbomCmd represents the sbom import command
@@ -90,16 +92,21 @@ func (s *SBOMImport) sbomImport() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse sbom-type flag: %w", err)
 	}
+	allowEmpty, err := s.cmd.Flags().GetBool("allow-empty")
+	if err != nil {
+		return fmt.Errorf("failed to parse allow-empty flag: %w", err)
+	}
 
 	var form = client.ImportForm{
-		"project":   projectName,
-		"branch":    branch,
-		"sbom_type": sbomType,
+		"project":     projectName,
+		"branch":      branch,
+		"sbom_type":   sbomType,
+		"allow_empty": strconv.FormatBool(allowEmpty),
 	}
 
 	err = s.client.ImportSBOM(file, repo, form)
 	if err != nil {
-		return fmt.Errorf("failed to import scan results: %w", err)
+		return fmt.Errorf("failed to import sbom file: %w", err)
 	}
 
 	importInfo := ""

@@ -39,12 +39,21 @@ jobs:
           ref: master
 
       - name: Run Gosec Security Scanner
+        id: run_gosec
         uses: securego/gosec@master
         with:
           # we let the report trigger content trigger a failure using the GitHub Security features.
-          args: "-no-fail -fmt sarif -out results.sarif ./..."
+          args: "-no-fail -fmt json -out results.json ./..."
+
+      - name: Archive GoSec Scan Results
+        id: archive_gosec_results
+        uses: actions/upload-artifact@v3
+        with:
+          name: results.json
+          path: results.json
 
       - name: Upload Gosec Scan Results To Kondukto
+        id: upload_gosec_results
         run: |
           kdt scan -p ${{ github.event.repository.name }} \
-              -t gosec -b ${{ github.ref }} -f results.sarif          
+              -t gosec -b ${{ github.ref }} -f results.json          

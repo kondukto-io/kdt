@@ -9,17 +9,17 @@ on:
       - master
 
 concurrency:
-  group: ci-master-scan-1
+  group: ci-master-nancy-scan-1
   cancel-in-progress: true
 
 jobs:
-  go-sec_scan:
+  nancy_scan:
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
       KONDUKTO_TOKEN: ${{ secrets.KONDUKTO_TOKEN }}
       KONDUKTO_HOST: ${{ secrets.KONDUKTO_HOST }}
-    name: Kondukto GoSec Scan
+    name: Kondukto Nancy Scan
 
     steps:
       - name: Configure Kondukto CLI

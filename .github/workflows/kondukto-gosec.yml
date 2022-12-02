@@ -9,7 +9,7 @@ on:
       - master
 
 concurrency:
-  group: ci-master-scan-1
+  group: ci-master-gosec-scan-1
   cancel-in-progress: true
 
 jobs:

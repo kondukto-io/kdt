@@ -46,22 +46,10 @@ jobs:
           cache: true
           cache-dependency-path: ./go.sum
 
-      - name: Write Go List
-        id: write_go_list
-        run: go list -json -deps ./... > go.list
-
-      - name: Archive Go List
-        id: archive_go_list
-        uses: actions/upload-artifact@v3
-        with:
-          name: go.list
-          path: go.list
-
       - name: Run Nancy Security Scanner
         id: run_nancy
-        uses: sonatype-nexus-community/nancy-github-action@main
-        with:
-          nancyCommand: sleuth --output json-pretty
+        run: |
+          go list -json -deps ./... | docker run -i sonatypecommunity/nancy:latest sleuth --output json-pretty > results.json
 
       - name: Archive Nancy Scan Results
         id: archive_nancy_results
@@ -73,5 +61,4 @@ jobs:
       - name: Upload Nancy Scan Results To Kondukto
         id: upload_nancy_results
         run: |
-          kdt scan -p ${{ github.event.repository.name }} \
-              -t nancy -b ${{ github.ref_name }} -f results.json          
+          kdt scan -p ${{ github.event.repository.name }} -t nancy -b ${{ github.ref_name }} -f results.json          

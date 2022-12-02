@@ -55,5 +55,4 @@ jobs:
       - name: Upload Gosec Scan Results To Kondukto
         id: upload_gosec_results
         run: |
-          kdt scan -p ${{ github.event.repository.name }} \
-              -t gosec -b ${{ github.ref_name }} -f results.json          
+          kdt scan -p ${{ github.event.repository.name }} -t gosec -b ${{ github.ref_name }} -f results.json          

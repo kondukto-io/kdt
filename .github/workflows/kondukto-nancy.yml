@@ -36,6 +36,7 @@ jobs:
         id: checkout_project
         uses: actions/checkout@v3
         with:
+          repository: kondukto-io/kdt
           ref: master
 
       - name: Setup Go
@@ -47,9 +48,11 @@ jobs:
           cache-dependency-path: ./go.sum
 
       - name: Run Nancy Security Scanner
+        continue-on-error: true
         id: run_nancy
         run: |
-          go list -json -deps ./... | docker run -i sonatypecommunity/nancy:latest sleuth --output json-pretty > results.json
+          docker pull sonatypecommunity/nancy:latest
+          go list -json -deps ./... | docker run -i sonatypecommunity/nancy sleuth --output json-pretty > results.json
 
       - name: Archive Nancy Scan Results
         id: archive_nancy_results

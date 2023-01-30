@@ -21,11 +21,15 @@ import (
 )
 
 const (
-	jobStarting = iota
-	jobRunning
-	jobAnalyzing
-	jobNotifying
-	jobFinished
+	EventStatusFailed = iota - 1
+	EventStatusWaiting
+	EventStatusStarting
+	EventStatusRunning
+	EventStatusRetrievingResults
+	EventStatusAnalyzing
+	EventStatusNotifying
+	EventStatusFinished
+	EventStatusWebhook
 )
 
 const (
@@ -972,15 +976,19 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 
 func statusMsg(s int) string {
 	switch s {
-	case jobStarting:
-		return "starting scan"
-	case jobRunning:
-		return "scan running"
-	case jobAnalyzing:
+	case EventStatusWaiting:
+		return "scan is waiting"
+	case EventStatusStarting:
+		return "scan is starting"
+	case EventStatusRunning:
+		return "scan is running"
+	case EventStatusRetrievingResults:
+		return "retrieving scan results"
+	case EventStatusAnalyzing:
 		return "analyzing scan results"
-	case jobNotifying:
+	case EventStatusNotifying:
 		return "setting notifications"
-	case jobFinished:
+	case EventStatusFinished:
 		return "scan finished"
 	default:
 		return "unknown scan status"
@@ -1145,7 +1153,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 		}
 
 		switch event.Active {
-		case eventFailed:
+		case EventStatusFailed:
 			eventRows := []Row{
 				{Columns: []string{"EventID", "Event Status", "UI Link"}},
 				{Columns: []string{"-------", "------------", "-------"}},
@@ -1154,7 +1162,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 			TableWriter(eventRows...)
 			qwm(ExitCodeError, fmt.Sprintf("Scan failed. Reason: %s", event.Message))
 		case eventInactive:
-			if event.Status == jobFinished {
+			if event.Status == EventStatusFinished {
 				klog.Println("scan finished successfully")
 				scan, err := c.FindScanByID(event.ScanId)
 				if err != nil {
@@ -1182,7 +1190,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 			} else {
 				klog.Debugf("event status [%s]", statusMsg(event.Status))
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(3 * time.Second)
 		default:
 			qwm(ExitCodeError, "invalid event status")
 		}

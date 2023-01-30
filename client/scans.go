@@ -367,7 +367,7 @@ func (c *Client) FindScanByID(id string) (*ScanDetail, error) {
 }
 
 func (c *Client) GetScanStatus(eventId string) (*Event, error) {
-	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
+	path := fmt.Sprintf("/api/v3/events/%s/status", eventId)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err

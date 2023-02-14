@@ -151,7 +151,7 @@ func (c *Client) IsValidTool(tool string) bool {
 // IsRescanOnlyLabel returns true if the given label is a rescan only label
 // If fork scan is true, then the ScannerLabelTemplate label is not a rescan only label, it can be used for fork scan
 func IsRescanOnlyLabel(label string, isForkScan bool) bool {
-	if isForkScan && label == ScannerLabelTemplate {
+	if isForkScan {
 		return false
 	}
 	if label == ScannerLabelBind || label == ScannerLabelAgent || label == ScannerLabelTemplate {

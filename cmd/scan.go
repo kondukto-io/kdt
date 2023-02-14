@@ -851,13 +851,19 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 			klog.Debugf("scanner tool %s is only allowing rescans", tool)
 			klog.Fatal("no scans found for given project, tool and PR configuration")
 		}
+
+		var custom = client.Custom{Type: scanner.CustomType}
+		if s.cmd.Flags().Changed("params") {
+			custom = s.parseCustomParams(custom, *scanner)
+		}
+
 		return &client.Scan{
 			Branch:   branch,
 			MetaData: meta,
 			Project:  project.Name,
 			ForkScan: forkScan,
 			ToolID:   scanner.ID,
-			Custom:   client.Custom{Type: scanner.CustomType},
+			Custom:   custom,
 		}
 	}()
 
@@ -886,8 +892,13 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 		return false, scanner, nil
 	}
 
+	isForkScan, err := s.cmd.Flags().GetBool("fork-scan")
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to get fork-scan flag: %w", err)
+	}
+
 	for _, label := range scanner.Labels {
-		if client.IsRescanOnlyLabel(label) {
+		if client.IsRescanOnlyLabel(label, isForkScan) {
 			return true, scanner, nil
 		}
 	}

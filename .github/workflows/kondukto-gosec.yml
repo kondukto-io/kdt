@@ -1,0 +1,58 @@
+name: Kondukto Gosec Scan
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 1 * * *"
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ci-master-gosec-scan-1
+  cancel-in-progress: true
+
+jobs:
+  go-sec_scan:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+      KONDUKTO_TOKEN: ${{ secrets.KONDUKTO_TOKEN }}
+      KONDUKTO_HOST: ${{ secrets.KONDUKTO_HOST }}
+    name: Kondukto GoSec Scan
+
+    steps:
+      - name: Configure Kondukto CLI
+        id: configure_kondukto_cli
+        run: |
+          curl -sSL https://cli.kondukto.io | sh
+
+      - name: Get Kondukto CLI Version
+        id: kdt_version
+        run: |
+          kdt version
+
+      - name: Checkout Project
+        id: checkout_project
+        uses: actions/checkout@v3
+        with:
+          ref: master
+
+      - name: Run Gosec Security Scanner
+        id: run_gosec
+        uses: securego/gosec@master
+        with:
+          # we let the report trigger content trigger a failure using the GitHub Security features.
+          args: "-no-fail -fmt json -out results.json ./..."
+
+      - name: Archive GoSec Scan Results
+        id: archive_gosec_results
+        uses: actions/upload-artifact@v3
+        with:
+          name: results.json
+          path: results.json
+
+      - name: Upload Gosec Scan Results To Kondukto
+        id: upload_gosec_results
+        run: |
+          kdt scan -p ${{ github.event.repository.name }} -t gosec -b ${{ github.ref_name }} -f results.json          

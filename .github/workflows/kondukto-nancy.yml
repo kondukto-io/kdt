@@ -1,0 +1,67 @@
+name: Kondukto Nancy Scan
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 1 * * *"
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ci-master-nancy-scan-1
+  cancel-in-progress: true
+
+jobs:
+  nancy_scan:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+      KONDUKTO_TOKEN: ${{ secrets.KONDUKTO_TOKEN }}
+      KONDUKTO_HOST: ${{ secrets.KONDUKTO_HOST }}
+    name: Kondukto Nancy Scan
+
+    steps:
+      - name: Configure Kondukto CLI
+        id: configure_kondukto_cli
+        run: |
+          curl -sSL https://cli.kondukto.io | sh
+
+      - name: Get Kondukto CLI Version
+        id: kdt_version
+        run: |
+          kdt version
+
+      - name: Checkout Project
+        id: checkout_project
+        uses: actions/checkout@v3
+        with:
+          repository: kondukto-io/kdt
+          ref: master
+
+      - name: Setup Go
+        id: setup_go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          cache: true
+          cache-dependency-path: ./go.sum
+
+      - name: Run Nancy Security Scanner
+        continue-on-error: true
+        id: run_nancy
+        run: |
+          docker pull sonatypecommunity/nancy:latest
+          go list -json -deps ./... | docker run -i sonatypecommunity/nancy sleuth --output json-pretty > results.json
+
+      - name: Archive Nancy Scan Results
+        id: archive_nancy_results
+        uses: actions/upload-artifact@v3
+        with:
+          name: results.json
+          path: results.json
+
+      - name: Upload Nancy Scan Results To Kondukto
+        id: upload_nancy_results
+        run: |
+          kdt scan -p ${{ github.event.repository.name }} -t nancy -b ${{ github.ref_name }} -f results.json          

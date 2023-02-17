@@ -46,7 +46,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// check if there is update
 		if ok, v := pkg.CheckUpdate(Version); ok {
-			fmt.Printf("A new version of KDT v%s is available\nPlease run `curl -sSl https://cli.kondukto.io | sh`\n\n", v)
+			fmt.Printf("A new version of KDT %s is available\nPlease run `curl -sSl https://cli.kondukto.io | sh`\n\n", v)
 		}
 
 		if verbose {

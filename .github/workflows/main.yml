@@ -1,6 +1,6 @@
 name: Build and Release KDT
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   push:
     branches: [ master ]
@@ -22,11 +22,11 @@ jobs:
         run: |
           git fetch --prune --unshallow --tags
           echo GIT_TAG=$(git describe --tags --abbrev=0) >> $GITHUB_ENV 
-          
+
       - name: Get Version Tag
         id: get_version_tag
         run: |
-          echo "VERSION_TAG=`${{ env.GIT_TAG }} | cut -d '-' -f 1`" >> $GITHUB_ENV  
+          echo "VERSION_TAG=`${{ env.GIT_TAG }}`" | cut -d '-' -f 1 >> $GITHUB_ENV  
 
       - name: Build
         run: |
@@ -48,7 +48,7 @@ jobs:
            - this
 
       - name: Upload Release Assets
-        id: upload-release-assets 
+        id: upload-release-assets
         uses: dwenegar/upload-release-assets@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,7 +61,7 @@ jobs:
 
       - name: Build docker image
         run: make image
-     
+
       - name: Push to registry
         run: |
           docker tag kondukto/kondukto-cli:${{ env.VERSION_TAG }}

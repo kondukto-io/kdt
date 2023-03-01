@@ -1,7 +1,7 @@
 .PHONY: all build help docker clean
 
 MODULE        = $(shell env GO111MODULE=on $(GO) list -m)
-COMMIT        = $(shell git rev-list --abbrev-commit --tags --max-count=1)
+COMMIT        = $(shell git rev-parse --short HEAD)
 TAG           = $(shell git describe --tags --abbrev=0)
 DATE          = $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
 BUILD_DIR     = _release

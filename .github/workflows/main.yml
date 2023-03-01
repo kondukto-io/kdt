@@ -26,7 +26,7 @@ jobs:
       - name: Get Version Tag
         id: get_version_tag
         run: |
-          echo "VERSION_TAG=`${{ env.GIT_TAG }}`" | cut -d '-' -f 1 >> $GITHUB_ENV  
+          echo "VERSION_TAG=${{ env.GIT_TAG }}" | cut -d '-' -f 1 >> $GITHUB_ENV  
 
       - name: Build
         run: |

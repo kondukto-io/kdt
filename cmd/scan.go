@@ -843,21 +843,12 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	}
 
 	var scanData = func() *client.Scan {
-		if sp != nil {
-			return &client.Scan{ScanparamsID: sp.ID}
-		}
-
-		if rescanOnly {
-			klog.Debugf("scanner tool %s is only allowing rescans", tool)
-			klog.Fatal("no scans found for given project, tool and PR configuration")
-		}
-
 		var custom = client.Custom{Type: scanner.CustomType}
 		if s.cmd.Flags().Changed("params") {
 			custom = s.parseCustomParams(custom, *scanner)
 		}
 
-		return &client.Scan{
+		var scanPayload = &client.Scan{
 			Branch:   branch,
 			MetaData: meta,
 			Project:  project.Name,
@@ -865,6 +856,18 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 			ToolID:   scanner.ID,
 			Custom:   custom,
 		}
+
+		if sp != nil {
+			scanPayload.ScanparamsID = sp.ID
+			return scanPayload
+		}
+
+		if rescanOnly {
+			klog.Debugf("scanner tool %s is only allowing rescans", tool)
+			klog.Fatal("no scans found for given project, tool and PR configuration")
+		}
+
+		return scanPayload
 	}()
 
 	return s.client.CreateNewScan(scanData)

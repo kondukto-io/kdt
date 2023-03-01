@@ -3,16 +3,16 @@
 MODULE        = $(shell env GO111MODULE=on $(GO) list -m)
 COMMIT        = $(shell git rev-parse --short HEAD)
 TAG           = $(shell git describe --tags --abbrev=0)
+VERSION_TAG   = $(shell echo $(TAG)| cut -d '-' -f 1)
 DATE          = $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
 BUILD_DIR     = _release
 OUT           = $(BUILD_DIR)/kdt
 PLATFORMS     := linux/amd64 windows/amd64 darwin/amd64 darwin/arm64
 TEMP 	      = $(subst /, ,$@)
-OS 	      = $(word 1, $(TEMP))
+OS 	      	  = $(word 1, $(TEMP))
 ARCH 	      = $(word 2, $(TEMP))
 
-VERSION_TAG = $(shell echo $(TAG)|cut -d "-" -f1)
-VERSION      := $(VERSION_TAG)-$(COMMIT)
+VERSION       := $(VERSION_TAG)-$(COMMIT)
 
 export GO111MODULE=on
 

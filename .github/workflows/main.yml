@@ -16,19 +16,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.18.x
-          cache: true
-          cache-dependency-path: ./go.sum
-
-      - name: Build and Show Version
-        id: build_and_show_version
-        run: |
-          make all
-          _release/kdt-linux-amd64 version
-
       - name: Add SHORT_SHA env property
         id: set_short_sha_variable
         run: |
@@ -43,6 +30,19 @@ jobs:
         id: get_version_tag
         run: |
           echo "VERSION_TAG=${{ env.GIT_TAG }}" | cut -d '-' -f 1 >> $GITHUB_ENV  
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.x
+          cache: true
+          cache-dependency-path: ./go.sum
+
+      - name: Build and Show Version
+        id: build_and_show_version
+        run: |
+          make all
+          _release/kdt-linux-amd64 version
 
       - name: Create Release
         uses: actions/create-release@v1

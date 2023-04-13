@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/google/go-querystring/query"
+
 	"github.com/kondukto-io/kdt/klog"
 )
 
@@ -34,6 +35,7 @@ type (
 		DisplayName string        `json:"display_name"`
 		Labels      []string      `json:"labels"`
 		CustomType  int           `json:"custom_type"`
+		Disabled    bool          `json:"disabled"`
 		Params      ScannerParams `json:"params"`
 	}
 

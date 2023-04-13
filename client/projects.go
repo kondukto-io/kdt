@@ -132,22 +132,21 @@ func (c *Client) CreateProject(pd ProjectDetail) (*Project, error) {
 }
 
 type ReleaseStatus struct {
+	Status  string             `json:"status" bson:"status"`
+	SAST    PlaybookTypeDetail `json:"sast" bson:"sast"`
+	DAST    PlaybookTypeDetail `json:"dast" bson:"dast"`
+	PENTEST PlaybookTypeDetail `json:"pentest" bson:"pentest"`
+	IAST    PlaybookTypeDetail `json:"iast" bson:"iast"`
+	SCA     PlaybookTypeDetail `json:"sca" bson:"sca"`
+	CS      PlaybookTypeDetail `json:"cs" bson:"cs"`
+	IAC     PlaybookTypeDetail `json:"iac" bson:"iac"`
+}
+
+type PlaybookTypeDetail struct {
+	Tool   string `json:"tool" bson:"tool"`
 	Status string `json:"status" bson:"status"`
-	SAST   struct {
-		Tool   string `json:"tool" bson:"tool"`
-		Status string `json:"status" bson:"status"`
-		ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
-	} `json:"sast" bson:"sast"`
-	DAST struct {
-		Tool   string `json:"tool" bson:"tool"`
-		Status string `json:"status" bson:"status"`
-		ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
-	} `json:"dast" bson:"dast"`
-	SCA struct {
-		Tool   string `json:"tool" bson:"tool"`
-		Status string `json:"status" bson:"status"`
-		ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
-	} `json:"sca" bson:"sca"`
+	Manual bool   `json:"manual" bson:"manual"`
+	ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
 }
 
 func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {

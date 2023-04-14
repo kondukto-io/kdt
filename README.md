@@ -119,6 +119,29 @@ Following flags are only valid for scan commands.
 
 `-b` or `--branch` for providing branch to scan
 
+###### Note: If you use with `-v` verbose flag, you will see more information about the scan.
+
+#### Release Commands Flags
+Following flags are only valid for release commands.
+
+`-p` or `--project` for providing project name or id
+
+`--cs` process cs criteria status
+
+`--dast` process dast criteria status
+
+`--iac` process iac criteria status
+
+`--iast` process iast criteria status
+
+`--pentest` process pentest criteria status
+
+`--sast` process sast criteria status
+
+`--sca` process sca criteria status
+
+###### Note: If you use with `-v` verbose flag, you will see more information the criteria status of the release.
+
 ##### Threshold flags
 
 These flags represent maximum number of vulnerabilities with specified severity to ignore. If these threshold are crossed, KDT will exit with non-zero status code.

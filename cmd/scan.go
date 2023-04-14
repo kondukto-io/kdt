@@ -1070,13 +1070,68 @@ func checkRelease(scan *client.ScanDetail) error {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}
 
+	return isScanReleaseFailed(rs)
+}
+
+func isScanReleaseFailed(release *client.ReleaseStatus) error {
 	const statusFail = "fail"
 
-	if rs.Status == statusFail {
-		return errors.New("project does not pass release criteria")
+	if release.Status != statusFail {
+		return nil
 	}
 
-	return nil
+	var failedScans = make(map[string]string, 0)
+
+	if release.SAST.Status == statusFail {
+		failedScans["SAST"] = release.SAST.ScanID
+	}
+	if release.DAST.Status == statusFail {
+		failedScans["DAST"] = release.DAST.ScanID
+	}
+	if release.PENTEST.Status == statusFail {
+		failedScans["PENTEST"] = release.PENTEST.ScanID
+	}
+	if release.IAST.Status == statusFail {
+		failedScans["IAST"] = release.IAST.ScanID
+	}
+	if release.SCA.Status == statusFail {
+		failedScans["SCA"] = release.SCA.ScanID
+	}
+	if release.CS.Status == statusFail {
+		failedScans["CS"] = release.CS.ScanID
+	}
+	if release.IAC.Status == statusFail {
+		failedScans["IAC"] = release.IAC.ScanID
+	}
+
+	if verbose {
+		c, err := client.New()
+		if err != nil {
+			qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		}
+
+		for toolType, scanID := range failedScans {
+			fmt.Println()
+			fmt.Println("-----------------------------------------------------------------")
+			fmt.Printf("[!] project does not pass release criteria due to [%s] failure\n", toolType)
+			scan, err := c.FindScanByID(scanID)
+			if err != nil {
+				qwe(ExitCodeError, err, "failed to fetch scan summary")
+			}
+
+			printScanSummary(scan)
+			fmt.Println("-----------------------------------------------------------------")
+		}
+	}
+
+	var failedToolTypes []string
+	for toolType := range failedScans {
+		failedToolTypes = append(failedToolTypes, toolType)
+	}
+
+	returnMSG := fmt.Sprintf("project does not pass release criteria due to [%s] failure", strings.Join(failedToolTypes, ", "))
+
+	return errors.New(returnMSG)
 }
 
 func passTests(scan *client.ScanDetail, cmd *cobra.Command) error {

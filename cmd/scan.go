@@ -462,8 +462,9 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		qwm(ExitCodeError, "failed to parse params flag")
 	}
 
-	var optionalsKeysLen = scanner.Params.ReturnsOptionalsLen()
-	if (len(scanner.Params) - optionalsKeysLen) > len(params) {
+	var requiredParamsLen = scanner.Params.RequiredParamsLen()
+
+	if requiredParamsLen > len(params) {
 		klog.Debugf("missing parameters for the scanner tool [%s]", scanner.DisplayName)
 		qwm(ExitCodeError, "missing parameters for the scanner tool")
 	}
@@ -985,29 +986,6 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	pr.updateProduct(product, parsedProjects)
 	qwm(ExitCodeSuccess, "the project assigned to the product")
 	return project, nil
-}
-
-func statusMsg(s int) string {
-	switch s {
-	case eventStatusWaiting:
-		return "scan waiting"
-	case eventStatusStarting:
-		return "scan starting"
-	case eventStatusRunning:
-		return "scan running"
-	case eventStatusRetrievingResults:
-		return "retrieving results"
-	case eventStatusAnalyzing:
-		return "analyzing scan results"
-	case eventStatusNotifying:
-		return "setting notifications"
-	case eventStatusFinished:
-		return "scan finished"
-	case eventStatusFailed:
-		return "scan failed"
-	default:
-		return fmt.Sprintf("unknown status: %d", s)
-	}
 }
 
 func getScanMode(cmd *cobra.Command) uint {

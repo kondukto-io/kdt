@@ -69,11 +69,11 @@ func (s ScannerParams) Find(k string) *ScannerCustomParams {
 	return nil
 }
 
-// ReturnsOptionalsLen returns the optionals length.
-func (s ScannerParams) ReturnsOptionalsLen() int {
+// RequiredParamsLen returns the required params length.
+func (s ScannerParams) RequiredParamsLen() int {
 	var count int
 	for _, v := range s {
-		if v.Optional {
+		if !v.Optional {
 			count++
 		}
 	}

@@ -162,7 +162,7 @@ func (c *Client) IsValidTool(tool string) bool {
 
 	var scanner = scanners.ActiveScanners[0]
 	if scanner.Disabled {
-		klog.Debugf("the scanner [%s] is disabled on the Kondukto", tool)
+		klog.Printf("the scanner [%s] is disabled on the Kondukto", tool)
 		return false
 	}
 

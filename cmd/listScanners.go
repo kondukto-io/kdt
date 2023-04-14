@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/kondukto-io/kdt/client"
-	
+
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,7 @@ var listScannersCmd = &cobra.Command{
 			return "required"
 		}
 
-		var boolToHumanText = func(b bool) string {
+		var boolToText = func(b bool) string {
 			if b {
 				return "disabled"
 			}
@@ -62,7 +62,7 @@ var listScannersCmd = &cobra.Command{
 		for _, v := range activeScanners.ActiveScanners {
 			var rescanOnly = rescanOnly(v.Labels)
 			var joinedLabels = strings.Join(v.Labels, ",")
-			var columns = []string{v.Slug, v.ID, v.Type, rescanOnly, joinedLabels, "", boolToHumanText(v.Disabled)}
+			var columns = []string{v.Slug, v.ID, v.Type, rescanOnly, joinedLabels, "", boolToText(v.Disabled)}
 
 			scannerRows = append(scannerRows, Row{Columns: columns})
 			for k, v := range v.Params {

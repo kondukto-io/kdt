@@ -12,7 +12,7 @@ TEMP 	      = $(subst /, ,$@)
 OS 	      	  = $(word 1, $(TEMP))
 ARCH 	      = $(word 2, $(TEMP))
 
-VERSION       := $(VERSION_TAG)-$(COMMIT)
+VERSION       := $(VERSION_TAG)
 
 export GO111MODULE=on
 
@@ -27,7 +27,7 @@ clean:
 	go clean
 
 help:
-	@echo 
+	@echo
 	@echo "Available commands: all | image | help"
 	@echo " make all   -- to build kdt in all supported environments"
 	@echo " make image -- to build docker image"

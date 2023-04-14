@@ -18,8 +18,9 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
-	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/viper"
+
+	"github.com/kondukto-io/kdt/klog"
 )
 
 type (
@@ -73,12 +74,13 @@ type (
 	}
 
 	Event struct {
-		ID      string `json:"id"`
-		Status  int    `json:"status"`
-		Active  int    `json:"active"`
-		ScanId  string `json:"scan_id"`
-		Message string `json:"message"`
-		Links   struct {
+		ID         string `json:"id"`
+		Status     int    `json:"status"`
+		Active     int    `json:"active"`
+		ScanID     string `json:"scan_id"`
+		StatusText string `json:"status_text"`
+		Message    string `json:"message"`
+		Links      struct {
 			HTML string `json:"html"`
 		} `json:"links"`
 	}
@@ -367,7 +369,7 @@ func (c *Client) FindScanByID(id string) (*ScanDetail, error) {
 }
 
 func (c *Client) GetScanStatus(eventId string) (*Event, error) {
-	path := fmt.Sprintf("/api/v1/events/%s/status", eventId)
+	path := fmt.Sprintf("/api/v2/events/%s/status", eventId)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err

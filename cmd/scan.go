@@ -13,12 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/kondukto-io/kdt/client"
 	"github.com/kondukto-io/kdt/klog"
-
-	"github.com/spf13/cobra"
 )
 
 const (

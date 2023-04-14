@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-querystring/query"
-
 	"github.com/kondukto-io/kdt/klog"
+
+	"github.com/google/go-querystring/query"
 )
 
 type (

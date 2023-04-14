@@ -17,10 +17,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kondukto-io/kdt/klog"
+
 	"github.com/google/go-querystring/query"
 	"github.com/spf13/viper"
-
-	"github.com/kondukto-io/kdt/klog"
 )
 
 type (

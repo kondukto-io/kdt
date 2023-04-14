@@ -1069,10 +1069,10 @@ func checkRelease(scan *client.ScanDetail) error {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}
 
-	return isReleaseFailed(rs)
+	return isScanReleaseFailed(rs)
 }
 
-func isReleaseFailed(release *client.ReleaseStatus) error {
+func isScanReleaseFailed(release *client.ReleaseStatus) error {
 	const statusFail = "fail"
 
 	if release.Status != statusFail {
@@ -1123,12 +1123,12 @@ func isReleaseFailed(release *client.ReleaseStatus) error {
 		}
 	}
 
-	var failedTools []string
+	var failedToolTypes []string
 	for toolType := range failedScans {
-		failedTools = append(failedTools, toolType)
+		failedToolTypes = append(failedToolTypes, toolType)
 	}
 
-	returnMSG := fmt.Sprintf("project does not pass release criteria due to [%s] failure", strings.Join(failedTools, ", "))
+	returnMSG := fmt.Sprintf("project does not pass release criteria due to [%s] failure", strings.Join(failedToolTypes, ", "))
 
 	return errors.New(returnMSG)
 }

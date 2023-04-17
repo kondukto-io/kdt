@@ -26,7 +26,7 @@ func init() {
 	createCmd.AddCommand(createProjectCmd)
 
 	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another Kondukto project")
-	createProjectCmd.Flags().StringP("over-write", "w", "", "rename the project name when creating a new project")
+	createProjectCmd.Flags().StringP("overwrite", "w", "", "rename the project name when creating a new project")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
 	createProjectCmd.Flags().String("repo-id", "r", "URL or ID of ALM repository")
@@ -66,9 +66,9 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeError, fmt.Sprintf("failed to parse the force-create flag: %v", err))
 	}
 
-	overwrite, err := p.cmd.Flags().GetString("over-write")
+	overwrite, err := p.cmd.Flags().GetString("overwrite")
 	if err != nil {
-		qwe(ExitCodeError, err, "failed to parse the over-write flag: %v")
+		qwe(ExitCodeError, err, "failed to parse the overwrite flag: %v")
 	}
 
 	p.overwriteOrForce(force, overwrite) // Being over write or being force create. That is the question. :)
@@ -200,7 +200,7 @@ func (p *Project) overwriteOrForce(force bool, overwrite string) {
 	}
 
 	if force && isOverWrite {
-		qwm(ExitCodeError, "please select either the --force-create or --over-write flag, but not both, to create a project.")
+		qwm(ExitCodeError, "please select either the --force-create or --overwrite flag, but not both, to create a project.")
 	}
 }
 
@@ -221,7 +221,7 @@ func (p *Project) checkProjectIfExist(repositoryID string, force bool, overwrite
 				p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
 			}
 			TableWriter(p.printRows...)
-			qwm(ExitCodeError, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag or rename project with --over-write flag", len(projects)))
+			qwm(ExitCodeError, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag or rename project with --overwrite flag", len(projects)))
 		}
 	}
 }

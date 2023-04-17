@@ -26,6 +26,7 @@ func init() {
 	createCmd.AddCommand(createProjectCmd)
 
 	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another Kondukto project")
+	createProjectCmd.Flags().StringP("over-write", "w", "", "rename the project name when creating a new project")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
 	createProjectCmd.Flags().String("repo-id", "r", "URL or ID of ALM repository")
@@ -65,22 +66,16 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeError, fmt.Sprintf("failed to parse the force-create flag: %v", err))
 	}
 
-	if !force {
-		projects, err := p.client.ListProjects("", repositoryID)
-		if err != nil {
-			qwe(ExitCodeError, err, "failed to check project with alm info")
-		}
-
-		if len(projects) > 0 {
-			for _, project := range projects {
-				p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
-			}
-			TableWriter(p.printRows...)
-			qwm(ExitCodeError, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag", len(projects)))
-		}
+	overwrite, err := p.cmd.Flags().GetString("over-write")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the over-write flag: %v")
 	}
 
-	project := p.createProject(repositoryID, force)
+	p.overwriteOrForce(force, overwrite) // Being over write or being force create. That is the question. :)
+
+	p.checkProjectIfExist(repositoryID, force, overwrite) // Check if the project already exists.
+
+	project := p.createProject(repositoryID, force, overwrite) // Create the project.
 
 	if !p.cmd.Flags().Changed("product-name") {
 		qwm(ExitCodeSuccess, "project created successfully")
@@ -105,7 +100,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	qwm(ExitCodeSuccess, "the project assigned to the product")
 }
 
-func (p *Project) createProject(repo string, force bool) *client.Project {
+func (p *Project) createProject(repo string, force bool, overwrite ...string) *client.Project {
 	klog.Debugf("creating project with repo-id: %s", repo)
 	if len(p.printRows) == 0 {
 		p.printRows = projectPrintHeaders()
@@ -134,22 +129,35 @@ func (p *Project) createProject(repo string, force bool) *client.Project {
 		qwe(ExitCodeError, err, "failed to parse the alm flag")
 	}
 
+	projectSource := func() client.ProjectSource {
+		s := client.ProjectSource{Tool: tool}
+		u, err := url.Parse(repo)
+		if err != nil || u.Host == "" || u.Scheme == "" {
+			s.ID = repo
+		} else {
+			s.URL = repo
+		}
+		return s
+	}()
+
+	var isOverwrite bool
+	var overwriteName = ""
+	if len(overwrite) > 0 {
+		overwriteName = overwrite[0]
+	}
+	if overwriteName != "" {
+		isOverwrite = true
+	}
+
 	pd := client.ProjectDetail{
-		Source: func() client.ProjectSource {
-			s := client.ProjectSource{Tool: tool}
-			u, err := url.Parse(repo)
-			if err != nil || u.Host == "" || u.Scheme == "" {
-				s.ID = repo
-			} else {
-				s.URL = repo
-			}
-			return s
-		}(),
+		Name:   overwriteName,
+		Source: projectSource,
 		Team: client.ProjectTeam{
 			Name: team,
 		},
-		Labels:   parsedLabels,
-		Override: force,
+		Labels:    parsedLabels,
+		Override:  force,
+		Overwrite: isOverwrite,
 	}
 
 	project, err := p.client.CreateProject(pd)
@@ -183,6 +191,39 @@ func (p *Project) createProject(repo string, force bool) *client.Project {
 
 	klog.Printf("project [%s] created successfully", project.Name)
 	return project
+}
+
+func (p *Project) overwriteOrForce(force bool, overwrite string) {
+	var isOverWrite bool
+	if len(overwrite) > 0 {
+		isOverWrite = true
+	}
+
+	if force && isOverWrite {
+		qwm(ExitCodeError, "please select either the --force-create or --over-write flag, but not both, to create a project.")
+	}
+}
+
+func (p *Project) checkProjectIfExist(repositoryID string, force bool, overwrite string) {
+	var isOverwrite bool
+	if len(overwrite) > 0 {
+		isOverwrite = true
+	}
+
+	if !force && !isOverwrite {
+		projects, err := p.client.ListProjects("", repositoryID)
+		if err != nil {
+			qwe(ExitCodeError, err, "failed to check project with alm info")
+		}
+
+		if len(projects) > 0 {
+			for _, project := range projects {
+				p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
+			}
+			TableWriter(p.printRows...)
+			qwm(ExitCodeError, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag or rename project with --over-write flag", len(projects)))
+		}
+	}
 }
 
 func projectPrintHeaders() []Row {

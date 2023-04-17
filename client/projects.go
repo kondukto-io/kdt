@@ -90,10 +90,12 @@ func (c *Client) FindProjectByName(name string) (*Project, error) {
 }
 
 type ProjectDetail struct {
-	Source   ProjectSource  `json:"source"`
-	Team     ProjectTeam    `json:"team"`
-	Labels   []ProjectLabel `json:"labels"`
-	Override bool           `json:"override"`
+	Name      string         `json:"name"`
+	Source    ProjectSource  `json:"source"`
+	Team      ProjectTeam    `json:"team"`
+	Labels    []ProjectLabel `json:"labels"`
+	Override  bool           `json:"override"`  // That means, if the project already exists, create a new one with prefix "-"
+	Overwrite bool           `json:"overwrite"` // That means, if the project already exists, overwrite it
 }
 
 type ProjectSource struct {

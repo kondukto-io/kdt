@@ -71,7 +71,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "failed to parse the overwrite flag: %v")
 	}
 
-	p.overwriteOrForce(force, overwrite) // Being over write or being force create. That is the question. :)
+	p.overwriteOrForce(force, overwrite) // Check if overwrite and force flags are used together.
 
 	p.checkProjectIfExist(repositoryID, force, overwrite) // Check if the project already exists.
 

@@ -247,11 +247,11 @@ kdt --config kondukto-config.yml \
 - --labels: Associate project with a label list
 - --alm-tool: If there is more than one ALM enabled in Kondukto you need to specify ALM tool, otherwise it is not necessary.
 - --team: Specify a team name. By default team name is `default team`. 
-- --force-create: Create a project with prefix `-` if there is another project with the same name.
-- --overwrite: Overwrite project name, there is no need to add `-` prefix.
+- --force-create: Create a project with suffix `-` if there is another project with the same name.
+- --overwrite: Overwrite project name, there is no need to add `-` suffix.
 
 This command will create a project on Kondukto with the same name in your ALM(Application Lifecycle Management) tool. If there is another project
-with the same name, command will print an error message and exit with a status code. You can pass `--force-create` flag to create a project with a prefix `-` or you can pass `--overwrite` flag to overwrite the project name.
+with the same name, command will print an error message and exit with a status code. You can pass `--force-create` flag to create a project with a suffix `-` or you can pass `--overwrite` flag to overwrite the project name.
 
 ``` 
 

@@ -94,7 +94,7 @@ type ProjectDetail struct {
 	Source    ProjectSource  `json:"source"`
 	Team      ProjectTeam    `json:"team"`
 	Labels    []ProjectLabel `json:"labels"`
-	Override  bool           `json:"override"`  // That means, if the project already exists, create a new one with prefix "-"
+	Override  bool           `json:"override"`  // That means, if the project already exists, create a new one with suffix "-"
 	Overwrite bool           `json:"overwrite"` // That means, if the project already exists, overwrite it
 }
 

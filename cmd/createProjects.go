@@ -12,6 +12,7 @@ import (
 
 	"github.com/kondukto-io/kdt/client"
 	"github.com/kondukto-io/kdt/klog"
+
 	"github.com/spf13/cobra"
 )
 
@@ -210,19 +211,21 @@ func (p *Project) checkProjectIfExist(repositoryID string, force bool, overwrite
 		isOverwrite = true
 	}
 
-	if !force && !isOverwrite {
-		projects, err := p.client.ListProjects("", repositoryID)
-		if err != nil {
-			qwe(ExitCodeError, err, "failed to check project with alm info")
-		}
+	if force || isOverwrite {
+		return
+	}
 
-		if len(projects) > 0 {
-			for _, project := range projects {
-				p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
-			}
-			TableWriter(p.printRows...)
-			qwm(ExitCodeError, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag or rename project with --overwrite flag", len(projects)))
+	projects, err := p.client.ListProjects("", repositoryID)
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to check project with alm info")
+	}
+
+	if len(projects) > 0 {
+		for _, project := range projects {
+			p.printRows = append(p.printRows, Row{Columns: project.FieldsAsRow()})
 		}
+		TableWriter(p.printRows...)
+		qwm(ExitCodeError, fmt.Sprintf("%d project(s) with the same repo-id already exists. for force creation pass --force-create flag or rename project with --overwrite flag", len(projects)))
 	}
 }
 

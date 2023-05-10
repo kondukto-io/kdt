@@ -72,6 +72,10 @@ To list projects: `kdt list projects`
 
 To list scans of a project: `kdt list scans -p ExampleProject`
 
+To check ALM project availability: `kdt project available -a $ALM_TOOL -r $PROJECT_ID`
+- If project is available, it will return exit code 0
+- If project is not available, it will return exit code -1 (255)
+
 To restart a scan, you can use one of the following:
 
 - id of the scan: `kdt scan -s 5da6cafa5ab6e436faf643dc`

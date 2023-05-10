@@ -34,7 +34,7 @@ const (
 	ExitCodeSuccess       = 0
 	ExitCodeError         = 1
 	ExitCodeWarning       = 2
-	ExitCodeNotAuthorized = 3
+	ExitCodeNotAuthorized = 100
 	ExitCodeNegative      = -1
 )
 

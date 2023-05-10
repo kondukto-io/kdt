@@ -176,3 +176,27 @@ func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 
 	return rs, nil
 }
+
+func (c *Client) IsAvailable(project, almTool string) (bool, error) {
+	path := fmt.Sprintf("/api/v2/projects/check/%s/%s", almTool, project)
+
+	req, err := c.newRequest("GET", path, nil)
+	if err != nil {
+		return false, err
+	}
+
+	var checkProjectResponse struct {
+		Exist bool `json:"exist"`
+	}
+
+	resp, err := c.do(req, &checkProjectResponse)
+	if err != nil {
+		return false, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	}
+
+	return checkProjectResponse.Exist, nil
+}

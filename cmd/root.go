@@ -31,9 +31,11 @@ var (
 )
 
 const (
-	ExitCodeSuccess = 0
-	ExitCodeError   = 1
-	ExitCodeWarning = 2
+	ExitCodeSuccess       = 0
+	ExitCodeError         = 1
+	ExitCodeWarning       = 2
+	ExitCodeNotAuthorized = 100
+	ExitCodeNegative      = -1
 )
 
 // rootCmd represents the base command when called without any subcommands

@@ -100,7 +100,6 @@ func checkProject(cmd *cobra.Command) {
 
 	if available {
 		qwm(ExitCodeSuccess, "[+] project is available")
-	} else {
-		qwm(ExitCodeNegative, "[-] project is not available")
 	}
+	qwm(ExitCodeNegative, "[-] project is not available")
 }

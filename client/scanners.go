@@ -10,8 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-querystring/query"
 	"github.com/kondukto-io/kdt/klog"
+
+	"github.com/google/go-querystring/query"
 )
 
 type (
@@ -34,6 +35,7 @@ type (
 		DisplayName string        `json:"display_name"`
 		Labels      []string      `json:"labels"`
 		CustomType  int           `json:"custom_type"`
+		Disabled    bool          `json:"disabled"`
 		Params      ScannerParams `json:"params"`
 	}
 
@@ -67,11 +69,11 @@ func (s ScannerParams) Find(k string) *ScannerCustomParams {
 	return nil
 }
 
-// ReturnsOptionalsLen returns the optionals length.
-func (s ScannerParams) ReturnsOptionalsLen() int {
+// RequiredParamsLen returns the required params length.
+func (s ScannerParams) RequiredParamsLen() int {
 	var count int
 	for _, v := range s {
-		if v.Optional {
+		if !v.Optional {
 			count++
 		}
 	}
@@ -155,6 +157,12 @@ func (c *Client) IsValidTool(tool string) bool {
 
 	if scanners.Total == 0 {
 		klog.Debugf("no tool found by given tool name. invalid or inactive tool name: %s", tool)
+		return false
+	}
+
+	var scanner = scanners.ActiveScanners[0]
+	if scanner.Disabled {
+		klog.Printf("the scanner [%s] is disabled on the Kondukto", tool)
 		return false
 	}
 

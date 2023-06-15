@@ -41,6 +41,7 @@ jobs:
       - name: Build and Show Version
         id: build_and_show_version
         run: |
+          go mod tidy
           make all
           _release/kdt-linux-amd64 version
 

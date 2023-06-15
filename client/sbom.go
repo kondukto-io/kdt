@@ -23,6 +23,7 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	if !ok {
 		projectName = ""
 	}
+
 	if projectName == "" && repo == "" {
 		return errors.New("project and repo parameter values can not be empty same time")
 	}
@@ -44,6 +45,7 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	if !ok {
 		allowEmptyParam = "false"
 	}
+
 	if allowEmptyParam == "" {
 		allowEmptyParam = "false"
 	}

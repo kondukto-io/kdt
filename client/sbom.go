@@ -19,7 +19,10 @@ import (
 func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	klog.Debugf("importing sbom content using file:%s", file)
 
-	projectName := form["project"]
+	projectName, ok := form["project"]
+	if !ok {
+		projectName = ""
+	}
 	if projectName == "" && repo == "" {
 		return errors.New("project and repo parameter values can not be empty same time")
 	}
@@ -37,7 +40,10 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 		return fmt.Errorf("multiple projects found for name [%s] and repo [%s]", projectName, repo)
 	}
 
-	allowEmptyParam := form["allow_empty"]
+	allowEmptyParam, ok := form["allow_empty"]
+	if !ok {
+		allowEmptyParam = "false"
+	}
 	if allowEmptyParam == "" {
 		allowEmptyParam = "false"
 	}
@@ -46,6 +52,9 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	if err != nil {
 		return fmt.Errorf("can not parse allow_empty parameter value [%s]", allowEmptyParam)
 	}
+
+	form["allow_empty"] = allowEmptyParam
+	form["project"] = projects[0].Name
 
 	path := fmt.Sprintf("/api/v2/projects/%s/sbom/upload", projects[0].ID)
 	rel := &url.URL{Path: path}

@@ -1,5 +1,8 @@
 .idea/
+.vscode/
 _release/
-kdt
 
-\.vscode/
+kdt
+coverage.out
+
+

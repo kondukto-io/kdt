@@ -20,17 +20,23 @@ define hash
 	cd $(BUILD_DIR) && sha256sum $(1) > $(1).sha256
 endef
 
-default: help
-
 clean:
 	rm -r $(BUILD_DIR)
+	rm coverage.out
 	go clean
 
-help:
-	@echo
-	@echo "Available commands: all | image | help"
-	@echo " make all   -- to build kdt in all supported environments"
-	@echo " make image -- to build docker image"
+test:
+	go test ./...
+
+test_coverage:
+	go test ./... -coverprofile=coverage.out
+
+go.mod:
+	go mod tidy
+	go mod verify
+
+vet:
+	go vet
 
 all: $(PLATFORMS)
 

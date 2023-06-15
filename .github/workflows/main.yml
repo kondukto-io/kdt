@@ -45,6 +45,7 @@ jobs:
           make test_coverage
           make go.mod
           make vet
+          make all
           _release/kdt-linux-amd64 version
 
       - name: Create Release

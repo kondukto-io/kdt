@@ -61,20 +61,6 @@ func New() (*Client, error) {
 	return client, nil
 }
 
-func (c *Client) HealthCheck() error {
-	req, err := c.newRequest("GET", "/api/v2/health/check", nil)
-	if err != nil {
-		return err
-	}
-
-	_, err = c.do(req, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (c *Client) newRequest(method string, path string, body interface{}) (*http.Request, error) {
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)

@@ -7,9 +7,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/kondukto-io/kdt/client"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/kondukto-io/kdt/client"
+
+	"github.com/spf13/cobra"
 )
 
 // ping represents the ping command

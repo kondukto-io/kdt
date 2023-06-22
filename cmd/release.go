@@ -42,7 +42,7 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "could not initialize Kondukto client")
 	}
 
-	project, err := cmd.Flags().GetString("project")
+	project, err := getSanitizedFlagStr(cmd, "project")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse project flag")
 	}

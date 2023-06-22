@@ -919,7 +919,7 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	}
 	var name string
 	if repo == "" {
-		project, err := s.cmd.Flags().GetString("project")
+		project, err := getSanitizedFlagStr(s.cmd, "project")
 		if err != nil {
 			return nil, fmt.Errorf("failed to get project flag: %w", err)
 		}

@@ -73,7 +73,7 @@ func (s *SBOMImport) sbomImport() error {
 		return errors.New("missing a required flag(repo or project) to get project detail")
 	}
 
-	projectName, err := s.cmd.Flags().GetString("project")
+	projectName, err := getSanitizedFlagStr(s.cmd, "project")
 	if err != nil {
 		return fmt.Errorf("failed to get project flag: %w", err)
 	}

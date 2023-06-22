@@ -9,7 +9,7 @@ With KDT, you can list projects and their scans in **Kondukto**, and restart a s
 [Kondukto](https://kondukto.io) is an Application Security Testing Orchestration platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
 
 ## Installation
-You can install the CLI with a `curl` utility script or by downloading the pre-compiled binary from the Github release page.
+You can install the CLI with a `curl` utility script or by downloading the pre-compiled binary from the GitHub release page.
 Once installed youl'll get the `kdt-cli` command and `kdt` alias.
 
 Utility script with `curl`:
@@ -31,7 +31,7 @@ Or you can also simply run the following if you have an existing [Go](https://go
 go get github.com/kondukto-io/kdt
 ```
 
-If you want to build it yourself, clone the source files using Github, change into the `kdt` directory and run:
+If you want to build it yourself, clone the source files using GitHub, change into the `kdt` directory and run:
 ```shell
 git clone https://github.com/kondukto-io/kdt.git
 cd kdt
@@ -225,43 +225,28 @@ The following command scans the project "SampleProject" with the tool "SampleToo
 $ kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10 --threshold-risk
 ```
 
-## Supported scanners (tools)
-KDT supports all scanners enabled in Kondukto server, to see the list simply run `kdt list scanners`.
+## Supported Scanners (Tools)
 
-Example Usage:
+KDT is designed to support all scanners enabled in the Kondukto server. The list of available scanners is dynamically updated as new tools are added, ensuring KDT remains adaptable and scalable to your scanning needs.
 
+To view the currently available scanners, use the `kdt list scanners` command:
+
+```shell
+kdt --config kondukto.yaml list scanners
 ```
-./kdt --config kondukto.yaml list scanners
+
+Example output:
+
+```shell
 Name       ID                          Type    Trigger     Labels
 ----       --                          ----    -------     ------
 gosec      60eec8a83e9e5e6e2ae52d06    sast    new scan    docker,kdt
 semgrep    60eec8a53e9e5e6e2ae52d05    sast    rescan      template,docker,kdt
 ```
 
-### Tool list (full)
-```
-checkmarx
-checkmarxsca
-owaspzap
-webinspect
-netsparker
-appspider
-bandit
-findsecbugs
-dependencycheck
-fortify
-gosec
-brakeman
-securitycodescan
-trivy
-hclappscan
-owaspzapheadless
-nancy
-semgrep
-veracode
-burpsuite
-burpsuiteenterprise
-```
+This output provides a summary of each available scanner, including its name, ID, type, trigger mechanism, and any associated labels.
+
+Please note that the actual list of supported scanners can vary as new tools are regularly added to improve the capabilities of KDT.
 
 ## Advanced Usage Examples
 
@@ -291,7 +276,7 @@ In this command:
 
 - `--tool`: Specifies the AST (Application Security Testing) tool to be used, in this case, 'fortify'.
 
-- `--file`: Determines the results filename. When this parameter is given, the scan will not be initiated, and only the results file (results.fpr) will be analyzed.
+- `--file`: Determines the result filename. When this parameter is given, the scan will not be initiated, and only the results file (results.fpr) will be analyzed.
 
 - `--branch`: Specifies the branch name.
 

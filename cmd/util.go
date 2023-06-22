@@ -9,9 +9,12 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/kondukto-io/kdt/klog"
+
+	"github.com/spf13/cobra"
 )
 
 // qwe quits with error. If there are messages, wraps error with message
@@ -60,3 +63,13 @@ func TableWriter(rows ...Row) {
 }
 
 func strC(v int) string { return strconv.Itoa(v) }
+
+// getSanitizedFlagStr returns a flag value with all spaces removed
+func getSanitizedFlagStr(cmd *cobra.Command, flagName string) (string, error) {
+	value, err := cmd.Flags().GetString(flagName)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse %s flag: %w", flagName, err)
+	}
+
+	return strings.ReplaceAll(value, " ", ""), nil
+}

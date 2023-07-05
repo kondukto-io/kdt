@@ -1,3 +1,8 @@
+/*
+Copyright © 2023 Kondukto
+
+*/
+
 package cmd
 
 import (

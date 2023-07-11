@@ -38,13 +38,14 @@ func createTeamRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "failed to parse the name flag")
 	}
 
+	if teamName == "" {
+		qwm(ExitCodeError, "team name is required")
+	}
+
+	// Responsible is optional
 	responsible, err := cmd.Flags().GetString("responsible")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse the responsible flag")
-	}
-
-	if teamName == "" {
-		qwm(ExitCodeError, "team name is required")
 	}
 
 	if err := c.CreateTeam(teamName, responsible); err != nil {

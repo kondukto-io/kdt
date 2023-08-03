@@ -102,9 +102,20 @@ func (c *Client) ListProducts(name string) ([]Product, error) {
 }
 
 type ProductDetail struct {
-	ID       string    `json:"id"`
-	Name     string    `json:"name"`
-	Projects []Project `json:"projects"`
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	Projects         []Project `json:"projects"`
+	BusinessUnitTags []struct {
+		ID       string `json:"id"`
+		Name     string `json:"name"`
+		Color    string `json:"color"`
+		IsActive int    `json:"isActive"`
+		Required bool   `json:"required"`
+	} `json:"business_unit_tags"`
+	AccessibleFor struct {
+		OwnerIDs []string `json:"owner_ids"`
+		TeamIDs  []string `json:"team_ids"`
+	} `json:"accessible_for"`
 }
 
 func (c *Client) CreateProduct(pd ProductDetail) (*Product, error) {

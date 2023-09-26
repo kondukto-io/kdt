@@ -33,9 +33,10 @@ type (
 		Total      int          `json:"total"`
 	}
 	Scanparams struct {
-		ID       string `json:"id"`
-		Branch   string `json:"branch"`
-		BindName string `json:"bind_name"`
+		ID       string  `json:"id"`
+		Branch   string  `json:"branch"`
+		BindName string  `json:"bind_name"`
+		Custom   *Custom `json:"custom"`
 	}
 
 	ScanparamsDetail struct {

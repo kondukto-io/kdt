@@ -381,7 +381,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 
 	var custom = client.Custom{Type: scanner.CustomType}
 	if s.cmd.Flags().Changed("params") {
-		custom = s.parseCustomParams(custom, *scanner)
+		custom = s.parseCustomParams(custom, *scanner, sp)
 	}
 
 	scanData := &client.Scan{
@@ -450,7 +450,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	return s.client.CreateNewScan(scanData)
 }
 
-func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInfo) client.Custom {
+func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInfo, existParams *client.Scanparams) client.Custom {
 	if len(scanner.Params) == 0 {
 		klog.Debugf("the scanner tool [%s] does not allow custom parameter", scanner.DisplayName)
 		qwm(ExitCodeError, "the scanner tool does not allow custom parameter")
@@ -494,6 +494,17 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		}
 
 		custom = appendKeyToParamsMap(key, custom, parsedValue)
+	}
+
+	if existParams == nil || existParams.Custom == nil || existParams.Custom.Params == nil {
+		return custom
+	}
+
+	for i, v := range existParams.Custom.Params {
+		_, ok := custom.Params[i]
+		if !ok {
+			custom.Params[i] = v
+		}
 	}
 
 	return custom
@@ -558,7 +569,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 	var custom = client.Custom{Type: scanner.CustomType}
 	if s.cmd.Flags().Changed("params") {
-		custom = s.parseCustomParams(custom, *scanner)
+		custom = s.parseCustomParams(custom, *scanner, nil)
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
@@ -697,7 +708,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 
 	var custom = client.Custom{Type: scanner.CustomType}
 	if s.cmd.Flags().Changed("params") {
-		custom = s.parseCustomParams(custom, *scanner)
+		custom = s.parseCustomParams(custom, *scanner, nil)
 	}
 	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
@@ -849,7 +860,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	var scanData = func() *client.Scan {
 		var custom = client.Custom{Type: scanner.CustomType}
 		if s.cmd.Flags().Changed("params") {
-			custom = s.parseCustomParams(custom, *scanner)
+			custom = s.parseCustomParams(custom, *scanner, sp)
 		}
 
 		var scanPayload = &client.Scan{

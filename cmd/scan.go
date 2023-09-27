@@ -13,19 +13,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kondukto-io/kdt/client"
-	"github.com/kondukto-io/kdt/klog"
+	"github.com/spf13/cobra"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/spf13/cobra"
+	"github.com/kondukto-io/kdt/client"
+	"github.com/kondukto-io/kdt/klog"
 )
 
 const (
-	jobStarting = iota
-	jobRunning
-	jobAnalyzing
-	jobNotifying
-	jobFinished
+	eventStatusWaiting           = 0
+	eventStatusStarting          = 1
+	eventStatusRunning           = 2
+	eventStatusRetrievingResults = 3
+	eventStatusAnalyzing         = 4
+	eventStatusNotifying         = 5
+	eventStatusFinished          = 6
+	eventStatusFailed            = -1
 )
 
 const (
@@ -94,7 +97,7 @@ var scanCmd = &cobra.Command{
 		t, _ := cmd.Flags().GetString("tool")
 		s, _ := cmd.Flags().GetString("scan-id")
 		if s == "" && !c.IsValidTool(t) {
-			qwm(ExitCodeError, "unknown or inactive tool name. Run `kdt list scanners` to see the supported active scanner's list.")
+			qwm(ExitCodeError, "unknown, disabled or inactive tool name. Run `kdt list scanners` to see the supported active scanner's list.")
 		}
 	},
 }
@@ -378,7 +381,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 
 	var custom = client.Custom{Type: scanner.CustomType}
 	if s.cmd.Flags().Changed("params") {
-		custom = s.parseCustomParams(custom, *scanner)
+		custom = s.parseCustomParams(custom, *scanner, sp)
 	}
 
 	scanData := &client.Scan{
@@ -447,7 +450,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	return s.client.CreateNewScan(scanData)
 }
 
-func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInfo) client.Custom {
+func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInfo, existParams *client.Scanparams) client.Custom {
 	if len(scanner.Params) == 0 {
 		klog.Debugf("the scanner tool [%s] does not allow custom parameter", scanner.DisplayName)
 		qwm(ExitCodeError, "the scanner tool does not allow custom parameter")
@@ -459,24 +462,26 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		qwm(ExitCodeError, "failed to parse params flag")
 	}
 
-	if len(scanner.Params) > len(params) {
+	var requiredParamsLen = scanner.Params.RequiredParamsLen()
+
+	if requiredParamsLen > len(params) {
 		klog.Debugf("missing parameters for the scanner tool [%s]", scanner.DisplayName)
 		qwm(ExitCodeError, "missing parameters for the scanner tool")
 	}
 
 	custom.Params = map[string]interface{}{}
 	for _, v := range params {
-		keyValuePair := strings.SplitN(v, ":", 2)
+		var keyValuePair = strings.SplitN(v, ":", 2)
 		if len(keyValuePair) != 2 {
 			klog.Debugf("invalid params flag: it should be key:value pairs: [%s]", keyValuePair)
 			qwm(ExitCodeError, "invalid params flag, the flag is should be a pair of [key:value]")
 		}
 
-		key := keyValuePair[0]
-		value := keyValuePair[1]
+		var key = keyValuePair[0]
+		var value = keyValuePair[1]
 
 		// validate the given key parameter
-		fieldDetail := scanner.Params.Find(key)
+		var fieldDetail = scanner.Params.Find(key)
 		if fieldDetail == nil {
 			klog.Debugf("params [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
 			qwm(ExitCodeError, "params key is not allowed by the scanner tool")
@@ -489,6 +494,17 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		}
 
 		custom = appendKeyToParamsMap(key, custom, parsedValue)
+	}
+
+	if existParams == nil || existParams.Custom == nil || existParams.Custom.Params == nil {
+		return custom
+	}
+
+	for i, v := range existParams.Custom.Params {
+		_, ok := custom.Params[i]
+		if !ok {
+			custom.Params[i] = v
+		}
 	}
 
 	return custom
@@ -553,7 +569,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 	var custom = client.Custom{Type: scanner.CustomType}
 	if s.cmd.Flags().Changed("params") {
-		custom = s.parseCustomParams(custom, *scanner)
+		custom = s.parseCustomParams(custom, *scanner, nil)
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
@@ -692,7 +708,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 
 	var custom = client.Custom{Type: scanner.CustomType}
 	if s.cmd.Flags().Changed("params") {
-		custom = s.parseCustomParams(custom, *scanner)
+		custom = s.parseCustomParams(custom, *scanner, nil)
 	}
 	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
@@ -844,7 +860,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	var scanData = func() *client.Scan {
 		var custom = client.Custom{Type: scanner.CustomType}
 		if s.cmd.Flags().Changed("params") {
-			custom = s.parseCustomParams(custom, *scanner)
+			custom = s.parseCustomParams(custom, *scanner, sp)
 		}
 
 		var scanPayload = &client.Scan{
@@ -873,7 +889,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 }
 
 func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
-	klog.Debugf("checking for rescan only tools")
+	klog.Debug("checking for rescan only tools")
 	name, err := s.cmd.Flags().GetString("tool")
 	if err != nil || name == "" {
 		return false, nil, errors.New("missing require tool flag")
@@ -981,23 +997,6 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	pr.updateProduct(product, parsedProjects)
 	qwm(ExitCodeSuccess, "the project assigned to the product")
 	return project, nil
-}
-
-func statusMsg(s int) string {
-	switch s {
-	case jobStarting:
-		return "starting scan"
-	case jobRunning:
-		return "scan running"
-	case jobAnalyzing:
-		return "analyzing scan results"
-	case jobNotifying:
-		return "setting notifications"
-	case jobFinished:
-		return "scan finished"
-	default:
-		return "unknown scan status"
-	}
 }
 
 func getScanMode(cmd *cobra.Command) uint {
@@ -1222,9 +1221,9 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 			TableWriter(eventRows...)
 			qwm(ExitCodeError, fmt.Sprintf("Scan failed. Reason: %s", event.Message))
 		case eventInactive:
-			if event.Status == jobFinished {
+			if event.Status == eventStatusFinished {
 				klog.Println("scan finished successfully")
-				scan, err := c.FindScanByID(event.ScanId)
+				scan, err := c.FindScanByID(event.ScanID)
 				if err != nil {
 					qwe(ExitCodeError, err, "failed to fetch scan summary")
 				}
@@ -1244,15 +1243,15 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 				qwm(ExitCodeSuccess, "scan duration exceeds timeout, it will continue running async in the background")
 			}
 			if event.Status != lastStatus {
-				klog.Println(statusMsg(event.Status))
+				klog.Printf("scan status is [%s]", event.StatusText)
 				lastStatus = event.Status
 				// Get new scans scan id
 			} else {
-				klog.Debugf("event status [%s]", statusMsg(event.Status))
+				klog.Debugf("event status is [%s]", event.StatusText)
 			}
 			time.Sleep(10 * time.Second)
 		default:
-			qwm(ExitCodeError, "invalid event status")
+			qwm(ExitCodeError, fmt.Sprintf("unknown event status: %d", event.Active))
 		}
 	}
 }

@@ -1,12 +1,12 @@
 <p align="center"><a href="https://kondukto.io" target="_blank" rel="noopener noreferrer"><img width="200" src="https://kondukto.io/logo.png" alt="Kondukto logo"></a></p>
 
 # KDT
-KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go](https://golang.org). It interacts with Kondukto engine through public API. 
+KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go](https://golang.org). It interacts with Kondukto engine through public API.
 
-With KDT, you can list projects and their scans in **Kondukto**, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD pipelines to trigger scans and break releases if a scan fails or scan results don't met specified release criteria. 
+With KDT, you can list projects and their scans in **Kondukto**, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD pipelines to trigger scans and break releases if a scan fails or scan results don't met specified release criteria.
 
 ### What is Kondukto?
-[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
+[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration and DevSecOps platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
 
 ## Installation
 You can install the CLI with a `curl` utility script or by downloading the pre-compiled binary from the GitHub release page.
@@ -22,7 +22,7 @@ Non-root with curl:
 $ curl -sSL https://cli.kondukto.io | sh
 ```
 
-### Windows 
+### Windows
 To install the kdt-cli on Windows go to [Releases](https://github.com/kondukto-io/kdt/releases) and download the latest kdt-cli.exe.
 
 
@@ -41,9 +41,9 @@ go install
 ## Configuration
 KDT needs Kondukto host and an API token for authentication. API tokens can be created under Integrations/API Tokens menu.
 
-You can provide configuration by:
+You can provide configuration via three different ways:
 
-##### 1) Setting environment variables: 
+##### 1) Setting environment variables:
 
 *(example is for BASH shell)*
 ```shell
@@ -55,15 +55,25 @@ It is always better to set environment variables in shell profile files(`~/.bash
 
 Default path for config file is `$HOME/.kdt.yaml`. Another file can be provided with `--config` command line flag.
 ```
+kdt --config=config.yaml list projects
+```
+
+A config file example.
+```
 // $HOME/.kdt.yaml 
 host: http://localhost:8088
 token: WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
+insecure: true
 ```
 
 ##### 3) Using command line flags
 ```
 kdt list projects --host http://localhost:8088 --token WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
 ```
+
+## Running
+KDT comes with an internal documentation. To see the documentation just type `kdt --help`.
+Most KDT commands are straightforward but for the details of a command you can always take a peak to the documentation. `kdt <command> --help` or `kdt <command> <sub-command> --help`.
 
 ### Health Checks
 
@@ -136,7 +146,7 @@ There are two options to restart a scan:
 To import scan results as a file, use the following command:
 
 ```shell
-$ kdt scan -p ExampleProject -t ExampleTool -b master
+$ kdt scan -p ExampleProject -t ExampleTool -b master -f results.json
 ```
 
 ## Command Line Flags
@@ -248,6 +258,20 @@ This output provides a summary of each available scanner, including its name, ID
 
 Please note that the actual list of supported scanners can vary as new tools are regularly added to improve the capabilities of KDT.
 
+### Custom Parameters
+For some tools the default behaviour of KDT is re-triggering or re-scanning of an existing scan. This means that, there should be a configured scan on Kondukto for KDT to run re-run this operation
+from the CLI. However, by passing some custom arguments to the scanner, Kondukto server can create and start a scan without having a configuration.
+
+The scanners that supports customer parameters are shown with `--params` arguments.
+A customized scan example:
+```
+# Run a scan using semgrep on a develop branch
+# with a custom rule path
+kdt scan -p SampleProject \
+         -b develop -t semgrep \
+	 --params=ruleset_type:2 --params=ruleset_options.ruleset:/rules/
+```
+
 ## Advanced Usage Examples
 
 KDT can be utilized in various ways within your pipeline. The following example demonstrates an advanced use case:
@@ -343,6 +367,23 @@ Additional flags that can be set include:
 - `--overwrite`: Overwrites the project name, eliminating the need to add a `-` suffix.
 
 This command creates a project on Kondukto that matches the name in your ALM tool. If a project with the same name already exists, the command will print an error message and exit with a status code. You can pass the `--force-create` flag to create a project with a suffix `-`, or pass the `--overwrite` flag to overwrite the project name.
+
+---
+
+```
+kdt --config kondukto-config.yml \
+    sbom import \
+    --file cyclonedx-sbom.json \
+    --project SampleProject \
+    --branch develop
+```
+- --config: Kondukto configuration file in yaml format
+- sbom import: Subcommand to import a Software Bill of Materials (SBOM) file
+- --file: The CycloneDX SBOM output file in JSON format
+- --project: The name or ID of the project in the Kondukto server
+- --branch: The name of the branch of the application
+
+This command allows you to update a previously generated SBOM file in the Kondukto system. Please note that currently, only the [CycloneDX](https://cyclonedx.org/) standard is supported for SBOM files.
 
 ---
 

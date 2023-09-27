@@ -116,6 +116,9 @@ type ProductDetail struct {
 		OwnerIDs []string `json:"owner_ids"`
 		TeamIDs  []string `json:"team_ids"`
 	} `json:"accessible_for"`
+	DefaultTeam struct {
+		ID string `json:"id"`
+	} `json:"default_team"`
 }
 
 func (c *Client) CreateProduct(pd ProductDetail) (*Product, error) {

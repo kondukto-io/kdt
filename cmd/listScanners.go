@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kondukto-io/kdt/client"
+
 	"github.com/spf13/cobra"
 )
 
@@ -39,19 +40,43 @@ var listScannersCmd = &cobra.Command{
 			return "new scan"
 		}
 
-		scannerRows := []Row{
-			{Columns: []string{"Name", "ID", "Type", "Trigger", "Labels", "Flags"}},
-			{Columns: []string{"----", "--", "----", "-------", "------", "-----"}},
+		var requirement = func(optional bool) string {
+			if optional {
+				return "optional"
+			}
+			return "required"
 		}
+
+		var boolToText = func(b bool) string {
+			if b {
+				return "disabled"
+			}
+			return "active"
+		}
+
+		var scannerRows = []Row{
+			{Columns: []string{"Name", "ID", "Type", "Trigger", "Labels", "Flags", "Status"}},
+			{Columns: []string{"----", "--", "----", "-------", "------", "-----", "--------"}},
+		}
+
 		for _, v := range activeScanners.ActiveScanners {
-			scannerRows = append(scannerRows, Row{Columns: []string{v.Slug, v.ID, v.Type, rescanOnly(v.Labels), strings.Join(v.Labels, ","), ""}})
+			var rescanOnly = rescanOnly(v.Labels)
+			var joinedLabels = strings.Join(v.Labels, ",")
+			var columns = []string{v.Slug, v.ID, v.Type, rescanOnly, joinedLabels, "", boolToText(v.Disabled)}
+
+			scannerRows = append(scannerRows, Row{Columns: columns})
 			for k, v := range v.Params {
-				scannerRows = append(scannerRows, Row{Columns: []string{"", "", "", "", "", fmt.Sprintf("--params=%s: %s", k, v.Description)}})
+				var params = fmt.Sprintf("--params=%s: %s [%s]", k, v.Description, requirement(v.Optional))
+				var paramColumns = []string{"", "", "", "", "", "", params}
+
+				scannerRows = append(scannerRows, Row{Columns: paramColumns})
 			}
 		}
+
 		if len(scannerRows) == 2 {
 			scannerRows = append(scannerRows, Row{Columns: []string{"no found active scanner"}})
 		}
+
 		TableWriter(scannerRows...)
 	},
 }

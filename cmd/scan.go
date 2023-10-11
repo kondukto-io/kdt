@@ -64,6 +64,7 @@ func init() {
 	scanCmd.Flags().StringP("image", "I", "", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
+	scanCmd.Flags().BoolP("break-by-scanner-type", "", false, "breaks pipeline if only scanner type matches with the given scanner's type")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
 	scanCmd.Flags().StringSlice("params", nil, "parameters for the scan")
@@ -1057,7 +1058,7 @@ func printScanSummary(scan *client.ScanDetail) {
 	TableWriter(scanSummaryRows...)
 }
 
-func checkRelease(scan *client.ScanDetail) error {
+func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 	c, err := client.New()
 	if err != nil {
 		return err
@@ -1068,10 +1069,15 @@ func checkRelease(scan *client.ScanDetail) error {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}
 
-	return isScanReleaseFailed(rs)
+	return isScanReleaseFailed(scan, rs, cmd)
 }
 
-func isScanReleaseFailed(release *client.ReleaseStatus) error {
+func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus, cmd *cobra.Command) error {
+	breakByScannerType, err := cmd.Flags().GetBool("break-by-scanner-type")
+	if err != nil {
+		return err
+	}
+
 	const statusFail = "fail"
 
 	if release.Status != statusFail {
@@ -1100,6 +1106,16 @@ func isScanReleaseFailed(release *client.ReleaseStatus) error {
 	}
 	if release.IAC.Status == statusFail {
 		failedScans["IAC"] = release.IAC.ScanID
+	}
+
+	if breakByScannerType {
+		scannerType := strings.ToUpper(scan.ScannerType)
+
+		if _, ok := failedScans[scannerType]; !ok {
+			// This means, this scanner type isn't failed. So, we can ignore it because we are breaking by scanner type
+			return nil
+		}
+		return fmt.Errorf("project does not pass release criteria due to [%s] failure", scannerType)
 	}
 
 	if verbose {
@@ -1233,7 +1249,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 
 				if err = passTests(scan, cmd); err != nil {
 					qwe(ExitCodeError, err, "scan could not pass security tests")
-				} else if err = checkRelease(scan); err != nil {
+				} else if err = checkRelease(scan, cmd); err != nil {
 					qwe(ExitCodeError, err, "scan failed to pass release criteria")
 				}
 				qwm(ExitCodeSuccess, "scan passed security tests successfully")

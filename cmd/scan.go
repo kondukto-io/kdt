@@ -1114,9 +1114,8 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 		if _, ok := failedScans[scannerType]; !ok {
 			// This means, this scanner type isn't failed. So, we can ignore it because we are breaking by scanner type
 			return nil
-		} else {
-			return errors.New(fmt.Sprintf("project does not pass release criteria due to [%s] failure", scannerType))
 		}
+		return fmt.Errorf("project does not pass release criteria due to [%s] failure", scannerType)
 	}
 
 	if verbose {

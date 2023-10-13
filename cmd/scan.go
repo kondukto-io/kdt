@@ -1087,25 +1087,25 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 	var failedScans = make(map[string]string, 0)
 
 	if release.SAST.Status == statusFail {
-		failedScans["SAST"] = release.SAST.ScanID
+		failedScans["SAST"] = scan.ID
 	}
 	if release.DAST.Status == statusFail {
-		failedScans["DAST"] = release.DAST.ScanID
+		failedScans["DAST"] = scan.ID
 	}
 	if release.PENTEST.Status == statusFail {
-		failedScans["PENTEST"] = release.PENTEST.ScanID
+		failedScans["PENTEST"] = scan.ID
 	}
 	if release.IAST.Status == statusFail {
-		failedScans["IAST"] = release.IAST.ScanID
+		failedScans["IAST"] = scan.ID
 	}
 	if release.SCA.Status == statusFail {
-		failedScans["SCA"] = release.SCA.ScanID
+		failedScans["SCA"] = scan.ID
 	}
 	if release.CS.Status == statusFail {
-		failedScans["CS"] = release.CS.ScanID
+		failedScans["CS"] = scan.ID
 	}
 	if release.IAC.Status == statusFail {
-		failedScans["IAC"] = release.IAC.ScanID
+		failedScans["IAC"] = scan.ID
 	}
 
 	if breakByScannerType {

@@ -404,6 +404,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 
 	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
 		klog.Debugf("scanner tool [%s] is only allowing rescans", tool)
+
 		qwm(ExitCodeError, "no scans found for given project and tool configuration")
 	}
 

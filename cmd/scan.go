@@ -356,16 +356,18 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
-	if err == nil && !s.cmd.Flags().Changed("params") {
-		klog.Print("a completed scan found with the same parameters, restarting")
+	if err != nil {
+		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
+
+	} else if !s.cmd.Flags().Changed("params") {
+		klog.Printf("a completed scan [%s] found with the same parameters, restarting", scan.ID)
+
 		eventID, err := s.client.RestartScanByScanID(scan.ID)
 		if err != nil {
 			return "", err
 		}
 		return eventID, nil
 	}
-
-	klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
 		ToolID:   scanner.ID,
@@ -394,13 +396,15 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	if sp != nil {
-		klog.Debug("a scanparams found with the same parameters")
+		klog.Debugf("a scanparams [%s] found with the same parameters", sp.ID)
+
 		scanData.ScanparamsID = sp.ID
 		return s.client.CreateNewScan(scanData)
 	}
 
 	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
 		klog.Debugf("scanner tool [%s] is only allowing rescans", tool)
+
 		qwm(ExitCodeError, "no scans found for given project and tool configuration")
 	}
 

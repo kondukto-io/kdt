@@ -50,7 +50,7 @@ type (
 		ForkScan bool            `json:"fork_scan"`
 		PR       PRInfo          `json:"pr"`
 		Manual   bool            `json:"manual"`
-		Custom   *Custom         `json:"custom"`
+		Custom   Custom          `json:"custom"`
 	}
 
 	ScanparamsItem struct {

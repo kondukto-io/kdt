@@ -66,8 +66,12 @@ var listScannersCmd = &cobra.Command{
 
 			scannerRows = append(scannerRows, Row{Columns: columns})
 			for k, v := range v.Params {
-				var params = fmt.Sprintf("--params=%s: %s [%s]", k, v.Description, requirement(v.Optional))
-				var paramColumns = []string{"", "", "", "", "", "", params}
+				var defaultValue string
+				if v.DefaultValue != "" {
+					defaultValue = fmt.Sprintf("default value: [%s]", v.DefaultValue)
+				}
+				var params = fmt.Sprintf("--params=%s: %s [%s] %s", k, v.Description, requirement(v.Optional), defaultValue)
+				var paramColumns = []string{"", "", "", "", "", "", "", params}
 
 				scannerRows = append(scannerRows, Row{Columns: paramColumns})
 			}

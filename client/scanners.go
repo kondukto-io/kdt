@@ -44,10 +44,11 @@ type (
 
 	// ScannerCustomParams holds the details of a custom parameter
 	ScannerCustomParams struct {
-		Examples    string                  `json:"examples,omitempty"`
-		Description string                  `json:"description"`
-		Optional    bool                    `json:"optional"`
-		Type        scannerCustomParamsType `json:"type"`
+		Examples     string                  `json:"examples,omitempty"`
+		Description  string                  `json:"description"`
+		DefaultValue string                  `json:"default_value"`
+		Optional     bool                    `json:"optional"`
+		Type         scannerCustomParamsType `json:"type"`
 	}
 )
 

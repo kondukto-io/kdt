@@ -411,7 +411,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	scanparamsData := client.ScanparamsDetail{
 		Branch:   branch,
 		MetaData: meta,
-		Custom:   &custom,
+		Custom:   custom,
 		ScanType: "kdt",
 		Tool: &client.ScanparamsItem{
 			ID: scanner.ID,
@@ -451,6 +451,8 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		qwe(ExitCodeError, err, "failed to create scanparams")
 	}
 	scanData.ScanparamsID = scanparams.ID
+	scanData.Custom = *scanparams.Custom
+
 	klog.Printf("creating a new scan")
 	return s.client.CreateNewScan(scanData)
 }
@@ -502,7 +504,7 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 	}
 
 	if existParams == nil || existParams.Custom == nil || existParams.Custom.Params == nil {
-		return custom
+		return s.updateCustomParamsWithDefaultValue(scanner, custom)
 	}
 
 	for i, v := range existParams.Custom.Params {
@@ -512,6 +514,36 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		}
 	}
 
+	return s.updateCustomParamsWithDefaultValue(scanner, custom)
+}
+
+func (*Scan) updateCustomParamsWithDefaultValue(scanner client.ScannerInfo, custom client.Custom) client.Custom {
+	for key := range scanner.Params {
+		_, ok := custom.Params[key]
+		if ok {
+			continue
+		}
+
+		var fieldDetail = scanner.Params.Find(key)
+		if fieldDetail == nil {
+			klog.Debugf("params [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
+			qwm(ExitCodeError, "params key is not allowed by the scanner tool")
+		}
+
+		if fieldDetail.DefaultValue == "" {
+			continue
+		}
+
+		parsedValue, err := fieldDetail.Parse(fieldDetail.DefaultValue)
+		if err != nil {
+			klog.Debugf("failed to parse default params key [%s] value [%s]: %v", key, fieldDetail.DefaultValue, err)
+			qwm(ExitCodeError, "invalid value for custom params key")
+		}
+
+		klog.Debugf("the field [%s] is using a default value: [%v]", key, parsedValue)
+
+		custom = appendKeyToParamsMap(key, custom, parsedValue)
+	}
 	return custom
 }
 

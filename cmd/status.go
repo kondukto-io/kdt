@@ -23,6 +23,7 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 
 	statusCmd.Flags().StringP("project", "p", "", "project name or id")
+	statusCmd.Flags().StringP("branch", "b", "", "project branch name, default is the branch of the latest completed scan")
 	statusCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	statusCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
 	statusCmd.Flags().Int("threshold-high", 0, "threshold for number of vulnerabilities with high severity")
@@ -37,8 +38,14 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "could not initialize Kondukto client")
 	}
 
-	pid := cmd.Flag("project").Value.String()
-	scans, err := c.ListScans(pid, nil)
+	var pid = cmd.Flag("project").Value.String()
+
+	var scanSearchParams *client.ScanSearchParams
+	if branch := cmd.Flag("branch").Value.String(); branch != "" {
+		scanSearchParams = &client.ScanSearchParams{Branch: branch}
+	}
+
+	scans, err := c.ListScans(pid, scanSearchParams)
 	if err != nil {
 		qwe(ExitCodeError, err, "could not retrieve scans of the project")
 	}

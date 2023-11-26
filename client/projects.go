@@ -151,12 +151,15 @@ type PlaybookTypeDetail struct {
 	ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
 }
 
-func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
+func (c *Client) ReleaseStatus(project, branch string) (*ReleaseStatus, error) {
 	if project == "" {
 		return nil, errors.New("missing project id or name")
 	}
 
 	path := fmt.Sprintf("/api/v1/projects/%s/release", project)
+	if branch != "" {
+		path += fmt.Sprintf("?branch=%s", branch)
+	}
 
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {

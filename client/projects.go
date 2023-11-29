@@ -157,13 +157,16 @@ func (c *Client) ReleaseStatus(project, branch string) (*ReleaseStatus, error) {
 	}
 
 	path := fmt.Sprintf("/api/v1/projects/%s/release", project)
-	if branch != "" {
-		path += fmt.Sprintf("?branch=%s", branch)
-	}
 
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if branch != "" {
+		queryParams := req.URL.Query()
+		queryParams.Add("branch", branch)
+		req.URL.RawQuery = queryParams.Encode()
 	}
 
 	rs := new(ReleaseStatus)

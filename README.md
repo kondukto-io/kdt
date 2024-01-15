@@ -192,6 +192,8 @@ The following flags are specific to the release commands:
 
 - `-p` or `--project`: Specifies the project name or ID.
 
+- `-b` or `--branch`: Specifies the project branch name, default is the project's default branch.
+
 - `--cs`: Processes CS (Code Security) criteria status.
 
 - `--dast`: Processes DAST (Dynamic Application Security Testing) criteria status.

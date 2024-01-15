@@ -151,7 +151,7 @@ type PlaybookTypeDetail struct {
 	ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
 }
 
-func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
+func (c *Client) ReleaseStatus(project, branch string) (*ReleaseStatus, error) {
 	if project == "" {
 		return nil, errors.New("missing project id or name")
 	}
@@ -161,6 +161,12 @@ func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if branch != "" {
+		queryParams := req.URL.Query()
+		queryParams.Add("branch", branch)
+		req.URL.RawQuery = queryParams.Encode()
 	}
 
 	rs := new(ReleaseStatus)

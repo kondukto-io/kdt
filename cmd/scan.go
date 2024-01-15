@@ -1100,7 +1100,7 @@ func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 		return err
 	}
 
-	rs, err := c.ReleaseStatus(scan.Project)
+	rs, err := c.ReleaseStatus(scan.Project, scan.Branch)
 	if err != nil {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}

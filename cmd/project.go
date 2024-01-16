@@ -31,8 +31,10 @@ const (
 	VCSToolBitbucketServer = "bitbucketserver"
 	// VCSToolGitHub represents the Github VCS tool name
 	VCSToolGitHub = "github"
-	// VCSToolGitLab represents the Gitlab VCS tool name
-	VCSToolGitLab = "gitlab"
+	// VCSToolGitLab represents the Gitlab Cloud VCS tool name
+	VCSToolGitLabCloud = "gitlabcloud"
+	// VCSToolGitLab represents the Gitlab On-Prem VCS tool name
+	VCSToolGitLabOnPrem = "gitlabonprem"
 	// VCSToolGit represents the Git VCS tool name
 	VCSToolGit = "git"
 	// VCSToolGitHubEnterprise represents the GitHubEnterprise VCS tool name
@@ -79,7 +81,7 @@ func checkProject(cmd *cobra.Command) {
 	}
 
 	switch almTool {
-	case VCSToolAzureServer, VCSToolAzureCloud, VCSToolBitbucket, VCSToolBitbucketServer, VCSToolGitHub, VCSToolGitLab, VCSToolGit, VCSToolGitHubEnterprise:
+	case VCSToolAzureServer, VCSToolAzureCloud, VCSToolBitbucket, VCSToolBitbucketServer, VCSToolGitHub, VCSToolGitLabCloud, VCSToolGitLabOnPrem, VCSToolGit, VCSToolGitHubEnterprise:
 	default:
 		qwm(ExitCodeError, fmt.Sprintf("alm tool [%s] is not valid", almTool))
 	}

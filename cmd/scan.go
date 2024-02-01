@@ -63,17 +63,19 @@ func init() {
 	scanCmd.Flags().Bool("no-decoration", false, "no decoration for pr number")
 	scanCmd.Flags().StringP("image", "I", "", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
-	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().BoolP("break-by-scanner-type", "", false, "breaks pipeline if only scanner type matches with the given scanner's type")
 	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
-	scanCmd.Flags().StringSlice("params", nil, "parameters for the scan")
-
+	scanCmd.Flags().StringSlice("params", nil, "custom parameters for scan")
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
 	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")
 	scanCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository [create-project]")
 	scanCmd.Flags().String("alm-tool", "A", "ALM tool name [create-project]")
 	scanCmd.Flags().StringP("product-name", "P", "", "name for product")
+	scanCmd.Flags().String("env", "", "application anvironment variable, allowed values: [production, staging, develop, feature]")
+	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
+	scanCmd.Flags().String("fork-source", "", "sets the source branch of fork scans. If the project already has a fork source branch, this parameter is not necessary to be set. only works for [feature] environment.")
+	scanCmd.Flags().String("override-fork-source", "", "overrides the project's fork source branch. only works for [feature] environment.")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -216,6 +218,10 @@ func (s *Scan) scanByImage() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse branch flag: %w", err)
 	}
+	applicationEnvironment, err := s.cmd.Flags().GetString("env")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse env flag: %w", err)
+	}
 	meta, err := s.cmd.Flags().GetString("meta")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
@@ -228,11 +234,12 @@ func (s *Scan) scanByImage() (string, error) {
 		return "", errors.New("image name is required")
 	}
 	var pr = &client.ImageScanParams{
-		Project:  project.ID,
-		Tool:     tool,
-		Branch:   branch,
-		Image:    image,
-		MetaData: meta,
+		Project:     project.ID,
+		Tool:        tool,
+		Branch:      branch,
+		Image:       image,
+		MetaData:    meta,
+		Environment: applicationEnvironment,
 	}
 	eventID, err := s.client.ScanByImage(pr)
 	if err != nil {
@@ -283,12 +290,27 @@ func (s *Scan) scanByFileImport() (string, error) {
 	if override && target == "" {
 		return "", errors.New("overriding PR analysis requires a merge target")
 	}
+	applicationEnvironment, err := s.cmd.Flags().GetString("env")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse env flag: %w", err)
+	}
 	forkScan, err := s.cmd.Flags().GetBool("fork-scan")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fork-scan flag: %w", err)
 	}
+	forkSourceBranch, err := s.cmd.Flags().GetString("fork-source")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse fork-source flag: %w", err)
+	}
+	overrideForkSourceBranch, err := s.cmd.Flags().GetBool("override-fork-source")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse override-fork-source flag: %w", err)
+	}
+	if overrideForkSourceBranch && forkSourceBranch == "" {
+		return "", errors.New("fork-source flag cannot be empty when override-fork-source flag is set")
+	}
 	if forkScan && target != "" {
-		return "", errors.New("the fork-scan and pr-merge commands cannot be used together")
+		return "", errors.New("the fork-scan and merge-target commands cannot be used together")
 	}
 
 	var form = client.ImportForm{
@@ -297,7 +319,10 @@ func (s *Scan) scanByFileImport() (string, error) {
 		"tool":                 tool,
 		"meta_data":            meta,
 		"target":               target,
+		"environment":          applicationEnvironment,
 		"fork-scan":            strconv.FormatBool(forkScan),
+		"fork-source":          forkSourceBranch,
+		"override-fork-source": strconv.FormatBool(overrideForkSourceBranch),
 		"override_old_analyze": strconv.FormatBool(override),
 	}
 
@@ -336,6 +361,11 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
 
+	applicationEnvironment, err := s.cmd.Flags().GetString("env")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse env flag: %w", err)
+	}
+
 	var agentID string
 	if len(agent) > 0 {
 		agentDetail, err := s.client.FindAgentByLabel(agent)
@@ -346,13 +376,14 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	params := &client.ScanSearchParams{
-		Tool:     tool,
-		Branch:   branch,
-		PR:       false,
-		Manual:   false,
-		AgentID:  agentID,
-		MetaData: meta,
-		Limit:    1,
+		Tool:        tool,
+		Branch:      branch,
+		PR:          false,
+		Manual:      false,
+		AgentID:     agentID,
+		MetaData:    meta,
+		Environment: applicationEnvironment,
+		Limit:       1,
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
@@ -370,13 +401,14 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
-		ToolID:   scanner.ID,
-		Branch:   branch,
-		Manual:   false,
-		PR:       false,
-		Agent:    agent,
-		MetaData: meta,
-		Limit:    1,
+		ToolID:      scanner.ID,
+		Branch:      branch,
+		Manual:      false,
+		PR:          false,
+		Agent:       agent,
+		MetaData:    meta,
+		Environment: applicationEnvironment,
+		Limit:       1,
 	})
 	if err != nil {
 		klog.Debugf("failed to get scanparams: %v, trying to create new scan", err)
@@ -388,11 +420,12 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	scanData := &client.Scan{
-		MetaData: meta,
-		Branch:   branch,
-		Project:  project.Name,
-		ToolID:   scanner.ID,
-		Custom:   custom,
+		MetaData:    meta,
+		Branch:      branch,
+		Project:     project.Name,
+		ToolID:      scanner.ID,
+		Custom:      custom,
+		Environment: applicationEnvironment,
 	}
 
 	if sp != nil {
@@ -859,17 +892,35 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
+	applicationEnvironment, err := s.cmd.Flags().GetString("env")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse env flag: %w", err)
+	}
 	forkScan, err := s.cmd.Flags().GetBool("fork-scan")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fork-scan flag: %w", err)
 	}
+	forkSourceBranch, err := s.cmd.Flags().GetString("fork-source")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse fork-source flag: %w", err)
+	}
+	overrideForkSourceBranch, err := s.cmd.Flags().GetBool("override-fork-source")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse override-fork-source flag: %w", err)
+	}
+	if overrideForkSourceBranch && forkSourceBranch == "" {
+		return "", errors.New("fork-source flag cannot be empty when override-fork-source flag is set")
+	}
 
 	params := &client.ScanSearchParams{
-		Tool:     tool,
-		Branch:   branch,
-		MetaData: meta,
-		ForkScan: forkScan,
-		Limit:    1,
+		Tool:                     tool,
+		Branch:                   branch,
+		MetaData:                 meta,
+		Environment:              applicationEnvironment,
+		ForkScan:                 forkScan,
+		ForkSourceBranch:         forkSourceBranch,
+		OverrideForkSourceBranch: overrideForkSourceBranch,
+		Limit:                    1,
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
@@ -884,11 +935,14 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	}
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
-		ToolID:   scanner.ID,
-		Branch:   branch,
-		ForkScan: forkScan,
-		MetaData: meta,
-		Limit:    1,
+		ToolID:                   scanner.ID,
+		Branch:                   branch,
+		MetaData:                 meta,
+		Environment:              applicationEnvironment,
+		ForkScan:                 forkScan,
+		ForkSourceBranch:         forkSourceBranch,
+		OverrideForkSourceBranch: overrideForkSourceBranch,
+		Limit:                    1,
 	})
 	if err != nil {
 		klog.Debugf("failed to get scanparams: %v, trying to create a new scan", err)
@@ -901,12 +955,15 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 		}
 
 		var scanPayload = &client.Scan{
-			Branch:   branch,
-			MetaData: meta,
-			Project:  project.Name,
-			ForkScan: forkScan,
-			ToolID:   scanner.ID,
-			Custom:   custom,
+			Branch:                   branch,
+			MetaData:                 meta,
+			Project:                  project.Name,
+			ToolID:                   scanner.ID,
+			Custom:                   custom,
+			Environment:              applicationEnvironment,
+			ForkScan:                 forkScan,
+			ForkSourceBranch:         forkSourceBranch,
+			OverrideForkSourceBranch: overrideForkSourceBranch,
 		}
 
 		if sp != nil {

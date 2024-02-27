@@ -16,18 +16,17 @@ import (
 
 type (
 	ScanparamSearchParams struct {
-		ToolID                   string `url:"tool_id"`
-		Branch                   string `url:"branch"`
-		Limit                    int    `url:"limit"`
-		MetaData                 string `url:"meta_data"`
-		Target                   string `url:"target"`
-		Manual                   bool   `url:"manual"`
-		Agent                    string `url:"agent"`
-		Environment              string `url:"environment"`
-		ForkScan                 bool   `url:"fork_scan"`
-		ForkSourceBranch         string `url:"fork_source_branch"`
-		OverrideForkSourceBranch bool   `url:"override_fork_source_branch"`
-		PR                       bool   `url:"pr"`
+		ToolID           string `url:"tool_id"`
+		Branch           string `url:"branch"`
+		Limit            int    `url:"limit"`
+		MetaData         string `url:"meta_data"`
+		Target           string `url:"target"`
+		Manual           bool   `url:"manual"`
+		Agent            string `url:"agent"`
+		Environment      string `url:"environment"`
+		ForkScan         bool   `url:"fork_scan"`
+		ForkSourceBranch string `url:"fork_source_branch"`
+		PR               bool   `url:"pr"`
 	}
 	ScanparamResponse struct {
 		Scanparams []Scanparams `json:"scanparams"`

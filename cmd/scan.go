@@ -916,36 +916,34 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	}
 
 	params := &client.ScanSearchParams{
-		Tool:                     tool,
-		Branch:                   branch,
-		MetaData:                 meta,
-		Environment:              applicationEnvironment,
-		ForkScan:                 forkScan,
-		ForkSourceBranch:         forkSourceBranch,
-		OverrideForkSourceBranch: overrideForkSourceBranch,
-		Limit:                    1,
+		Tool:             tool,
+		Branch:           branch,
+		MetaData:         meta,
+		Environment:      applicationEnvironment,
+		ForkScan:         forkScan,
+		ForkSourceBranch: forkSourceBranch,
+		Limit:            1,
 	}
 
 	scan, err := s.client.FindScan(project.Name, params)
-	if err == nil {
+	if err != nil {
+		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
+	} else {
 		eventID, err := s.client.RestartScanByScanID(scan.ID)
 		if err != nil {
 			qwe(1, err, "could not start scan")
 		}
 		return eventID, nil
-	} else {
-		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 	}
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
-		ToolID:                   scanner.ID,
-		Branch:                   branch,
-		MetaData:                 meta,
-		Environment:              applicationEnvironment,
-		ForkScan:                 forkScan,
-		ForkSourceBranch:         forkSourceBranch,
-		OverrideForkSourceBranch: overrideForkSourceBranch,
-		Limit:                    1,
+		ToolID:           scanner.ID,
+		Branch:           branch,
+		MetaData:         meta,
+		Environment:      applicationEnvironment,
+		ForkScan:         forkScan,
+		ForkSourceBranch: forkSourceBranch,
+		Limit:            1,
 	})
 	if err != nil {
 		klog.Debugf("failed to get scanparams: %v, trying to create a new scan", err)

@@ -44,7 +44,7 @@ type (
 	ScanSearchParams struct {
 		Branch           string `url:"branch,omitempty"`
 		Tool             string `url:"tool,omitempty"`
-		MetaData         string `url:"meta_data,omitempty"`
+		MetaData         string `url:"meta_data"`
 		PR               bool   `url:"pr"`
 		Manual           bool   `url:"manual"`
 		AgentID          string `url:"agent_id"`

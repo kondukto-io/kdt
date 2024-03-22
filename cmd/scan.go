@@ -71,7 +71,7 @@ func init() {
 	scanCmd.Flags().String("env", "", "application anvironment variable, allowed values: [production, staging, develop, feature]")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().String("fork-source", "", "sets the source branch of fork scans. If the project already has a fork source branch, this parameter is not necessary to be set. only works for [feature] environment.")
-	scanCmd.Flags().String("override-fork-source", "", "overrides the project's fork source branch. only works for [feature] environment.")
+	scanCmd.Flags().Bool("override-fork-source", false, "overrides the project's fork source branch. only works for [feature] environment.")
 
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
 	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")

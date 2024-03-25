@@ -623,6 +623,10 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse agent flag: %w", err)
 	}
+	applicationEnvironment, err := s.cmd.Flags().GetString("env")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse env flag: %w", err)
+	}
 
 	var agentID string
 	if len(agent) > 0 {
@@ -634,10 +638,11 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	}
 
 	params := &client.ScanSearchParams{
-		Tool:     tool,
-		MetaData: meta,
-		AgentID:  agentID,
-		Limit:    1,
+		Tool:        tool,
+		MetaData:    meta,
+		AgentID:     agentID,
+		Environment: applicationEnvironment,
+		Limit:       1,
 	}
 
 	var custom = client.Custom{Type: scanner.CustomType}
@@ -652,6 +657,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 			To:                 mergeTarget,
 			OverrideOldAnalyze: override,
 			Custom:             custom,
+			Environment:        applicationEnvironment,
 		}
 		eventID, err := s.client.RestartScanWithOption(scan.ID, opt)
 		if err != nil {
@@ -662,13 +668,14 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
-		MetaData: meta,
-		Branch:   branch,
-		ToolID:   scanner.ID,
-		Agent:    agent,
-		Target:   mergeTarget,
-		PR:       true,
-		Limit:    1,
+		MetaData:    meta,
+		Branch:      branch,
+		ToolID:      scanner.ID,
+		Agent:       agent,
+		Target:      mergeTarget,
+		PR:          true,
+		Environment: applicationEnvironment,
+		Limit:       1,
 	})
 	if err != nil {
 		klog.Debugf("failed to get scanparams: %v, trying to create a new scan", err)
@@ -681,6 +688,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 				ToolID:       scanner.ID,
 				ScanparamsID: sp.ID,
 				Custom:       custom,
+				Environment:  applicationEnvironment,
 			}
 		}
 
@@ -699,6 +707,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 				OK:     true,
 				Target: mergeTarget,
 			},
+			Environment: applicationEnvironment,
 		}
 
 		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {

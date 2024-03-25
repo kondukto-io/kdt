@@ -61,6 +61,7 @@ type (
 		PRNumber           string `json:"pr_number"`
 		NoDecoration       bool   `json:"no_decoration"`
 		Custom             Custom `json:"custom"`
+		Environment        string `url:"environment"`
 	}
 
 	ResultSet struct {

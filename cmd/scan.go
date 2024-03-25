@@ -772,6 +772,11 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		return "", fmt.Errorf("failed to parse agent flag: %w", err)
 	}
 
+	applicationEnvironment, err := s.cmd.Flags().GetString("env")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse env flag: %w", err)
+	}
+
 	var agentID string
 	if len(agent) > 0 {
 		agentDetail, err := s.client.FindAgentByLabel(agent)
@@ -782,10 +787,11 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	}
 
 	params := &client.ScanSearchParams{
-		Tool:     tool,
-		MetaData: meta,
-		AgentID:  agentID,
-		Limit:    1,
+		Tool:        tool,
+		MetaData:    meta,
+		AgentID:     agentID,
+		Limit:       1,
+		Environment: applicationEnvironment,
 	}
 
 	var custom = client.Custom{Type: scanner.CustomType}
@@ -799,6 +805,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 			PRNumber:           prNumber,
 			NoDecoration:       noDecoration,
 			Custom:             custom,
+			Environment:        applicationEnvironment,
 		}
 
 		eventID, err := s.client.RestartScanWithOption(scan.ID, opt)
@@ -811,11 +818,12 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
-		MetaData: meta,
-		ToolID:   scanner.ID,
-		Agent:    agent,
-		PR:       true,
-		Limit:    1,
+		MetaData:    meta,
+		ToolID:      scanner.ID,
+		Agent:       agent,
+		PR:          true,
+		Limit:       1,
+		Environment: applicationEnvironment,
 	})
 	if err != nil {
 		klog.Debugf("failed to get scanparams: %v, trying to create a new scan", err)
@@ -832,7 +840,8 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 					PRNumber:     prNumber,
 					NoDecoration: noDecoration,
 				},
-				Custom: custom,
+				Custom:      custom,
+				Environment: applicationEnvironment,
 			}
 		}
 
@@ -851,6 +860,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 				PRNumber:     prNumber,
 				NoDecoration: noDecoration,
 			},
+			Environment: applicationEnvironment,
 		}
 
 		if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {

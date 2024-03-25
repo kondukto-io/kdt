@@ -458,6 +458,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		Project: &client.ScanparamsItem{
 			ID: project.ID,
 		},
+		Environment: applicationEnvironment,
 	}
 
 	klog.Debug("no scanparams found with the same parameters, creating a new scan")
@@ -688,7 +689,6 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 				ToolID:       scanner.ID,
 				ScanparamsID: sp.ID,
 				Custom:       custom,
-				Environment:  applicationEnvironment,
 			}
 		}
 

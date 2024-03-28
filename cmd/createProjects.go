@@ -127,7 +127,22 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 
 	tool, err := p.cmd.Flags().GetString("alm-tool")
 	if err != nil {
-		qwe(ExitCodeError, err, "failed to parse the alm flag")
+		qwe(ExitCodeError, err, "failed to parse the alm-tool flag")
+	}
+
+	forkSourceBranch, err := p.cmd.Flags().GetString("fork-source")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the fork-source flag")
+	}
+
+	featureBranchRetention, err := p.cmd.Flags().GetUint("feature-branch-retention")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the feature-branch-retention flag")
+	}
+
+	featureBranchNoRetention, err := p.cmd.Flags().GetBool("feature-branch-no-retention")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the feature-branch-no-retention flag")
 	}
 
 	projectSource := func() client.ProjectSource {
@@ -156,9 +171,12 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		Team: client.ProjectTeam{
 			Name: team,
 		},
-		Labels:    parsedLabels,
-		Override:  force,
-		Overwrite: isOverwrite,
+		Labels:                   parsedLabels,
+		Override:                 force,
+		Overwrite:                isOverwrite,
+		ForkSourceBranch:         forkSourceBranch,
+		FeatureBranchRetention:   featureBranchRetention,
+		FeatureBranchNoRetention: featureBranchNoRetention,
 	}
 
 	project, err := p.client.CreateProject(pd)

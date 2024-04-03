@@ -96,6 +96,13 @@ type ProjectDetail struct {
 	Labels    []ProjectLabel `json:"labels"`
 	Override  bool           `json:"override"`  // That means, if the project already exists, create a new one with suffix "-"
 	Overwrite bool           `json:"overwrite"` // That means, if the project already exists, overwrite it
+	// ForkSourceBranch holds the name of the branch to be used as the source for the fork scan.
+	// It is only used for [feature] environemnt
+	ForkSourceBranch string `json:"fork_source_branch"`
+	// FeatureBranchRetention holds the number of days to delete the feature branch after the latest scan.
+	FeatureBranchRetention uint `json:"feature_branch_retention"`
+	// FeatureBranchNoRetention holds disables the feature branch retention.
+	FeatureBranchNoRetention bool `json:"feature_branch_no_retention"`
 }
 
 type ProjectSource struct {
@@ -151,7 +158,7 @@ type PlaybookTypeDetail struct {
 	ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
 }
 
-func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
+func (c *Client) ReleaseStatus(project, branch string) (*ReleaseStatus, error) {
 	if project == "" {
 		return nil, errors.New("missing project id or name")
 	}
@@ -161,6 +168,12 @@ func (c *Client) ReleaseStatus(project string) (*ReleaseStatus, error) {
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if branch != "" {
+		queryParams := req.URL.Query()
+		queryParams.Add("branch", branch)
+		req.URL.RawQuery = queryParams.Encode()
 	}
 
 	rs := new(ReleaseStatus)

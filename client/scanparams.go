@@ -16,15 +16,17 @@ import (
 
 type (
 	ScanparamSearchParams struct {
-		ToolID   string `url:"tool_id"`
-		Branch   string `url:"branch"`
-		Limit    int    `url:"limit"`
-		MetaData string `url:"meta_data"`
-		Target   string `url:"target"`
-		Manual   bool   `url:"manual"`
-		Agent    string `url:"agent"`
-		ForkScan bool   `url:"fork_scan"`
-		PR       bool   `url:"pr"`
+		ToolID           string `url:"tool_id"`
+		Branch           string `url:"branch"`
+		Limit            int    `url:"limit"`
+		MetaData         string `url:"meta_data"`
+		Target           string `url:"target"`
+		Manual           bool   `url:"manual"`
+		Agent            string `url:"agent"`
+		Environment      string `url:"environment"`
+		ForkScan         bool   `url:"fork_scan"`
+		ForkSourceBranch string `url:"fork_source_branch"`
+		PR               bool   `url:"pr"`
 	}
 	ScanparamResponse struct {
 		Scanparams []Scanparams `json:"scanparams"`
@@ -40,17 +42,18 @@ type (
 	}
 
 	ScanparamsDetail struct {
-		Tool     *ScanparamsItem `json:"tool"`
-		Project  *ScanparamsItem `json:"project"`
-		Agent    *ScanparamsItem `json:"agent"`
-		BindName string          `json:"bind_name"`
-		Branch   string          `json:"branch"`
-		ScanType string          `json:"scan_type"`
-		MetaData string          `json:"meta_data"`
-		ForkScan bool            `json:"fork_scan"`
-		PR       PRInfo          `json:"pr"`
-		Manual   bool            `json:"manual"`
-		Custom   Custom          `json:"custom"`
+		Tool        *ScanparamsItem `json:"tool"`
+		Project     *ScanparamsItem `json:"project"`
+		Agent       *ScanparamsItem `json:"agent"`
+		BindName    string          `json:"bind_name"`
+		Branch      string          `json:"branch"`
+		ScanType    string          `json:"scan_type"`
+		MetaData    string          `json:"meta_data"`
+		ForkScan    bool            `json:"fork_scan"`
+		PR          PRInfo          `json:"pr"`
+		Manual      bool            `json:"manual"`
+		Custom      Custom          `json:"custom"`
+		Environment string          `json:"environment"`
 	}
 
 	ScanparamsItem struct {

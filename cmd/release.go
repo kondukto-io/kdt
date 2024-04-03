@@ -26,6 +26,7 @@ func init() {
 	rootCmd.AddCommand(releaseCmd)
 
 	releaseCmd.Flags().StringP("project", "p", "", "project name or id")
+	releaseCmd.Flags().StringP("branch", "b", "", "project branch name, default is the project's default branch")
 	releaseCmd.Flags().Bool("sast", false, "sast criteria status")
 	releaseCmd.Flags().Bool("dast", false, "dast criteria status")
 	releaseCmd.Flags().Bool("pentest", false, "pentest criteria status")
@@ -47,7 +48,12 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "failed to parse project flag")
 	}
 
-	rs, err := c.ReleaseStatus(project)
+	branch, err := getSanitizedFlagStr(cmd, "branch")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse branch flag")
+	}
+
+	rs, err := c.ReleaseStatus(project, branch)
 	if err != nil {
 		qwe(ExitCodeError, fmt.Errorf("failed to get release status: %w", err))
 	}

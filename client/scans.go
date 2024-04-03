@@ -42,14 +42,16 @@ type (
 	}
 
 	ScanSearchParams struct {
-		Branch   string `url:"branch,omitempty"`
-		Tool     string `url:"tool,omitempty"`
-		MetaData string `url:"meta_data"`
-		PR       bool   `url:"pr"`
-		Manual   bool   `url:"manual"`
-		AgentID  string `url:"agent_id"`
-		ForkScan bool   `url:"fork_scan"`
-		Limit    int    `url:"limit,omitempty"`
+		Branch           string `url:"branch,omitempty"`
+		Tool             string `url:"tool,omitempty"`
+		MetaData         string `url:"meta_data"`
+		PR               bool   `url:"pr"`
+		Manual           bool   `url:"manual"`
+		AgentID          string `url:"agent_id"`
+		Environment      string `url:"environment"`
+		ForkScan         bool   `url:"fork_scan"`
+		ForkSourceBranch string `url:"fork_source_branch"`
+		Limit            int    `url:"limit,omitempty"`
 	}
 
 	ScanPROptions struct {
@@ -59,6 +61,7 @@ type (
 		PRNumber           string `json:"pr_number"`
 		NoDecoration       bool   `json:"no_decoration"`
 		Custom             Custom `json:"custom"`
+		Environment        string `url:"environment"`
 	}
 
 	ResultSet struct {
@@ -101,10 +104,16 @@ type (
 		PR PRInfo `json:"pr"`
 		// Custom is holding custom type of scanners that specified on the Kondukto side
 		Custom Custom `json:"custom"`
-		// ForkScan is holding value of baseline scan
-		ForkScan bool `json:"fork_scan"`
 		// MetaData is holding value of scanparam meta-data
 		MetaData string `json:"meta_data"`
+		// ForkScan is holding value of baseline scan
+		ForkScan bool `json:"fork_scan"`
+		// ForkSourceBranch is holding value of baseline scan branch
+		ForkSourceBranch string `json:"fork_source_branch"`
+		// OverrideForkSourceBranch is holding value of baseline scan branch
+		OverrideForkSourceBranch bool `json:"override_fork_source_branch"`
+		// Environment is holding value of application environment
+		Environment string `json:"environment"`
 	}
 
 	PRInfo struct {
@@ -199,11 +208,12 @@ func (c *Client) RestartScanWithOption(id string, opt *ScanPROptions) (string, e
 }
 
 type ImageScanParams struct {
-	Project  string `json:"project"`
-	Tool     string `json:"tool"`
-	Branch   string `json:"branch"`
-	Image    string `json:"image"`
-	MetaData string `json:"meta_data"`
+	Project     string `json:"project"`
+	Tool        string `json:"tool"`
+	Branch      string `json:"branch"`
+	Image       string `json:"image"`
+	MetaData    string `json:"meta_data"`
+	Environment string `json:"environment"`
 }
 
 func (c *Client) ScanByImage(pr *ImageScanParams) (string, error) {

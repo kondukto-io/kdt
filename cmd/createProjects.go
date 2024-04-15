@@ -148,6 +148,10 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		qwe(ExitCodeError, err, "failed to parse the feature-branch-no-retention flag")
 	}
 
+	if featureBranchNoRetention {
+		featureBranchRetention = 0
+	}
+
 	projectSource := func() client.ProjectSource {
 		s := client.ProjectSource{Tool: tool}
 		u, err := url.Parse(repo)

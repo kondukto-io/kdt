@@ -101,7 +101,7 @@ type ProjectDetail struct {
 	ForkSourceBranch string `json:"fork_source_branch"`
 	// FeatureBranchRetention holds the number of days to delete the feature branch after the latest scan.
 	FeatureBranchRetention uint `json:"feature_branch_retention"`
-	// FeatureBranchInfiniteRetention holds disables the feature branch retention.
+	// FeatureBranchInfiniteRetention holds a value that disables the feature branch retention period.
 	FeatureBranchInfiniteRetention bool `json:"feature_branch_no_retention"`
 }
 

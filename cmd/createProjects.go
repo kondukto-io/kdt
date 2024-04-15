@@ -33,7 +33,7 @@ func init() {
 	createProjectCmd.Flags().String("repo-id", "r", "URL or ID of ALM repository")
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
 	createProjectCmd.Flags().StringP("product-name", "P", "", "name of product")
-	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project. only works for [feature] environment.")
+	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project's feature branches to be forked from.")
 	createProjectCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) period to the project for feature branch delete operations")
 	createProjectCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true.")
 }

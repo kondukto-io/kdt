@@ -33,6 +33,9 @@ func init() {
 	createProjectCmd.Flags().String("repo-id", "r", "URL or ID of ALM repository")
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
 	createProjectCmd.Flags().StringP("product-name", "P", "", "name of product")
+	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project's feature branches to be forked from.")
+	createProjectCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) period to the project for feature branch delete operations")
+	createProjectCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true.")
 }
 
 type Project struct {
@@ -140,9 +143,13 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		qwe(ExitCodeError, err, "failed to parse the feature-branch-retention flag")
 	}
 
-	featureBranchNoRetention, err := p.cmd.Flags().GetBool("feature-branch-no-retention")
+	featureBranchNoRetention, err := p.cmd.Flags().GetBool("feature-branch-infinite-retention")
 	if err != nil {
-		qwe(ExitCodeError, err, "failed to parse the feature-branch-no-retention flag")
+		qwe(ExitCodeError, err, "failed to parse the feature-branch-infinite-retention flag")
+	}
+
+	if featureBranchNoRetention {
+		featureBranchRetention = 0
 	}
 
 	projectSource := func() client.ProjectSource {
@@ -171,12 +178,12 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		Team: client.ProjectTeam{
 			Name: team,
 		},
-		Labels:                   parsedLabels,
-		Override:                 force,
-		Overwrite:                isOverwrite,
-		ForkSourceBranch:         forkSourceBranch,
-		FeatureBranchRetention:   featureBranchRetention,
-		FeatureBranchNoRetention: featureBranchNoRetention,
+		Labels:                         parsedLabels,
+		Override:                       force,
+		Overwrite:                      isOverwrite,
+		ForkSourceBranch:               forkSourceBranch,
+		FeatureBranchRetention:         featureBranchRetention,
+		FeatureBranchInfiniteRetention: featureBranchNoRetention,
 	}
 
 	project, err := p.client.CreateProject(pd)

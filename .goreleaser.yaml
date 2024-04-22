@@ -1,0 +1,74 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: darwin-amd64
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=0
+      - GO111Module=on
+    main: ./main.go
+    binary: kdt-darwin-amd64
+    no_unique_dist_dir: true
+    ldflags:
+      - -s -w -X github.com/kondukto-io/kdt/cmd.Version=v{{.Version}} -extldflags "-static"
+    flags:
+      - -trimpath
+  - id: darwin-arm64
+    goos:
+      - darwin
+    goarch:
+      - arm64
+    env:
+      - CGO_ENABLED=0
+      - GO111Module=on
+    main: ./main.go
+    binary: kdt-darwin-arm64
+    no_unique_dist_dir: true
+    ldflags:
+      - -s -w -X github.com/kondukto-io/kdt/cmd.Version=v{{.Version}} -extldflags "-static"
+    flags:
+      - -trimpath
+  - id: linux-amd64
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=1
+    main: ./main.go
+    binary: kdt-linux-amd64
+    no_unique_dist_dir: true
+    ldflags:
+      - -s -w -X github.com/kondukto-io/kdt/cmd.Version=v{{.Version}} -extldflags "-static"
+    flags:
+      - -trimpath
+  - id: windows-amd64
+    goos:
+      - windows
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=0
+    main: ./main.go
+    binary: kdt-windows-amd64
+    no_unique_dist_dir: true
+    ldflags:
+      - -X github.com/kondukto-io/kdt/cmd.Version=v{{.Version}}
+    flags:
+      - -trimpath
+      - -buildmode=exe
+archives:
+  - format: binary
+    name_template: >-
+      {{ .Binary }}
+    files:
+      - README.md
+      - LICENSE
+checksum:
+    # kdt-darwin-arm64.sha256
+    name_template:  "{{ .ArtifactName }}.sha256" 
+    split: true

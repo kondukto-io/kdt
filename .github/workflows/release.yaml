@@ -10,9 +10,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build
+  push_to_registry:
+    name: Build and Publish KDT
     runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: 'kondukto/kondukto-cli'
 
     steps:
       - name: Checkout Code

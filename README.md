@@ -31,11 +31,15 @@ Or you can also simply run the following if you have an existing [Go](https://go
 go get github.com/kondukto-io/kdt
 ```
 
-If you want to build it yourself, clone the source files using GitHub, change into the `kdt` directory and run:
+If you want to build it yourself, clone the source files using GitHub, change into the `kdt` directory and compile:
 ```shell
 git clone https://github.com/kondukto-io/kdt.git
 cd kdt
-go install
+go build . -o kdt
+```
+or simply run 
+```
+make all
 ```
 
 ## Configuration

@@ -54,8 +54,7 @@ checkHash(){
 
     targetFileDir=${targetFile%/*}
 
-    #(cd $targetFileDir && curl -sSL $url.sha256|$sha_cmd -c >/dev/null)
-    (cd $targetFileDir && echo "$targetFile $(curl -sSL $url.sha256)"|$sha_cmd -c >/dev/null)
+    (cd $targetFileDir && echo "$(curl -sSL $url.sha256) $targetFile"|$sha_cmd -c >/dev/null)
 
         if [ "$?" != "0" ]; then
             rm $targetFile

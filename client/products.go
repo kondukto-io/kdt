@@ -8,7 +8,6 @@ package client
 import (
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strconv"
 
 	"github.com/kondukto-io/kdt/klog"
@@ -45,7 +44,8 @@ func (c *Client) FindProductByName(name string) (*Product, error) {
 func (c *Client) GetProductDetail(id string) (*ProductDetail, error) {
 	klog.Debug("retrieving product list...")
 
-	req, err := c.newRequest("GET", filepath.Join("/api/v2/products", id), nil)
+	path := fmt.Sprintf("/api/v2/products/%s", id)
+	req, err := c.newRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,8 @@ func (c *Client) CreateProduct(pd ProductDetail) (*Product, error) {
 func (c *Client) UpdateProduct(id string, pd ProductDetail) (*Product, error) {
 	klog.Debug("updating a product")
 
-	req, err := c.newRequest(http.MethodPatch, filepath.Join("/api/v2/products", id), pd)
+	path := fmt.Sprintf("/api/v2/products/%s", id)
+	req, err := c.newRequest(http.MethodPatch, path, pd)
 	if err != nil {
 		return nil, err
 	}

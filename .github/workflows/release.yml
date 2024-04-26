@@ -59,8 +59,8 @@ jobs:
           prerelease: false
           draft: true
           body: |
-           Changes in release
-           - this
+            Changes in release
+            - this
 
       - name: Upload Release Assets
         id: upload-release-assets

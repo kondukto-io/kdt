@@ -12,7 +12,7 @@ USER appuser
 WORKDIR /app
 
 # Copy compiled binary to WORKDIR
-COPY dist/kdt-linux-amd64 /app/kdt
+COPY _release/kdt-linux-amd64 /app/kdt
 
 # Command to run the executable
 ENTRYPOINT ["./kdt"]

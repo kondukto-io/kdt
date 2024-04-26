@@ -1,13 +1,8 @@
-name: Release
+name: Build and Release KDT
 
 on:
   push:
     branches: [ master ]
-
-
-concurrency:
-  group: ci-tag-1
-  cancel-in-progress: true
 
 jobs:
   push_to_registry:
@@ -19,9 +14,10 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Add SHORT_SHA env property
+        id: set_short_sha_variable
         run: |
           echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
 
@@ -31,32 +27,58 @@ jobs:
           echo GIT_TAG=$(git describe --tags --abbrev=0) >> $GITHUB_ENV 
 
       - name: Get Version Tag
+        id: get_version_tag
         run: |
-          echo "VERSION_TAG=${{ env.GIT_TAG }}" | cut -d '-' -f 1 >> $GITHUB_ENV
+          echo "VERSION_TAG=${{ env.GIT_TAG }}" | cut -d '-' -f 1 >> $GITHUB_ENV  
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - name: Install Go
+        uses: actions/setup-go@v3
         with:
-          go-version: '1.21'
+          go-version: 1.18.x
           cache: true
           cache-dependency-path: ./go.sum
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          version: latest
-          args: release --clean
+      - name: Build and Show Version
+        id: build_and_show_version
+        run: |
+          make test
+          make test_coverage
+          make go.mod
+          make vet
+          make all
+          _release/kdt-linux-amd64 version
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
         env:
-          GITHUB_TOKEN: ${{ secrets.GO_RELEASER_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.VERSION_TAG }}
+          release_name: Release ${{ env.VERSION_TAG }}
+          prerelease: false
+          draft: true
+          body: |
+            Changes in release
+            - this
+
+      - name: Upload Release Assets
+        id: upload-release-assets
+        uses: dwenegar/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+          assets_path: ./_release/
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v2
 
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -79,7 +101,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -91,4 +113,4 @@ jobs:
 
       - name: Invalidate CDN
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"          

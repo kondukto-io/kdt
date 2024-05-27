@@ -18,10 +18,15 @@ var listScannersCmd = &cobra.Command{
 			qwe(ExitCodeError, err, "could not initialize Kondukto client")
 		}
 
-		scannerType := cmd.Flag("type").Value.String()
+		var scannerTypes []client.ScannerType
+		scannerTypeFlag := cmd.Flag("type").Value.String()
+		if scannerTypeFlag != "" {
+			scannerTypes = []client.ScannerType{client.ScannerType(scannerTypeFlag)}
+		}
+
 		scannerLabels := cmd.Flag("labels").Value.String()
-		activeScanners, err := c.ListActiveScanners(&client.ScannersSearchParams{
-			Types:  scannerType,
+		activeScanners, err := c.ListActiveScanners(&client.ListActiveScannersInput{
+			Types:  scannerTypes,
 			Labels: scannerLabels,
 		})
 		if err != nil {

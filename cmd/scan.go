@@ -236,7 +236,7 @@ func (s *Scan) scanByImage() (string, error) {
 	if image == "" {
 		return "", errors.New("image name is required")
 	}
-	var pr = &client.ImageScanParams{
+	var pr = &client.ScanByImageInput{
 		Project:     project.ID,
 		Tool:        tool,
 		Branch:      branch,
@@ -1008,7 +1008,7 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 	if err != nil || name == "" {
 		return false, nil, errors.New("missing require tool flag")
 	}
-	scanners, err := s.client.ListActiveScanners(&client.ScannersSearchParams{Name: name, Limit: 1})
+	scanners, err := s.client.ListActiveScanners(&client.ListActiveScannersInput{Name: name, Limit: 1})
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get active scanners: %w", err)
 	}

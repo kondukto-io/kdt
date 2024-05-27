@@ -45,7 +45,7 @@ func (c *Client) ListProjects(name, repo string) ([]Project, error) {
 
 	klog.Debug("retrieving project list...")
 
-	req, err := c.newRequest("GET", "/api/v1/projects", nil)
+	req, err := c.newRequest("GET", "/api/v2/projects", nil)
 	if err != nil {
 		return projects, err
 	}
@@ -141,20 +141,18 @@ func (c *Client) CreateProject(pd ProjectDetail) (*Project, error) {
 }
 
 type ReleaseStatus struct {
-	Status  string             `json:"status" bson:"status"`
-	SAST    PlaybookTypeDetail `json:"sast" bson:"sast"`
-	DAST    PlaybookTypeDetail `json:"dast" bson:"dast"`
-	PENTEST PlaybookTypeDetail `json:"pentest" bson:"pentest"`
-	IAST    PlaybookTypeDetail `json:"iast" bson:"iast"`
-	SCA     PlaybookTypeDetail `json:"sca" bson:"sca"`
-	CS      PlaybookTypeDetail `json:"cs" bson:"cs"`
-	IAC     PlaybookTypeDetail `json:"iac" bson:"iac"`
+	Status  string             `json:"status"`
+	SAST    PlaybookTypeDetail `json:"sast"`
+	DAST    PlaybookTypeDetail `json:"dast"`
+	PENTEST PlaybookTypeDetail `json:"pentest"`
+	IAST    PlaybookTypeDetail `json:"iast"`
+	SCA     PlaybookTypeDetail `json:"sca"`
+	CS      PlaybookTypeDetail `json:"cs"`
+	IAC     PlaybookTypeDetail `json:"iac"`
 }
 
 type PlaybookTypeDetail struct {
-	Tool   string `json:"tool" bson:"tool"`
 	Status string `json:"status" bson:"status"`
-	Manual bool   `json:"manual" bson:"manual"`
 	ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
 }
 
@@ -163,7 +161,7 @@ func (c *Client) ReleaseStatus(project, branch string) (*ReleaseStatus, error) {
 		return nil, errors.New("missing project id or name")
 	}
 
-	path := fmt.Sprintf("/api/v1/projects/%s/release", project)
+	path := fmt.Sprintf("/api/v2/projects/%s/release", project)
 
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {

@@ -70,6 +70,7 @@ func init() {
 	scanCmd.Flags().StringP("product-name", "P", "", "name for product")
 	scanCmd.Flags().String("env", "", "application anvironment variable, allowed values: [production, staging, develop, feature]")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
+	scanCmd.Flags().BoolP("incremental-scan", "i", false, "enables a incremental scan, only available for semgrep imports")
 	scanCmd.Flags().String("fork-source", "", "sets the source branch of fork scans. If the project already has a fork source branch, this parameter is not necessary to be set. only works for [feature] environment.")
 	scanCmd.Flags().Bool("override-fork-source", false, "overrides the project's fork source branch. only works for [feature] environment.")
 
@@ -147,7 +148,17 @@ type Scan struct {
 }
 
 func (s *Scan) startScan() (string, error) {
-	switch getScanMode(s.cmd) {
+	var scanMode = getScanMode(s.cmd)
+	incremental, err := s.cmd.Flags().GetBool("incremental-scan")
+	if err != nil {
+		return "", err
+	}
+
+	if incremental && scanMode != modeByFileImport {
+		return "", fmt.Errorf("scan mode [%d] does not support the incremental scan", scanMode)
+	}
+
+	switch scanMode {
 	case modeByFileImport:
 		// scan mode to start a scan by importing a file
 		eventID, err := s.scanByFileImport()
@@ -301,6 +312,10 @@ func (s *Scan) scanByFileImport() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fork-scan flag: %w", err)
 	}
+	incrementalScan, err := s.cmd.Flags().GetBool("incremental-scan")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse incremental-scan flag: %w", err)
+	}
 	forkSourceBranch, err := s.cmd.Flags().GetString("fork-source")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fork-source flag: %w", err)
@@ -327,6 +342,7 @@ func (s *Scan) scanByFileImport() (string, error) {
 		"fork-source":          forkSourceBranch,
 		"override-fork-source": strconv.FormatBool(overrideForkSourceBranch),
 		"override_old_analyze": strconv.FormatBool(override),
+		"incremental-scan":     strconv.FormatBool(incrementalScan),
 	}
 
 	eventID, err := s.client.ImportScanResult(absoluteFilePath, form)

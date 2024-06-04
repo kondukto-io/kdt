@@ -1432,8 +1432,8 @@ func appendKeyToParamsMap(key string, custom client.Custom, parsedValue interfac
 		custom.Params[key0] = key0map
 
 	default:
-		klog.Debugf("unsupportted key: [%s]", key)
-		qwm(ExitCodeError, "unsupportted key, key can only contain one or two dots")
+		klog.Debugf("unsupported key: [%s]", key)
+		qwm(ExitCodeError, "unsupported key, key can only contain one or two dots")
 	}
 	return custom
 }

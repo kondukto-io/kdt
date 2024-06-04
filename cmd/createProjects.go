@@ -34,8 +34,9 @@ func init() {
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
 	createProjectCmd.Flags().StringP("product-name", "P", "", "name of product")
 	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project's feature branches to be forked from.")
-	createProjectCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) period to the project for feature branch delete operations")
+	createProjectCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) period to the project for feature branch delete operations.")
 	createProjectCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true.")
+	createProjectCmd.Flags().String("default-branch", "main", "Sets the default branch for the project. When repo-id is given, this will be overridden by the repository's default branch.")
 }
 
 type Project struct {
@@ -133,6 +134,11 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		qwe(ExitCodeError, err, "failed to parse the alm-tool flag")
 	}
 
+	defaultBranch, err := p.cmd.Flags().GetString("default-branch")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the default branch flag")
+	}
+
 	forkSourceBranch, err := p.cmd.Flags().GetString("fork-source")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse the fork-source flag")
@@ -184,6 +190,7 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		ForkSourceBranch:               forkSourceBranch,
 		FeatureBranchRetention:         featureBranchRetention,
 		FeatureBranchInfiniteRetention: featureBranchNoRetention,
+		DefaultBranch:                  defaultBranch,
 	}
 
 	project, err := p.client.CreateProject(pd)

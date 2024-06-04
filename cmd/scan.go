@@ -80,6 +80,7 @@ func init() {
 	scanCmd.Flags().String("alm-tool", "A", "ALM tool name [create-project]")
 	scanCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) to the project for feature branch delete operations [create-project]")
 	scanCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true [create-project]")
+	scanCmd.Flags().String("default-branch", "main", "Sets the default branch for the project. When repo-id is given, this will be overridden by the repository's default branch [create-project].")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")

@@ -1220,6 +1220,9 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 	if release.IAC.Status == statusFail {
 		failedScans["IAC"] = scan.ID
 	}
+	if release.MAST.Status == statusFail {
+		failedScans["MAST"] = scan.ID
+	}
 
 	if breakByScannerType {
 		scannerType := strings.ToUpper(scan.ScannerType)

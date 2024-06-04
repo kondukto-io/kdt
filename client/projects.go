@@ -149,6 +149,7 @@ type ReleaseStatus struct {
 	SCA     PlaybookTypeDetail `json:"sca"`
 	CS      PlaybookTypeDetail `json:"cs"`
 	IAC     PlaybookTypeDetail `json:"iac"`
+	MAST    PlaybookTypeDetail `json:"mast"`
 }
 
 type PlaybookTypeDetail struct {

@@ -19,7 +19,7 @@ var listScannersCmd = &cobra.Command{
 		}
 
 		var scannerTypes []client.ScannerType
-		scannerTypeFlag := cmd.Flag("type").Value.String()
+		var scannerTypeFlag = cmd.Flag("type").Value.String()
 		if scannerTypeFlag != "" {
 			scannerTypes = []client.ScannerType{client.ScannerType(scannerTypeFlag)}
 		}

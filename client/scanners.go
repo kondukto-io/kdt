@@ -151,7 +151,7 @@ type ListActiveScannersInput struct {
 func (i *ListActiveScannersInput) prepareRequestQueryParameters() ScannersSearchParams {
 	var scannerTypes = make([]string, 0)
 
-	if i.Types == nil || len(i.Types) == 0 {
+	if len(i.Types) == 0 {
 		for _, t := range ScannerTypes() {
 			scannerTypes = append(scannerTypes, t.String())
 		}

@@ -70,6 +70,7 @@ func init() {
 	scanCmd.Flags().StringP("product-name", "P", "", "name for product")
 	scanCmd.Flags().String("env", "", "application anvironment variable, allowed values: [production, staging, develop, feature]")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
+	scanCmd.Flags().BoolP("incremental-scan", "i", false, "enables a incremental scan, only available for semgrep imports")
 	scanCmd.Flags().String("fork-source", "", "sets the source branch of fork scans. If the project already has a fork source branch, this parameter is not necessary to be set. only works for [feature] environment.")
 	scanCmd.Flags().Bool("override-fork-source", false, "overrides the project's fork source branch. only works for [feature] environment.")
 
@@ -79,6 +80,7 @@ func init() {
 	scanCmd.Flags().String("alm-tool", "A", "ALM tool name [create-project]")
 	scanCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) to the project for feature branch delete operations [create-project]")
 	scanCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true [create-project]")
+	scanCmd.Flags().String("default-branch", "main", "Sets the default branch for the project. When repo-id is given, this will be overridden by the repository's default branch [create-project].")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
@@ -147,7 +149,17 @@ type Scan struct {
 }
 
 func (s *Scan) startScan() (string, error) {
-	switch getScanMode(s.cmd) {
+	var scanMode = getScanMode(s.cmd)
+	incremental, err := s.cmd.Flags().GetBool("incremental-scan")
+	if err != nil {
+		return "", err
+	}
+
+	if incremental && scanMode != modeByFileImport {
+		return "", fmt.Errorf("scan mode [%d] does not support the incremental scan", scanMode)
+	}
+
+	switch scanMode {
 	case modeByFileImport:
 		// scan mode to start a scan by importing a file
 		eventID, err := s.scanByFileImport()
@@ -301,6 +313,10 @@ func (s *Scan) scanByFileImport() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fork-scan flag: %w", err)
 	}
+	incrementalScan, err := s.cmd.Flags().GetBool("incremental-scan")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse incremental-scan flag: %w", err)
+	}
 	forkSourceBranch, err := s.cmd.Flags().GetString("fork-source")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse fork-source flag: %w", err)
@@ -327,6 +343,7 @@ func (s *Scan) scanByFileImport() (string, error) {
 		"fork-source":          forkSourceBranch,
 		"override-fork-source": strconv.FormatBool(overrideForkSourceBranch),
 		"override_old_analyze": strconv.FormatBool(override),
+		"incremental-scan":     strconv.FormatBool(incrementalScan),
 	}
 
 	eventID, err := s.client.ImportScanResult(absoluteFilePath, form)

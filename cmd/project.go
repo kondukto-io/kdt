@@ -29,11 +29,11 @@ const (
 	VCSToolBitbucket = "bitbucket"
 	// VCSToolBitbucketServer represents the Bitbucket server VCS tool name
 	VCSToolBitbucketServer = "bitbucketserver"
-	// VCSToolGitHub represents the Github VCS tool name
+	// VCSToolGitHub represents the GitHub VCS tool name
 	VCSToolGitHub = "github"
-	// VCSToolGitLab represents the Gitlab Cloud VCS tool name
+	// VCSToolGitLabCloud represents the Gitlab Cloud VCS tool name
 	VCSToolGitLabCloud = "gitlabcloud"
-	// VCSToolGitLab represents the Gitlab On-Prem VCS tool name
+	// VCSToolGitLabOnPrem represents the Gitlab On-Prem VCS tool name
 	VCSToolGitLabOnPrem = "gitlabonprem"
 	// VCSToolGit represents the Git VCS tool name
 	VCSToolGit = "git"

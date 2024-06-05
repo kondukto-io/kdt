@@ -15,6 +15,30 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
+type ScannerType string
+
+const (
+	ScannerTypeSAST ScannerType = "sast"
+	ScannerTypeDAST ScannerType = "dast"
+	ScannerTypeSCA  ScannerType = "sca"
+	ScannerTypeCS   ScannerType = "cs"
+	ScannerTypeIAC  ScannerType = "iac"
+	ScannerTypeIAST ScannerType = "iast"
+	ScannerTypeCSPM ScannerType = "cspm"
+	ScannerTypeMAST ScannerType = "mast"
+)
+
+func (s ScannerType) String() string {
+	return string(s)
+}
+
+func ScannerTypes() []ScannerType {
+	return []ScannerType{
+		ScannerTypeSAST, ScannerTypeDAST, ScannerTypeSCA, ScannerTypeCS,
+		ScannerTypeIAC, ScannerTypeIAST, ScannerTypeCSPM, ScannerTypeMAST,
+	}
+}
+
 type (
 	ScannersSearchParams struct {
 		Types  string `url:"types"`
@@ -117,17 +141,45 @@ const (
 	ScannerLabelCreatableOnTool = "creatable-on-tool"
 )
 
+type ListActiveScannersInput struct {
+	Types  []ScannerType
+	Labels string
+	Name   string
+	Limit  int
+}
+
+func (i *ListActiveScannersInput) prepareRequestQueryParameters() ScannersSearchParams {
+	var scannerTypes = make([]string, 0)
+
+	if len(i.Types) == 0 {
+		for _, t := range ScannerTypes() {
+			scannerTypes = append(scannerTypes, t.String())
+		}
+	} else {
+		for _, t := range i.Types {
+			scannerTypes = append(scannerTypes, t.String())
+		}
+	}
+
+	return ScannersSearchParams{
+		Types:  strings.Join(scannerTypes, ","),
+		Labels: i.Labels,
+		Name:   i.Name,
+		Limit:  i.Limit,
+	}
+}
+
 // ListActiveScanners returns a list of active scanners
-func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResponse, error) {
+func (c *Client) ListActiveScanners(input *ListActiveScannersInput) (*ScannersResponse, error) {
 	klog.Debugf("retrieving active scanners")
 
-	path := fmt.Sprintf("/api/v1/scanners/active")
+	path := fmt.Sprintf("/api/v2/scanners/active")
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	v, err := query.Values(params)
+	v, err := query.Values(input.prepareRequestQueryParameters())
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +202,9 @@ func (c *Client) ListActiveScanners(params *ScannersSearchParams) (*ScannersResp
 func (c *Client) IsValidTool(tool string) bool {
 	klog.Debugf("validating given tool name [%s]", tool)
 
-	scanners, err := c.ListActiveScanners(&ScannersSearchParams{Name: tool})
+	scanners, err := c.ListActiveScanners(&ListActiveScannersInput{
+		Name: tool,
+	})
 	if err != nil {
 		klog.Debugf("failed to get active tools: %v", err)
 		return false

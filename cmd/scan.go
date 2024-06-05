@@ -248,7 +248,7 @@ func (s *Scan) scanByImage() (string, error) {
 	if image == "" {
 		return "", errors.New("image name is required")
 	}
-	var pr = &client.ImageScanParams{
+	var pr = &client.ScanByImageInput{
 		Project:     project.ID,
 		Tool:        tool,
 		Branch:      branch,
@@ -1025,7 +1025,7 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 	if err != nil || name == "" {
 		return false, nil, errors.New("missing require tool flag")
 	}
-	scanners, err := s.client.ListActiveScanners(&client.ScannersSearchParams{Name: name, Limit: 1})
+	scanners, err := s.client.ListActiveScanners(&client.ListActiveScannersInput{Name: name, Limit: 1})
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get active scanners: %w", err)
 	}
@@ -1236,6 +1236,9 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 	}
 	if release.IAC.Status == statusFail {
 		failedScans["IAC"] = scan.ID
+	}
+	if release.MAST.Status == statusFail {
+		failedScans["MAST"] = scan.ID
 	}
 
 	if breakByScannerType {
@@ -1449,8 +1452,8 @@ func appendKeyToParamsMap(key string, custom client.Custom, parsedValue interfac
 		custom.Params[key0] = key0map
 
 	default:
-		klog.Debugf("unsupportted key: [%s]", key)
-		qwm(ExitCodeError, "unsupportted key, key can only contain one or two dots")
+		klog.Debugf("unsupported key: [%s]", key)
+		qwm(ExitCodeError, "unsupported key, key can only contain one or two dots")
 	}
 	return custom
 }

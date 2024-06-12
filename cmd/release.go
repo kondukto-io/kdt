@@ -34,6 +34,7 @@ func init() {
 	releaseCmd.Flags().Bool("sca", false, "sca criteria status")
 	releaseCmd.Flags().Bool("cs", false, "cs criteria status")
 	releaseCmd.Flags().Bool("iac", false, "iac criteria status")
+	releaseCmd.Flags().Bool("mast", false, "mast criteria status")
 	_ = releaseCmd.MarkFlagRequired("project")
 }
 

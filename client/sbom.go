@@ -12,8 +12,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/viper"
+
+	"github.com/kondukto-io/kdt/klog"
 )
 
 func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {

@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/google/go-querystring/query"
+
 	"github.com/kondukto-io/kdt/klog"
 )
 
@@ -95,7 +96,6 @@ func (c *Client) CreateScanparams(pID string, sp ScanparamsDetail) (*Scanparams,
 	klog.Debug("creating a scanparams")
 
 	path := fmt.Sprintf("/api/v2/projects/%s/scanparams", pID)
-	//req, err := c.newRequest(http.MethodPost, filepath.Join("/api/v2/projects", pID, "scanparams"), sp)
 	req, err := c.newRequest(http.MethodPost, path, sp)
 	if err != nil {
 		return nil, err

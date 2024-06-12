@@ -15,8 +15,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/viper"
+
+	"github.com/kondukto-io/kdt/klog"
 )
 
 const (

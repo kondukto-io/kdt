@@ -28,7 +28,7 @@ func (l loggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 	return l.next.RoundTrip(r)
 }
 
-// checks if there is a new version
+// CheckUpdate checks if there is a new version
 func CheckUpdate(ver string) (bool, string) {
 	client := &http.Client{
 		Timeout: time.Second * 3,

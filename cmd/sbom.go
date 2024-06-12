@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/spf13/cobra"
+
 	"github.com/kondukto-io/kdt/client"
 	"github.com/kondukto-io/kdt/klog"
-	"github.com/spf13/cobra"
 )
 
 // sbomCmd represents the sbom root command

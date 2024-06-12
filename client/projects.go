@@ -96,7 +96,7 @@ type ProjectDetail struct {
 	Override  bool           `json:"override"`  // That means, if the project already exists, create a new one with suffix "-"
 	Overwrite bool           `json:"overwrite"` // That means, if the project already exists, overwrite it
 	// ForkSourceBranch holds the name of the branch to be used as the source for the fork scan.
-	// It is only used for [feature] environemnt
+	// It is only used for [feature] environment
 	ForkSourceBranch string `json:"fork_source_branch"`
 	// FeatureBranchRetention holds the number of days to delete the feature branch after the latest scan.
 	FeatureBranchRetention uint `json:"feature_branch_retention"`

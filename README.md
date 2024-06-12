@@ -10,7 +10,7 @@ With KDT, you can list projects and their scans in **Kondukto**, and restart a s
 
 ## Installation
 You can install the CLI with a `curl` utility script or by downloading the pre-compiled binary from the GitHub release page.
-Once installed youl'll get the `kdt-cli` command and `kdt` alias.
+Once installed you'll get the `kdt-cli` command and `kdt` alias.
 
 Utility script with `curl`:
 ```shell

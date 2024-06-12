@@ -9,10 +9,11 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/kondukto-io/kdt/client"
-	"github.com/kondukto-io/kdt/klog"
 	"github.com/spf13/cobra"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/kondukto-io/kdt/client"
+	"github.com/kondukto-io/kdt/klog"
 )
 
 // createProductCmd represents the create product command
@@ -26,7 +27,7 @@ func init() {
 	createCmd.AddCommand(createProductCmd)
 
 	createProductCmd.Flags().StringP("name", "n", "", "product name")
-	createProductCmd.Flags().StringP("projects", "p", "", "comma separeted name or id of kondukto projects")
+	createProductCmd.Flags().StringP("projects", "p", "", "comma separated name or id of kondukto projects")
 }
 
 type Product struct {

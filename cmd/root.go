@@ -9,10 +9,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kondukto-io/kdt/klog"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/kondukto-io/kdt/klog"
 
 	"github.com/kondukto-io/kdt/internal/pkg"
 )

@@ -68,7 +68,7 @@ func init() {
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
 	scanCmd.Flags().StringSlice("params", nil, "custom parameters for scan")
 	scanCmd.Flags().StringP("product-name", "P", "", "name for product")
-	scanCmd.Flags().String("env", "", "application anvironment variable, allowed values: [production, staging, develop, feature]")
+	scanCmd.Flags().String("env", "", "application environment variable, allowed values: [production, staging, develop, feature]")
 	scanCmd.Flags().BoolP("fork-scan", "B", false, "enables a fork scan that based on project's default branch")
 	scanCmd.Flags().BoolP("incremental-scan", "i", false, "enables a incremental scan, only available for semgrep imports")
 	scanCmd.Flags().String("fork-source", "", "sets the source branch of fork scans. If the project already has a fork source branch, this parameter is not necessary to be set. only works for [feature] environment.")
@@ -1406,7 +1406,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) {
 }
 
 // appendKeyToParamsMap appends the key to the custom params map
-// generates a nested map object if the key is contians a dot
+// generates a nested map object if the key is contains a dot
 // for example: if key:"image.tag" and value:"latest" will generate a map object {"image": {"tag": "value"}}
 func appendKeyToParamsMap(key string, custom client.Custom, parsedValue interface{}) client.Custom {
 	var splitted = strings.Split(key, ".")

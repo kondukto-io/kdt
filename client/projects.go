@@ -56,9 +56,8 @@ func (c *Client) ListProjects(name, repo string) ([]Project, error) {
 	req.URL.RawQuery = queryParams.Encode()
 
 	type getProjectsResponse struct {
-		Projects []Project `json:"data"`
+		Projects []Project `json:"projects"`
 		Total    int       `json:"total"`
-		Error    string    `json:"error"`
 	}
 	var ps getProjectsResponse
 
@@ -68,7 +67,7 @@ func (c *Client) ListProjects(name, repo string) ([]Project, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return projects, fmt.Errorf("HTTP response not OK : %s", ps.Error)
+		return projects, fmt.Errorf("HTTP response not OK : %s", resp.Status)
 	}
 
 	return ps.Projects, nil

@@ -24,7 +24,7 @@ func (c *Client) CreateTeam(teamName, responsible string) error {
 		},
 	}
 
-	req, err := c.newRequest(http.MethodPost, "/api/v2/teams", team)
+	req, err := c.newRequest(http.MethodPost, "/api/v3/teams", team)
 	if err != nil {
 		return err
 	}

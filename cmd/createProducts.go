@@ -71,11 +71,16 @@ func createProductsRootCommand(cmd *cobra.Command, _ []string) {
 				continue
 			}
 			pd.ID = project.ID
-			if exist, ok := pMap[pd.ID]; ok && exist {
-				continue
-			}
-			pMap[pd.ID] = true
+		} else {
+			pd.ID = pr
 		}
+
+		if exist, ok := pMap[pd.ID]; ok && exist {
+			continue
+		}
+
+		pMap[pd.ID] = true
+
 		parsedProjects = append(parsedProjects, pd)
 	}
 

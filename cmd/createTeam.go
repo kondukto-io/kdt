@@ -8,6 +8,8 @@ package cmd
 import (
 	"fmt"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/kondukto-io/kdt/client"
 
 	"github.com/spf13/cobra"
@@ -48,7 +50,18 @@ func createTeamRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "failed to parse the responsible flag")
 	}
 
-	if err := c.CreateTeam(teamName, responsible); err != nil {
+	var issueResponsible client.IssueResponsible
+	if !primitive.IsValidObjectID(responsible) {
+		issueResponsible = client.IssueResponsible{
+			Username: responsible,
+		}
+	} else {
+		issueResponsible = client.IssueResponsible{
+			ID: responsible,
+		}
+	}
+
+	if err := c.CreateTeam(teamName, issueResponsible); err != nil {
 		qwe(ExitCodeError, err, "failed to create team")
 	}
 

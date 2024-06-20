@@ -6,8 +6,9 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
-	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
+
+	"github.com/kondukto-io/kdt/client"
 )
 
 // listProductsCmd represents the listProductsCmd command

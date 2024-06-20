@@ -13,12 +13,7 @@ type Label struct {
 }
 
 func (c *Client) CreateLabel(label Label) error {
-	var newLabel = Label{
-		Name:  label.Name,
-		Color: label.Color,
-	}
-
-	req, err := c.newRequest(http.MethodPost, "/api/v3/labels", newLabel)
+	req, err := c.newRequest(http.MethodPost, "/api/v2/labels", label)
 	if err != nil {
 		return err
 	}

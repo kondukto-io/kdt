@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
+
+	"github.com/kondukto-io/kdt/client"
 )
 
 var listAgentsCmd = &cobra.Command{

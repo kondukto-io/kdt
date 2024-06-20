@@ -13,18 +13,17 @@ type Team struct {
 }
 
 type IssueResponsible struct {
-	Username string `json:"username"`
+	ID       string `json:"id,omitempty"`
+	Username string `json:"username,omitempty"`
 }
 
-func (c *Client) CreateTeam(teamName, responsible string) error {
+func (c *Client) CreateTeam(teamName string, issueResponsible IssueResponsible) error {
 	var team = Team{
-		Name: teamName,
-		IssueResponsible: IssueResponsible{
-			Username: responsible,
-		},
+		Name:             teamName,
+		IssueResponsible: issueResponsible,
 	}
 
-	req, err := c.newRequest(http.MethodPost, "/api/v3/teams", team)
+	req, err := c.newRequest(http.MethodPost, "/api/v2/teams", team)
 	if err != nil {
 		return err
 	}

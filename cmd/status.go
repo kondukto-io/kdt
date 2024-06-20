@@ -8,8 +8,9 @@ package cmd
 import (
 	"strconv"
 
-	"github.com/kondukto-io/kdt/client"
 	"github.com/spf13/cobra"
+
+	"github.com/kondukto-io/kdt/client"
 )
 
 // statusCmd represents the scan command

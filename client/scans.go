@@ -24,6 +24,15 @@ import (
 )
 
 type (
+	ImageScanParams struct {
+		Project     string `json:"project"`
+		Tool        string `json:"tool"`
+		Branch      string `json:"branch"`
+		Image       string `json:"image"`
+		MetaData    string `json:"meta_data"`
+		Environment string `json:"environment"`
+	}
+
 	ScanDetail struct {
 		ID          string     `json:"id"`
 		Name        string     `json:"name"`
@@ -156,7 +165,7 @@ func (c *Client) CreateNewScan(scan *Scan) (string, error) {
 
 func (c *Client) RestartScanByScanID(id string) (string, error) {
 	klog.Debug("starting scan by scan_id")
-	path := fmt.Sprintf("/api/v1/scans/%s/restart", id)
+	path := fmt.Sprintf("/api/v2/scans/%s/restart", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return "", err
@@ -180,7 +189,7 @@ func (c *Client) RestartScanWithOption(id string, opt *ScanPROptions) (string, e
 		return "", errors.New("missing scan options")
 	}
 
-	path := fmt.Sprintf("/api/v1/scans/%s/restart_with_option", id)
+	path := fmt.Sprintf("/api/v2/scans/%s/restart_with_option", id)
 	req, err := c.newRequest(http.MethodPost, path, opt)
 	if err != nil {
 		return "", err
@@ -207,19 +216,30 @@ func (c *Client) RestartScanWithOption(id string, opt *ScanPROptions) (string, e
 	return rsr.Event, nil
 }
 
-type ImageScanParams struct {
-	Project     string `json:"project"`
-	Tool        string `json:"tool"`
-	Branch      string `json:"branch"`
-	Image       string `json:"image"`
-	MetaData    string `json:"meta_data"`
-	Environment string `json:"environment"`
+type ScanByImageInput struct {
+	Project     string
+	Tool        string
+	Branch      string
+	Image       string
+	MetaData    string
+	Environment string
 }
 
-func (c *Client) ScanByImage(pr *ImageScanParams) (string, error) {
-	path := "/api/v1/scans/image"
+func (i *ScanByImageInput) prepareRequestQueryParameters() ImageScanParams {
+	return ImageScanParams{
+		Project:     i.Project,
+		Tool:        i.Tool,
+		Branch:      i.Branch,
+		Image:       i.Image,
+		MetaData:    i.MetaData,
+		Environment: i.Environment,
+	}
+}
 
-	req, err := c.newRequest(http.MethodPost, path, pr)
+func (c *Client) ScanByImage(pr *ScanByImageInput) (string, error) {
+	path := "/api/v2/scans/image"
+
+	req, err := c.newRequest(http.MethodPost, path, pr.prepareRequestQueryParameters())
 	if err != nil {
 		return "", fmt.Errorf("failed to create HTTP request: %w", err)
 	}
@@ -247,7 +267,7 @@ type ImportForm map[string]string
 func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) {
 	klog.Debugf("importing scan results using the file:%s", file)
 
-	path := "/api/v1/scans/import"
+	path := "/api/v2/scans/import"
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)
 
@@ -312,7 +332,7 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]ScanDeta
 	klog.Debugf("retrieving scans of the project: %s", project)
 
 	scans := make([]ScanDetail, 0)
-	path := fmt.Sprintf("/api/v1/projects/%s/scans", project)
+	path := fmt.Sprintf("/api/v2/projects/%s/scans", project)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return scans, err
@@ -325,7 +345,7 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]ScanDeta
 	req.URL.RawQuery = v.Encode()
 
 	type getProjectScansResponse struct {
-		Scans []ScanDetail `json:"data"`
+		Scans []ScanDetail `json:"scans"`
 		Total int          `json:"total"`
 	}
 	var ps getProjectScansResponse
@@ -360,7 +380,7 @@ func (c *Client) FindScan(project string, params *ScanSearchParams) (*ScanDetail
 }
 
 func (c *Client) FindScanByID(id string) (*ScanDetail, error) {
-	path := fmt.Sprintf("/api/v1/scans/%s", id)
+	path := fmt.Sprintf("/api/v2/scans/%s", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
@@ -400,7 +420,7 @@ func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 }
 
 func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
-	path := fmt.Sprintf("/api/v1/scans/%s/last_results", id)
+	path := fmt.Sprintf("/api/v2/scans/%s/last_results", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err

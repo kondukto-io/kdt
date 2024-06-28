@@ -34,6 +34,7 @@ func init() {
 	releaseCmd.Flags().Bool("sca", false, "sca criteria status")
 	releaseCmd.Flags().Bool("cs", false, "cs criteria status")
 	releaseCmd.Flags().Bool("iac", false, "iac criteria status")
+	releaseCmd.Flags().Bool("mast", false, "mast criteria status")
 	_ = releaseCmd.MarkFlagRequired("project")
 }
 
@@ -65,9 +66,9 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	releaseCriteriaRows := []Row{
-		{Columns: []string{"STATUS", "SAST", "DAST", "PENTEST", "IAST", "SCA", "CS", "IAC"}},
-		{Columns: []string{"------", "----", "----", "-------", "----", "---", "--", "---"}},
-		{Columns: []string{rs.Status, rs.SAST.Status, rs.DAST.Status, rs.PENTEST.Status, rs.IAST.Status, rs.SCA.Status, rs.CS.Status, rs.IAC.Status}},
+		{Columns: []string{"STATUS", "SAST", "DAST", "PENTEST", "IAST", "SCA", "CS", "IAC", "MAST"}},
+		{Columns: []string{"------", "----", "----", "-------", "----", "---", "--", "---", "----"}},
+		{Columns: []string{rs.Status, rs.SAST.Status, rs.DAST.Status, rs.PENTEST.Status, rs.IAST.Status, rs.SCA.Status, rs.CS.Status, rs.IAC.Status, rs.MAST.Status}},
 	}
 	TableWriter(releaseCriteriaRows...)
 
@@ -106,7 +107,12 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeError, "failed to parse iac flag")
 	}
 
-	isSpecific := sast || dast || pentest || iast || sca || cs || iac
+	mast, err := cmd.Flags().GetBool("mast")
+	if err != nil {
+		qwm(ExitCodeError, "failed to parse mast flag")
+	}
+
+	isSpecific := sast || dast || pentest || iast || sca || cs || iac || mast
 
 	var spesificMap = make(map[string]bool, 0)
 	spesificMap["SAST"] = sast
@@ -116,6 +122,7 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	spesificMap["SCA"] = sca
 	spesificMap["CS"] = cs
 	spesificMap["IAC"] = iac
+	spesificMap["MAST"] = mast
 
 	isReleaseFailed(rs, isSpecific, spesificMap)
 }
@@ -149,6 +156,9 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 	}
 	if release.IAC.Status == statusFail {
 		failedScans["IAC"] = release.IAC.ScanID
+	}
+	if release.MAST.Status == statusFail {
+		failedScans["MAST"] = release.MAST.ScanID
 	}
 
 	if verbose {

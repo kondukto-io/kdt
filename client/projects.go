@@ -45,7 +45,7 @@ func (c *Client) ListProjects(name, repo string) ([]Project, error) {
 
 	klog.Debug("retrieving project list...")
 
-	req, err := c.newRequest("GET", "/api/v1/projects", nil)
+	req, err := c.newRequest("GET", "/api/v2/projects", nil)
 	if err != nil {
 		return projects, err
 	}
@@ -56,9 +56,8 @@ func (c *Client) ListProjects(name, repo string) ([]Project, error) {
 	req.URL.RawQuery = queryParams.Encode()
 
 	type getProjectsResponse struct {
-		Projects []Project `json:"data"`
+		Projects []Project `json:"projects"`
 		Total    int       `json:"total"`
-		Error    string    `json:"error"`
 	}
 	var ps getProjectsResponse
 
@@ -68,7 +67,7 @@ func (c *Client) ListProjects(name, repo string) ([]Project, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return projects, fmt.Errorf("HTTP response not OK : %s", ps.Error)
+		return projects, fmt.Errorf("HTTP response not OK : %s", resp.Status)
 	}
 
 	return ps.Projects, nil
@@ -97,7 +96,7 @@ type ProjectDetail struct {
 	Override  bool           `json:"override"`  // That means, if the project already exists, create a new one with suffix "-"
 	Overwrite bool           `json:"overwrite"` // That means, if the project already exists, overwrite it
 	// ForkSourceBranch holds the name of the branch to be used as the source for the fork scan.
-	// It is only used for [feature] environemnt
+	// It is only used for [feature] environment
 	ForkSourceBranch string `json:"fork_source_branch"`
 	// FeatureBranchRetention holds the number of days to delete the feature branch after the latest scan.
 	FeatureBranchRetention uint `json:"feature_branch_retention"`
@@ -142,20 +141,19 @@ func (c *Client) CreateProject(pd ProjectDetail) (*Project, error) {
 }
 
 type ReleaseStatus struct {
-	Status  string             `json:"status" bson:"status"`
-	SAST    PlaybookTypeDetail `json:"sast" bson:"sast"`
-	DAST    PlaybookTypeDetail `json:"dast" bson:"dast"`
-	PENTEST PlaybookTypeDetail `json:"pentest" bson:"pentest"`
-	IAST    PlaybookTypeDetail `json:"iast" bson:"iast"`
-	SCA     PlaybookTypeDetail `json:"sca" bson:"sca"`
-	CS      PlaybookTypeDetail `json:"cs" bson:"cs"`
-	IAC     PlaybookTypeDetail `json:"iac" bson:"iac"`
+	Status  string             `json:"status"`
+	SAST    PlaybookTypeDetail `json:"sast"`
+	DAST    PlaybookTypeDetail `json:"dast"`
+	PENTEST PlaybookTypeDetail `json:"pentest"`
+	IAST    PlaybookTypeDetail `json:"iast"`
+	SCA     PlaybookTypeDetail `json:"sca"`
+	CS      PlaybookTypeDetail `json:"cs"`
+	IAC     PlaybookTypeDetail `json:"iac"`
+	MAST    PlaybookTypeDetail `json:"mast"`
 }
 
 type PlaybookTypeDetail struct {
-	Tool   string `json:"tool" bson:"tool"`
 	Status string `json:"status" bson:"status"`
-	Manual bool   `json:"manual" bson:"manual"`
 	ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
 }
 
@@ -164,7 +162,7 @@ func (c *Client) ReleaseStatus(project, branch string) (*ReleaseStatus, error) {
 		return nil, errors.New("missing project id or name")
 	}
 
-	path := fmt.Sprintf("/api/v1/projects/%s/release", project)
+	path := fmt.Sprintf("/api/v2/projects/%s/release", project)
 
 	req, err := c.newRequest("GET", path, nil)
 	if err != nil {

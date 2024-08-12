@@ -106,9 +106,10 @@ type ProjectDetail struct {
 }
 
 type ProjectSource struct {
-	Tool string `json:"tool"`
-	ID   string `json:"id"`
-	URL  string `json:"url"`
+	Tool         string `json:"tool"`
+	ID           string `json:"id"`
+	URL          string `json:"url"`
+	CloneEnabled bool   `json:"clone_enabled"`
 }
 type ProjectTeam struct {
 	ID   string `json:"id,omitempty"`

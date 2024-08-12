@@ -32,6 +32,7 @@ func init() {
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
 	createProjectCmd.Flags().String("repo-id", "r", "URL or ID of ALM repository")
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
+	createProjectCmd.Flags().Bool("enable-clone", false, "enables the clone operation for the project")
 	createProjectCmd.Flags().StringP("product-name", "P", "", "name of product")
 	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project's feature branches to be forked from.")
 	createProjectCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) period to the project for feature branch delete operations.")
@@ -158,6 +159,11 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		featureBranchRetention = 0
 	}
 
+	enableCloneOperation, err := p.cmd.Flags().GetBool("enable-clone")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the enable-clone flag")
+	}
+
 	projectSource := func() client.ProjectSource {
 		s := client.ProjectSource{Tool: tool}
 		u, err := url.Parse(repo)
@@ -166,6 +172,7 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		} else {
 			s.URL = repo
 		}
+		s.CloneEnabled = enableCloneOperation
 		return s
 	}()
 

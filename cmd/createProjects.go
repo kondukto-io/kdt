@@ -159,7 +159,7 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		featureBranchRetention = 0
 	}
 
-	enableCloneOperation, err := p.cmd.Flags().GetBool("disable-clone")
+	disableCloneOperation, err := p.cmd.Flags().GetBool("disable-clone")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse the disable-clone flag")
 	}
@@ -172,7 +172,7 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		} else {
 			s.URL = repo
 		}
-		s.CloneDisabled = enableCloneOperation
+		s.CloneDisabled = disableCloneOperation
 		return s
 	}()
 

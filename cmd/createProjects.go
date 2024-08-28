@@ -37,7 +37,10 @@ func init() {
 	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project's feature branches to be forked from.")
 	createProjectCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) period to the project for feature branch delete operations.")
 	createProjectCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true.")
-	createProjectCmd.Flags().String("default-branch", "main", "Sets the default branch for the project. When repo-id is given, this will be overridden by the repository's default branch.")
+	createProjectCmd.Flags().String("default-branch", "main", "sets the default branch for the project. When repo-id is given, this will be overridden by the repository's default branch.")
+	createProjectCmd.Flags().Bool("scope-include-empty", false, "enable to include SAST, SCA and IAC vulnerabilities with no path in this project.")
+	createProjectCmd.Flags().String("scope-included-paths", "", "a comma separated list of paths within your mono-repo so that Kondukto can decide on the SAST, SCA and IAC vulnerabilities to include in this project.")
+	createProjectCmd.Flags().String("scope-included-files", "", "a comma separated list of file names Kondukto should check for in vulnerabilities alongside paths")
 }
 
 type Project struct {
@@ -164,6 +167,21 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		qwe(ExitCodeError, err, "failed to parse the disable-clone flag")
 	}
 
+	scopeAllowEmpty, err := p.cmd.Flags().GetBool("scope-include-empty")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the scope-include-empty flag")
+	}
+
+	scopeIncludedPaths, err := p.cmd.Flags().GetString("scope-included-paths")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the scope-included-paths flag")
+	}
+
+	scopeIncludedFiles, err := p.cmd.Flags().GetString("scope-included-files")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the scope-included-files flag")
+	}
+
 	projectSource := func() client.ProjectSource {
 		s := client.ProjectSource{Tool: tool}
 		u, err := url.Parse(repo)
@@ -172,7 +190,19 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		} else {
 			s.URL = repo
 		}
+
 		s.CloneDisabled = disableCloneOperation
+
+		if scopeIncludedPaths == "" && scopeIncludedFiles == "" {
+			return s
+		}
+
+		s.PathScope = client.PathScope{
+			IncludeEmpty:  scopeAllowEmpty,
+			IncludedPaths: scopeIncludedPaths,
+			IncludedFiles: scopeIncludedFiles,
+		}
+
 		return s
 	}()
 

@@ -106,11 +106,19 @@ type ProjectDetail struct {
 }
 
 type ProjectSource struct {
-	Tool          string `json:"tool"`
-	ID            string `json:"id"`
-	URL           string `json:"url"`
-	CloneDisabled bool   `json:"clone_disabled"`
+	Tool          string    `json:"tool"`
+	ID            string    `json:"id"`
+	URL           string    `json:"url"`
+	CloneDisabled bool      `json:"clone_disabled"`
+	PathScope     PathScope `json:"path_scope"`
 }
+
+type PathScope struct {
+	IncludeEmpty  bool   `json:"include_empty"`
+	IncludedPaths string `json:"included_paths"`
+	IncludedFiles string `json:"included_files"`
+}
+
 type ProjectTeam struct {
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`

@@ -106,11 +106,11 @@ type ProjectDetail struct {
 }
 
 type ProjectSource struct {
-	Tool         string    `json:"tool"`
-	ID           string    `json:"id"`
-	URL          string    `json:"url"`
-	CloneEnabled bool      `json:"clone_enabled"`
-	PathScope    PathScope `json:"path_scope"`
+	Tool          string    `json:"tool"`
+	ID            string    `json:"id"`
+	URL           string    `json:"url"`
+	CloneDisabled bool      `json:"clone_disabled"`
+	PathScope     PathScope `json:"path_scope"`
 }
 
 type PathScope struct {

@@ -32,7 +32,7 @@ func init() {
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
 	createProjectCmd.Flags().String("repo-id", "r", "URL or ID of ALM repository")
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
-	createProjectCmd.Flags().Bool("enable-clone", false, "enables the clone operation for the project")
+	createProjectCmd.Flags().Bool("disable-clone", false, "disables the clone operation for the project")
 	createProjectCmd.Flags().StringP("product-name", "P", "", "name of product")
 	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project's feature branches to be forked from.")
 	createProjectCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) period to the project for feature branch delete operations.")
@@ -162,9 +162,9 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		featureBranchRetention = 0
 	}
 
-	enableCloneOperation, err := p.cmd.Flags().GetBool("enable-clone")
+	disableCloneOperation, err := p.cmd.Flags().GetBool("disable-clone")
 	if err != nil {
-		qwe(ExitCodeError, err, "failed to parse the enable-clone flag")
+		qwe(ExitCodeError, err, "failed to parse the disable-clone flag")
 	}
 
 	scopeAllowEmpty, err := p.cmd.Flags().GetBool("scope-include-empty")
@@ -190,7 +190,8 @@ func (p *Project) createProject(repo string, force bool, overwrite ...string) *c
 		} else {
 			s.URL = repo
 		}
-		s.CloneEnabled = enableCloneOperation
+
+		s.CloneDisabled = disableCloneOperation
 
 		if scopeIncludedPaths == "" && scopeIncludedFiles == "" {
 			return s

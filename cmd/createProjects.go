@@ -33,6 +33,7 @@ func init() {
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
 	createProjectCmd.Flags().String("repo-id", "", "URL or ID of ALM repository")
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
+	createProjectCmd.Flags().String("instance", "", "Instance for Azure DevOps Services")
 	createProjectCmd.Flags().StringP("product-name", "P", "", "name of product")
 	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project's feature branches to be forked from.")
 	createProjectCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) period to the project for feature branch delete operations.")
@@ -164,6 +165,11 @@ func (p *Project) createProject(repo, projectName string, force bool, overwrite 
 		qwe(ExitCodeError, err, "failed to parse the feature-branch-infinite-retention flag")
 	}
 
+	instance, err := p.cmd.Flags().GetString("instance")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the instance flag")
+	}
+
 	if featureBranchNoRetention {
 		featureBranchRetention = 0
 	}
@@ -198,6 +204,7 @@ func (p *Project) createProject(repo, projectName string, force bool, overwrite 
 		FeatureBranchRetention:         featureBranchRetention,
 		FeatureBranchInfiniteRetention: featureBranchNoRetention,
 		DefaultBranch:                  defaultBranch,
+		Instance:                       instance,
 	}
 
 	project, err := p.client.CreateProject(pd)

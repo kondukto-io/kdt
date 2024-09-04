@@ -1104,7 +1104,7 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 		client: s.client,
 	}
 
-	var project = p.createProject(repo, false)
+	var project = p.createProject(repo, "", false, "")
 
 	if !p.cmd.Flags().Changed("product-name") {
 		return project, nil

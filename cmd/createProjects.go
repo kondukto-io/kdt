@@ -31,7 +31,7 @@ func init() {
 	createProjectCmd.Flags().StringP("overwrite", "w", "", "rename the project name when creating a new project")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
-	createProjectCmd.Flags().String("repo-id", "", "URL or ID of ALM repository")
+	createProjectCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository")
 	createProjectCmd.Flags().StringP("alm-tool", "a", "", "ALM tool name")
 	createProjectCmd.Flags().StringP("product-name", "P", "", "name of product")
 	createProjectCmd.Flags().String("fork-source", "", "Sets the source branch of project's feature branches to be forked from.")

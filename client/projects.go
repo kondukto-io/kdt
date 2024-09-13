@@ -103,7 +103,6 @@ type ProjectDetail struct {
 	// FeatureBranchInfiniteRetention holds a value that disables the feature branch retention period.
 	FeatureBranchInfiniteRetention bool   `json:"feature_branch_no_retention"`
 	DefaultBranch                  string `json:"default_branch"`
-	Instance                       string `json:"instance"`
 }
 
 type ProjectSource struct {

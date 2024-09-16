@@ -74,6 +74,7 @@ func init() {
 	scanCmd.Flags().String("fork-source", "", "sets the source branch of fork scans. If the project already has a fork source branch, this parameter is not necessary to be set. only works for [feature] environment.")
 	scanCmd.Flags().Bool("override-fork-source", false, "overrides the project's fork source branch. only works for [feature] environment.")
 
+	scanCmd.Flags().String("project-name", "", "name of the project [create-project]")
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
 	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")
 	scanCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository [create-project]")
@@ -1056,7 +1057,7 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 }
 
 func (s *Scan) findORCreateProject() (*client.Project, error) {
-	if !s.cmd.Flags().Changed("repo-id") && !s.cmd.Flags().Changed("project") {
+	if !(s.cmd.Flags().Changed("repo-id") || s.cmd.Flags().Changed("project-name")) && !s.cmd.Flags().Changed("project") {
 		return nil, errors.New("missing a required flag(repo or project) to get project detail")
 	}
 
@@ -1064,13 +1065,19 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get repo flag: %w", err)
 	}
+	projectName, err := s.cmd.Flags().GetString("project-name")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project-name flag: %w", err)
+	}
 	var name string
-	if repo == "" {
+	if repo == "" && projectName == "" {
 		project, err := getSanitizedFlagStr(s.cmd, "project")
 		if err != nil {
 			return nil, fmt.Errorf("failed to get project flag: %w", err)
 		}
 		name = project
+	} else {
+		name = projectName
 	}
 
 	projects, err := s.client.ListProjects(name, repo)
@@ -1095,8 +1102,12 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 		return nil, errors.New("no projects were found according to the given parameters")
 	}
 
-	if !s.cmd.Flags().Changed("repo-id") {
-		return nil, errors.New("missing a required repo flag to create project")
+	if !(s.cmd.Flags().Changed("repo-id") || s.cmd.Flags().Changed("project-name")) {
+		return nil, errors.New("missing a required repo or project-name flag to create a project")
+	}
+
+	if s.cmd.Flags().Changed("repo-id") && s.cmd.Flags().Changed("project-name") {
+		return nil, errors.New("both repo and project-name flags cannot be used together")
 	}
 
 	var p = Project{
@@ -1104,7 +1115,7 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 		client: s.client,
 	}
 
-	var project = p.createProject(repo, false)
+	var project = p.createProject(repo, name, false, "")
 
 	if !p.cmd.Flags().Changed("product-name") {
 		return project, nil

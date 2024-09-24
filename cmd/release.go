@@ -36,6 +36,7 @@ func init() {
 	releaseCmd.Flags().Bool("cs", false, "cs criteria status")
 	releaseCmd.Flags().Bool("iac", false, "iac criteria status")
 	releaseCmd.Flags().Bool("mast", false, "mast criteria status")
+	releaseCmd.Flags().Int("timeout", 5, "minutes to wait for release criteria check to finish")
 	_ = releaseCmd.MarkFlagRequired("project")
 }
 
@@ -55,9 +56,14 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "failed to parse branch flag")
 	}
 
+	timeoutFlag, err := cmd.Flags().GetInt("timeout")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse timeout flag")
+	}
+
 	var releaseOpts = client.ReleaseStatusOpts{
 		WaitTillComplete:           true,
-		TotalWaitDurationToTimeout: time.Minute * 5,
+		TotalWaitDurationToTimeout: time.Minute * time.Duration(timeoutFlag),
 		WaitDuration:               time.Second * 5,
 	}
 

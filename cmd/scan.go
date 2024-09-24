@@ -1209,7 +1209,13 @@ func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 		return err
 	}
 
-	rs, err := c.ReleaseStatus(scan.Project, scan.Branch)
+	var releaseOpts = client.ReleaseStatusOpts{
+		WaitTillComplete:           true,
+		TotalWaitDurationToTimeout: time.Minute * 5,
+		WaitDuration:               time.Second * 5,
+	}
+
+	rs, err := c.ReleaseStatus(scan.Project, scan.Branch, releaseOpts)
 	if err != nil {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kondukto-io/kdt/client"
 
@@ -54,7 +55,13 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "failed to parse branch flag")
 	}
 
-	rs, err := c.ReleaseStatus(project, branch)
+	var releaseOpts = client.ReleaseStatusOpts{
+		WaitTillComplete:           true,
+		TotalWaitDurationToTimeout: time.Minute * 5,
+		WaitDuration:               time.Second * 5,
+	}
+
+	rs, err := c.ReleaseStatus(project, branch, releaseOpts)
 	if err != nil {
 		qwe(ExitCodeError, fmt.Errorf("failed to get release status: %w", err))
 	}

@@ -230,7 +230,7 @@ func (c *Client) waitReleaseProgress(rs *ReleaseStatus, project, branch string, 
 				return rs, nil
 			}
 
-			klog.Debugf("Release is still in progress for project [%s] on branch [%s]. Waiting for 5 seconds...", project, branch)
+			klog.Debugf("Release status is still in progress for project [%s] on branch [%s]. Waiting for 5 seconds...", project, branch)
 			time.Sleep(time.Second * 5)
 
 			rs, err = c.ReleaseStatus(project, branch)

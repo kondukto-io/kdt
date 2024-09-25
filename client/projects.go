@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/kondukto-io/kdt/klog"
 )
@@ -150,23 +151,32 @@ func (c *Client) CreateProject(pd ProjectDetail) (*Project, error) {
 }
 
 type ReleaseStatus struct {
-	Status  string             `json:"status"`
-	SAST    PlaybookTypeDetail `json:"sast"`
-	DAST    PlaybookTypeDetail `json:"dast"`
-	PENTEST PlaybookTypeDetail `json:"pentest"`
-	IAST    PlaybookTypeDetail `json:"iast"`
-	SCA     PlaybookTypeDetail `json:"sca"`
-	CS      PlaybookTypeDetail `json:"cs"`
-	IAC     PlaybookTypeDetail `json:"iac"`
-	MAST    PlaybookTypeDetail `json:"mast"`
+	ProgressStatus string             `json:"progress_status"`
+	Status         string             `json:"status"`
+	SAST           PlaybookTypeDetail `json:"sast"`
+	DAST           PlaybookTypeDetail `json:"dast"`
+	PENTEST        PlaybookTypeDetail `json:"pentest"`
+	IAST           PlaybookTypeDetail `json:"iast"`
+	SCA            PlaybookTypeDetail `json:"sca"`
+	CS             PlaybookTypeDetail `json:"cs"`
+	IAC            PlaybookTypeDetail `json:"iac"`
+	MAST           PlaybookTypeDetail `json:"mast"`
 }
+
+const ReleaseStatusHistoryInprogress = "in_progress"
 
 type PlaybookTypeDetail struct {
 	Status string `json:"status" bson:"status"`
 	ScanID string `json:"scan_id,omitempty" bson:"scan_id"`
 }
 
-func (c *Client) ReleaseStatus(project, branch string) (*ReleaseStatus, error) {
+type ReleaseStatusOpts struct {
+	WaitTillComplete           bool
+	TotalWaitDurationToTimeout time.Duration
+	WaitDuration               time.Duration
+}
+
+func (c *Client) ReleaseStatus(project, branch string, opts ...ReleaseStatusOpts) (*ReleaseStatus, error) {
 	if project == "" {
 		return nil, errors.New("missing project id or name")
 	}
@@ -195,7 +205,40 @@ func (c *Client) ReleaseStatus(project, branch string) (*ReleaseStatus, error) {
 		return nil, fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
 	}
 
-	return rs, nil
+	return c.waitReleaseProgress(rs, project, branch, opts...)
+}
+
+func (c *Client) waitReleaseProgress(rs *ReleaseStatus, project, branch string, opts ...ReleaseStatusOpts) (*ReleaseStatus, error) {
+	if len(opts) == 0 {
+		return rs, nil
+	}
+
+	var opt = opts[0]
+	if !opt.WaitTillComplete {
+		return rs, nil
+	}
+
+	var timeout = time.After(opt.TotalWaitDurationToTimeout)
+
+	for {
+		select {
+		case <-timeout:
+			return nil, fmt.Errorf("timeout [%s] exceeded while waiting for release status", opt.TotalWaitDurationToTimeout)
+		default:
+			if rs.ProgressStatus != ReleaseStatusHistoryInprogress {
+				return rs, nil
+			}
+
+			klog.Debugf("Release status is still in progress for project [%s] on branch [%s]. Waiting for 5 seconds...", project, branch)
+			time.Sleep(time.Second * 5)
+
+			var err error
+			rs, err = c.ReleaseStatus(project, branch)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get release status: %w", err)
+			}
+		}
+	}
 }
 
 func (c *Client) IsAvailable(project, almTool string) (bool, error) {

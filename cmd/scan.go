@@ -94,6 +94,7 @@ func init() {
 	scanCmd.Flags().Int("threshold-low", 0, "threshold for number of vulnerabilities with low severity")
 
 	scanCmd.Flags().Int("timeout", 0, "minutes to wait for scan to finish. scan will continue async if duration exceeds limit")
+	scanCmd.Flags().Int("release-timeout", 5, "minutes to wait for release criteria check to finish")
 }
 
 // scanCmd represents the scan command
@@ -1209,7 +1210,18 @@ func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 		return err
 	}
 
-	rs, err := c.ReleaseStatus(scan.Project, scan.Branch)
+	releaseTimeoutFlag, err := cmd.Flags().GetInt("release-timeout")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse release-timeout flag")
+	}
+
+	var releaseOpts = client.ReleaseStatusOpts{
+		WaitTillComplete:           true,
+		TotalWaitDurationToTimeout: time.Minute * time.Duration(releaseTimeoutFlag),
+		WaitDuration:               time.Second * 5,
+	}
+
+	rs, err := c.ReleaseStatus(scan.Project, scan.Branch, releaseOpts)
 	if err != nil {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}

@@ -163,7 +163,7 @@ type ReleaseStatus struct {
 	MAST           PlaybookTypeDetail `json:"mast"`
 }
 
-const ReleaseStatusHistoryInprogress = "inprogress"
+const ReleaseStatusHistoryInprogress = "in_progress"
 
 type PlaybookTypeDetail struct {
 	Status string `json:"status" bson:"status"`

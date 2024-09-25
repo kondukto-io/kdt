@@ -224,7 +224,7 @@ func (c *Client) waitReleaseProgress(rs *ReleaseStatus, project, branch string, 
 	for {
 		select {
 		case <-timeout:
-			return nil, fmt.Errorf("timeout [5min] exceeded while waiting for release status")
+			return nil, fmt.Errorf("timeout [%s] exceeded while waiting for release status", opt.TotalWaitDurationToTimeout)
 		default:
 			if rs.ProgressStatus != ReleaseStatusHistoryInprogress {
 				return rs, nil

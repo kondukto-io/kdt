@@ -218,7 +218,6 @@ func (c *Client) waitReleaseProgress(rs *ReleaseStatus, project, branch string, 
 		return rs, nil
 	}
 
-	var err error
 	var timeout = time.After(opt.TotalWaitDurationToTimeout)
 
 	for {
@@ -233,6 +232,7 @@ func (c *Client) waitReleaseProgress(rs *ReleaseStatus, project, branch string, 
 			klog.Debugf("Release status is still in progress for project [%s] on branch [%s]. Waiting for 5 seconds...", project, branch)
 			time.Sleep(time.Second * 5)
 
+			var err error
 			rs, err = c.ReleaseStatus(project, branch)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release status: %w", err)

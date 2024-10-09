@@ -71,7 +71,7 @@ getPackage() {
 
     if [ $arch = "x86_64" ]; then
 	arch="amd64"
-    elif [ $arch = "arm64" ]; then
+    elif [ $arch = "arm64" ] || [ $arch = "aarm64" ]; then
 	arch="arm64"
     fi
 

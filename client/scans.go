@@ -63,9 +63,11 @@ type (
 		Limit            int    `url:"limit,omitempty"`
 	}
 
-	ScanPROptions struct {
-		From               string `json:"from"`
-		To                 string `json:"to"`
+	ScanRestartOptions struct {
+		// MergeSourceBranch is source branch of the PR. It is required when PR is true
+		MergeSourceBranch string `json:"from"`
+		// MergeTargetBranch is target branch of the PR. It is required when PR is true
+		MergeTargetBranch  string `json:"to"`
 		OverrideOldAnalyze bool   `json:"override_old_analyze"`
 		PRNumber           string `json:"pr_number"`
 		NoDecoration       bool   `json:"no_decoration"`
@@ -184,7 +186,7 @@ func (c *Client) RestartScanByScanID(id string) (string, error) {
 	return rsr.Event, nil
 }
 
-func (c *Client) RestartScanWithOption(id string, opt *ScanPROptions) (string, error) {
+func (c *Client) RestartScanWithOption(id string, opt *ScanRestartOptions) (string, error) {
 	if opt == nil {
 		return "", errors.New("missing scan options")
 	}

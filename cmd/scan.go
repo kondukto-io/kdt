@@ -58,13 +58,15 @@ func init() {
 	scanCmd.Flags().StringP("meta", "m", "", "meta data")
 	scanCmd.Flags().StringP("file", "f", "", "scan result file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
-	scanCmd.Flags().StringP("merge-target", "M", "", "source branch name for pull-request")
-	scanCmd.Flags().StringP("pr-number", "", "", "pull-request number. supported alms[github, gitlab, azure, bitbucket]")
-	scanCmd.Flags().Bool("no-decoration", false, "no decoration for pr number")
+
+	scanCmd.Flags().StringP("merge-target", "M", "", "target branch name for pull requests. By default, it sets the PR decorations. PR decoration can be disabled by --no-decoration flag. What is PR scan https://docs.kondukto.io/docs/scans-page")
+	scanCmd.Flags().Bool("override", false, "overrides the old analyzed results for the source branch of the PR scan")
+	scanCmd.Flags().Bool("no-decoration", false, "disables the pull request decoration for the source branch of the pull request feature. It cannot be used with --pr-number flag")
+	scanCmd.Flags().StringP("pr-number", "", "", "a pull request number to set pull request decoration. Supported ALMs: [GitHub, GitLab, Azure, Bitbucket]. It is not triggers the PR scan, only sets the PR decoration")
+
 	scanCmd.Flags().StringP("image", "I", "", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
 	scanCmd.Flags().BoolP("break-by-scanner-type", "", false, "breaks pipeline if only scanner type matches with the given scanner's type")
-	scanCmd.Flags().Bool("override", false, "overrides old analysis results for the source branch")
 	scanCmd.Flags().Bool("create-project", false, "creates a new project when no project is found with the given parameters")
 	scanCmd.Flags().StringSlice("params", nil, "custom parameters for scan")
 	scanCmd.Flags().StringP("product-name", "P", "", "name for product")
@@ -179,9 +181,12 @@ func (s *Scan) startScan() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if !primitive.IsValidObjectID(scanID) {
-			return "", errors.New("invalid object id")
+
+		_, err = primitive.ObjectIDFromHex(scanID)
+		if err != nil {
+			return "", fmt.Errorf("invalid scan object id [%s]: %w", scanID, err)
 		}
+
 		eventID, err := s.client.RestartScanByScanID(scanID)
 		if err != nil {
 			return "", err
@@ -208,6 +213,7 @@ func (s *Scan) startScan() (string, error) {
 			return "", err
 		}
 		return eventID, nil
+
 	case modeByProjectToolAndForkScan:
 		// scan mode to restart a scan with the given project, tool and pr params
 		eventID, err := s.findScanIDByProjectToolAndForkScan()
@@ -300,17 +306,6 @@ func (s *Scan) scanByFileImport() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
-	target, err := s.cmd.Flags().GetString("merge-target")
-	if err != nil {
-		return "", fmt.Errorf("failed to parse merge target flag: %w", err)
-	}
-	override, err := s.cmd.Flags().GetBool("override")
-	if err != nil {
-		return "", fmt.Errorf("failed to parse override flag: %w", err)
-	}
-	if override && target == "" {
-		return "", errors.New("overriding PR analysis requires a merge target")
-	}
 	applicationEnvironment, err := s.cmd.Flags().GetString("env")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse env flag: %w", err)
@@ -334,7 +329,13 @@ func (s *Scan) scanByFileImport() (string, error) {
 	if overrideForkSourceBranch && forkSourceBranch == "" {
 		return "", errors.New("fork-source flag cannot be empty when override-fork-source flag is set")
 	}
-	if forkScan && target != "" {
+
+	prInfo, override, err := s.getValidatedPullRequestFields()
+	if err != nil {
+		return "", err
+	}
+
+	if forkScan && prInfo.Target != "" {
 		return "", errors.New("the fork-scan and merge-target commands cannot be used together")
 	}
 
@@ -343,7 +344,9 @@ func (s *Scan) scanByFileImport() (string, error) {
 		"branch":               branch,
 		"tool":                 tool,
 		"meta_data":            meta,
-		"target":               target,
+		"target":               prInfo.Target,
+		"pr_number":            prInfo.PRNumber,
+		"no_decoration":        strconv.FormatBool(prInfo.NoDecoration),
 		"environment":          applicationEnvironment,
 		"fork-scan":            strconv.FormatBool(forkScan),
 		"fork-source":          forkSourceBranch,
@@ -628,18 +631,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	if branch == "" {
 		return "", errors.New("missing branch field")
 	}
-	override, err := s.cmd.Flags().GetBool("override")
-	if err != nil {
-		return "", fmt.Errorf("failed to parse override flag: %w", err)
-	}
-	mergeTarget, err := s.cmd.Flags().GetString("merge-target")
-	if err != nil {
-		return "", fmt.Errorf("failed to parse tool flag: %w", err)
-	}
-	if mergeTarget == "" {
-		return "", errors.New("missing merge-target field")
-	}
-	meta, err := s.cmd.Flags().GetString("meta")
+	metaData, err := s.cmd.Flags().GetString("meta")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
@@ -650,6 +642,11 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	applicationEnvironment, err := s.cmd.Flags().GetString("env")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse env flag: %w", err)
+	}
+
+	prInfo, override, err := s.getValidatedPullRequestFields()
+	if err != nil {
+		return "", err
 	}
 
 	var agentID string
@@ -663,7 +660,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 	params := &client.ScanSearchParams{
 		Tool:        tool,
-		MetaData:    meta,
+		MetaData:    metaData,
 		AgentID:     agentID,
 		Environment: applicationEnvironment,
 		Limit:       1,
@@ -676,9 +673,10 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
-		opt := &client.ScanPROptions{
-			From:               branch,
-			To:                 mergeTarget,
+		opt := &client.ScanRestartOptions{
+			MergeSourceBranch:  branch,
+			MergeTargetBranch:  prInfo.Target,
+			NoDecoration:       prInfo.NoDecoration,
 			OverrideOldAnalyze: override,
 			Custom:             custom,
 			Environment:        applicationEnvironment,
@@ -692,11 +690,11 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
-		MetaData:    meta,
+		MetaData:    metaData,
 		Branch:      branch,
 		ToolID:      scanner.ID,
 		Agent:       agent,
-		Target:      mergeTarget,
+		Target:      prInfo.Target,
 		PR:          true,
 		Environment: applicationEnvironment,
 		Limit:       1,
@@ -721,14 +719,15 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		}
 
 		var scan = &client.Scan{
-			MetaData: meta,
+			MetaData: metaData,
 			Branch:   branch,
 			Custom:   custom,
 			Project:  project.Name,
 			ToolID:   scanner.ID,
 			PR: client.PRInfo{
-				OK:     true,
-				Target: mergeTarget,
+				OK:           true,
+				Target:       prInfo.Target,
+				NoDecoration: prInfo.NoDecoration,
 			},
 			Environment: applicationEnvironment,
 		}
@@ -770,26 +769,17 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse project flag: %w", err)
 	}
+
 	tool, err := s.cmd.Flags().GetString("tool")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
-	noDecoration, err := s.cmd.Flags().GetBool("no-decoration")
-	if err != nil {
-		return "", fmt.Errorf("failed to parse no-decoration flag: %w", err)
-	}
-	prNumber, err := s.cmd.Flags().GetString("pr-number")
-	if err != nil {
-		return "", fmt.Errorf("failed to get request number: %w", err)
-	}
-	override, err := s.cmd.Flags().GetBool("override")
-	if err != nil {
-		return "", fmt.Errorf("failed to parse override flag: %w", err)
-	}
-	meta, err := s.cmd.Flags().GetString("meta")
+
+	metaData, err := s.cmd.Flags().GetString("meta")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
+
 	agent, err := s.cmd.Flags().GetString("agent")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse agent flag: %w", err)
@@ -798,6 +788,16 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	applicationEnvironment, err := s.cmd.Flags().GetString("env")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse env flag: %w", err)
+	}
+
+	branch, err := s.cmd.Flags().GetString("branch")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse branch flag: %w", err)
+	}
+
+	prInfo, override, err := s.getValidatedPullRequestFields()
+	if err != nil {
+		return "", err
 	}
 
 	var agentID string
@@ -810,8 +810,9 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	}
 
 	params := &client.ScanSearchParams{
+		Branch:      branch,
 		Tool:        tool,
-		MetaData:    meta,
+		MetaData:    metaData,
 		AgentID:     agentID,
 		Limit:       1,
 		Environment: applicationEnvironment,
@@ -821,12 +822,14 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	if s.cmd.Flags().Changed("params") {
 		custom = s.parseCustomParams(custom, *scanner, nil)
 	}
+
 	scan, err := s.client.FindScan(project.Name, params)
 	if err == nil {
-		opt := &client.ScanPROptions{
+		opt := &client.ScanRestartOptions{
+			MergeSourceBranch:  branch,
 			OverrideOldAnalyze: override,
-			PRNumber:           prNumber,
-			NoDecoration:       noDecoration,
+			PRNumber:           prInfo.PRNumber,
+			NoDecoration:       prInfo.NoDecoration,
 			Custom:             custom,
 			Environment:        applicationEnvironment,
 		}
@@ -841,7 +844,8 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
-		MetaData:    meta,
+		Branch:      branch,
+		MetaData:    metaData,
 		ToolID:      scanner.ID,
 		Agent:       agent,
 		PR:          true,
@@ -855,13 +859,14 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	var scanData = func() *client.Scan {
 		if sp != nil {
 			return &client.Scan{
+				Branch:       branch,
 				ScanparamsID: sp.ID,
 				ToolID:       scanner.ID,
 				Project:      project.Name,
 				PR: client.PRInfo{
 					OK:           true,
-					PRNumber:     prNumber,
-					NoDecoration: noDecoration,
+					PRNumber:     prInfo.PRNumber,
+					NoDecoration: prInfo.NoDecoration,
 				},
 				Custom:      custom,
 				Environment: applicationEnvironment,
@@ -874,14 +879,15 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		}
 
 		var scan = &client.Scan{
+			Branch:   branch,
 			Project:  project.Name,
 			ToolID:   scanner.ID,
 			Custom:   custom,
-			MetaData: meta,
+			MetaData: metaData,
 			PR: client.PRInfo{
 				OK:           true,
-				PRNumber:     prNumber,
-				NoDecoration: noDecoration,
+				PRNumber:     prInfo.PRNumber,
+				NoDecoration: prInfo.NoDecoration,
 			},
 			Environment: applicationEnvironment,
 		}
@@ -1146,20 +1152,64 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 	return project, nil
 }
 
+func (s *Scan) getValidatedPullRequestFields() (*client.PRInfo, bool, error) {
+	mergeTarget, err := s.cmd.Flags().GetString("merge-target")
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to parse merge target flag: %w", err)
+	}
+
+	override, err := s.cmd.Flags().GetBool("override")
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to parse override flag: %w", err)
+	}
+
+	if override && mergeTarget == "" {
+		return nil, false, errors.New("overriding PR analysis requires a merge target")
+	}
+
+	noDecoration, err := s.cmd.Flags().GetBool("no-decoration")
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to parse no-decoration flag: %w", err)
+	}
+
+	prNumber, err := s.cmd.Flags().GetString("pr-number")
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get request number: %w", err)
+	}
+
+	if noDecoration {
+		if mergeTarget == "" {
+			return nil, false, errors.New("no-decoration flag requires a merge-target flag to be set")
+		}
+		if prNumber != "" {
+			return nil, false, errors.New("no-decoration flag cannot be used with pr-number flag")
+		}
+	}
+
+	prInfo := client.PRInfo{
+		OK:           mergeTarget != "",
+		Target:       mergeTarget,
+		PRNumber:     prNumber,
+		NoDecoration: noDecoration,
+	}
+
+	return &prInfo, override, nil
+}
+
 func getScanMode(cmd *cobra.Command) uint {
 	// Check scan method
 	byImportFile := cmd.Flag("file").Changed
 	byTool := cmd.Flag("tool").Changed
 	byScanID := cmd.Flag("scan-id").Changed
 	byProject := cmd.Flag("project").Changed
-	byBranch := cmd.Flag("merge-target").Changed
+	byMergeTarget := cmd.Flag("merge-target").Changed
 	byForkScan := cmd.Flag("fork-scan").Changed
-	byMerge := cmd.Flag("branch").Changed
+	byBranch := cmd.Flag("branch").Changed
 	byPRNumber := cmd.Flag("pr-number").Changed
 	byImage := cmd.Flag("image").Changed
 	byRepo := cmd.Flag("repo-id").Changed
 	byProjectORRepo := byProject || byRepo
-	byPR := byBranch && byMerge
+	byPR := byMergeTarget && byBranch
 
 	byProjectAndTool := byProjectORRepo && byTool && !byPR //
 	byProjectAndToolAndFile := byProjectAndTool && byImportFile

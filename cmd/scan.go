@@ -1211,7 +1211,7 @@ func getScanMode(cmd *cobra.Command) uint {
 	byProjectORRepo := byProject || byRepo
 	byPR := byMergeTarget && byBranch
 
-	byProjectAndTool := byProjectORRepo && byTool && !byPR //
+	byProjectAndTool := byProjectORRepo && byTool && !byPR
 	byProjectAndToolAndFile := byProjectAndTool && byImportFile
 	byProjectAndToolAndForkScan := byProjectORRepo && byTool && byForkScan && !byPR
 	byProjectAndToolAndPullRequestNumber := byProjectORRepo && byTool && byPRNumber && !byImportFile

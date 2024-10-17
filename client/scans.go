@@ -67,12 +67,13 @@ type (
 		// MergeSourceBranch is source branch of the PR. It is required when PR is true
 		MergeSourceBranch string `json:"from"`
 		// MergeTargetBranch is target branch of the PR. It is required when PR is true
-		MergeTargetBranch  string `json:"to"`
-		OverrideOldAnalyze bool   `json:"override_old_analyze"`
-		PRNumber           string `json:"pr_number"`
-		NoDecoration       bool   `json:"no_decoration"`
-		Custom             Custom `json:"custom"`
-		Environment        string `url:"environment"`
+		MergeTargetBranch        string `json:"to"`
+		OverrideOldAnalyze       bool   `json:"override_old_analyze"`
+		PRNumber                 string `json:"pr_number"`
+		NoDecoration             bool   `json:"no_decoration"`
+		PRDecorationScannerTypes string `json:"pr_decoration_scanner_types"`
+		Custom                   Custom `json:"custom"`
+		Environment              string `url:"environment"`
 	}
 
 	ResultSet struct {
@@ -128,10 +129,12 @@ type (
 	}
 
 	PRInfo struct {
-		OK           bool   `json:"ok" json:"ok"`
-		Target       string `json:"target" bson:"target" valid:"Branch"`
-		PRNumber     string `json:"pr_number"`
-		NoDecoration bool   `json:"no_decoration"`
+		// OK means that the merge target is a valid branch to merge the source branch changes into.
+		OK                       bool   `json:"ok" json:"ok"`
+		MergeTarget              string `json:"target" bson:"target" valid:"Branch"`
+		PRNumber                 string `json:"pr_number"`
+		NoDecoration             bool   `json:"no_decoration"`
+		PRDecorationScannerTypes string `json:"pr_decoration_scanner_types"`
 	}
 
 	Custom struct {

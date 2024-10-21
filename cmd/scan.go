@@ -1192,7 +1192,7 @@ func (s *Scan) getValidatedPullRequestFields() (*client.PRInfo, bool, error) {
 	if noDecoration {
 		klog.Warn("no-decoration flag is deprecated and will be removed in the future")
 		if prNumber != "" {
-			return nil, false, errors.New("no-decoration flag cannot be used with pr-number flag")
+			return nil, false, errors.New("no-decoration flag cannot be used with pr-number flag. If the pr decoration is not desired, please remove the pr-number flag")
 		}
 	}
 

@@ -63,7 +63,7 @@ func init() {
 	scanCmd.Flags().Bool("override", false, "overrides the old analyzed results for the source branch of the PR scan")
 	scanCmd.Flags().Bool("no-decoration", false, "disables the PR decoration of the PR scan feature. Deprecated, remove the pr-number flag to disable PR decoration")
 	scanCmd.Flags().StringP("pr-number", "", "", "a pull request number to set only PR decoration on it. Supported ALMs: [GitHub, GitLab, Azure, Bitbucket]. It does not trigger the PR scan, it only sets the PR decoration")
-	scanCmd.Flags().StringSlice("pr-decoration-scanner-types", nil, "specify comma separated scanner types for the project vulnerability summary of pr decoration. By default, it only uses the scanner type of the current scan. Example: all,sast,dast,sca...")
+	scanCmd.Flags().StringArray("pr-decoration-scanner-types", nil, "specify comma separated scanner types for the project vulnerability summary of pr decoration. By default, it only uses the scanner type of the current scan. Example: all,sast,dast,sca...")
 
 	scanCmd.Flags().StringP("image", "I", "", "image to scan with container security products")
 	scanCmd.Flags().StringP("agent", "a", "", "agent name for agent type scanners")
@@ -1208,7 +1208,7 @@ func (s *Scan) getValidatedPullRequestFields() (*client.PRInfo, bool, error) {
 }
 
 func (s *Scan) getDecorationScannerTypes() (string, error) {
-	prDecorationScannerTypes, err := s.cmd.Flags().GetStringSlice("pr-decoration-scanner-types")
+	prDecorationScannerTypes, err := s.cmd.Flags().GetStringArray("pr-decoration-scanner-types")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse pr-decoration-scanner-types flag: %w", err)
 	}

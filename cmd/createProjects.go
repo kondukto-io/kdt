@@ -27,6 +27,7 @@ func init() {
 	createCmd.AddCommand(createProjectCmd)
 
 	createProjectCmd.Flags().String("project-name", "", "name of the project")
+	createProjectCmd.Flags().String("criticality", "", "business criticality of the project")
 	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another Kondukto project")
 	createProjectCmd.Flags().StringP("overwrite", "w", "", "rename the project name when creating a new project")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
@@ -192,6 +193,39 @@ func (p *Project) createProject(repo, projectName string, force bool, overwrite 
 		qwe(ExitCodeError, err, "failed to parse the scope-included-files flag")
 	}
 
+	criticality, err := p.cmd.Flags().GetString("criticality")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the criticality flag")
+	}
+
+	businessCriticality := func() string {
+		const (
+			criticalityMajor  = "Major"
+			criticalityHigh   = "High"
+			criticalityMedium = "Medium"
+			criticalityLow    = "Low"
+			criticalityNone   = "None"
+			criticalityAuto   = "Auto"
+		)
+
+		switch strings.ToLower(criticality) {
+		case strings.ToLower(criticalityMajor):
+			return criticalityMajor
+		case strings.ToLower(criticalityHigh):
+			return criticalityHigh
+		case strings.ToLower(criticalityMedium):
+			return criticalityMedium
+		case strings.ToLower(criticalityLow):
+			return criticalityLow
+		case strings.ToLower(criticalityNone):
+			return criticalityNone
+		case strings.ToLower(criticalityAuto):
+			return criticalityAuto
+		default:
+			return criticalityNone
+		}
+	}()
+
 	projectSource := func() client.ProjectSource {
 		s := client.ProjectSource{Tool: tool}
 		u, err := url.Parse(repo)
@@ -235,6 +269,7 @@ func (p *Project) createProject(repo, projectName string, force bool, overwrite 
 		FeatureBranchRetention:         featureBranchRetention,
 		FeatureBranchInfiniteRetention: featureBranchNoRetention,
 		DefaultBranch:                  defaultBranch,
+		Criticality:                    businessCriticality,
 	}
 
 	project, err := p.client.CreateProject(pd)

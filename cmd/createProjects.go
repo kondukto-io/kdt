@@ -27,7 +27,7 @@ func init() {
 	createCmd.AddCommand(createProjectCmd)
 
 	createProjectCmd.Flags().String("project-name", "", "name of the project")
-	createProjectCmd.Flags().String("criticality", "", "business criticality of the project")
+	createProjectCmd.Flags().String("criticality", "", "business criticality of the project, possible values are [ Major, High, Medium, Low, None, Auto ]. Default is [None]")
 	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another Kondukto project")
 	createProjectCmd.Flags().StringP("overwrite", "w", "", "rename the project name when creating a new project")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")

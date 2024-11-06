@@ -27,7 +27,7 @@ func init() {
 	createCmd.AddCommand(createProjectCmd)
 
 	createProjectCmd.Flags().String("project-name", "", "name of the project")
-	createProjectCmd.Flags().String("criticality", "", "business criticality of the project, possible values are [ Major, High, Medium, Low, None, Auto ]. Default is [None]")
+	createProjectCmd.Flags().Int("criticality-level", 0, "business criticality of the project, possible values are [ 4 = Major, 3 = High, 2 = Medium, 1 = Low, 0 = None, -1 = Auto ]. Default is [0]")
 	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another Kondukto project")
 	createProjectCmd.Flags().StringP("overwrite", "w", "", "rename the project name when creating a new project")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
@@ -193,38 +193,21 @@ func (p *Project) createProject(repo, projectName string, force bool, overwrite 
 		qwe(ExitCodeError, err, "failed to parse the scope-included-files flag")
 	}
 
-	criticality, err := p.cmd.Flags().GetString("criticality")
+	criticality, err := p.cmd.Flags().GetInt("criticality-level")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse the criticality flag")
 	}
 
-	businessCriticality := func() string {
-		const (
-			criticalityMajor  = "Major"
-			criticalityHigh   = "High"
-			criticalityMedium = "Medium"
-			criticalityLow    = "Low"
-			criticalityNone   = "None"
-			criticalityAuto   = "Auto"
-		)
-
-		switch strings.ToLower(criticality) {
-		case strings.ToLower(criticalityMajor):
-			return criticalityMajor
-		case strings.ToLower(criticalityHigh):
-			return criticalityHigh
-		case strings.ToLower(criticalityMedium):
-			return criticalityMedium
-		case strings.ToLower(criticalityLow):
-			return criticalityLow
-		case strings.ToLower(criticalityNone):
-			return criticalityNone
-		case strings.ToLower(criticalityAuto):
-			return criticalityAuto
-		default:
-			return criticalityNone
+	businessCriticalityLevel, err := func() (int, error) {
+		if criticality < -1 || criticality > 4 {
+			return 0, fmt.Errorf("invalid criticality level: %d", criticality)
 		}
+
+		return criticality, nil
 	}()
+	if err != nil {
+		qwe(ExitCodeError, err, "business criticality level must be between -1, 0, 1, 2, 3 or 4")
+	}
 
 	projectSource := func() client.ProjectSource {
 		s := client.ProjectSource{Tool: tool}
@@ -269,7 +252,7 @@ func (p *Project) createProject(repo, projectName string, force bool, overwrite 
 		FeatureBranchRetention:         featureBranchRetention,
 		FeatureBranchInfiniteRetention: featureBranchNoRetention,
 		DefaultBranch:                  defaultBranch,
-		Criticality:                    businessCriticality,
+		CriticalityLevel:               businessCriticalityLevel,
 	}
 
 	project, err := p.client.CreateProject(pd)

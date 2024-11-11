@@ -10,6 +10,7 @@ import "net/http"
 type Team struct {
 	Name             string           `json:"name"`
 	IssueResponsible IssueResponsible `json:"issue_responsible"`
+	TeamAdmin        TeamAdmin        `json:"team_admin"`
 }
 
 type IssueResponsible struct {
@@ -17,12 +18,12 @@ type IssueResponsible struct {
 	Username string `json:"username,omitempty"`
 }
 
-func (c *Client) CreateTeam(teamName string, issueResponsible IssueResponsible) error {
-	var team = Team{
-		Name:             teamName,
-		IssueResponsible: issueResponsible,
-	}
+type TeamAdmin struct {
+	ID       string `json:"id,omitempty"`
+	Username string `json:"username,omitempty"`
+}
 
+func (c *Client) CreateTeam(team Team) error {
 	req, err := c.newRequest(http.MethodPost, "/api/v2/teams", team)
 	if err != nil {
 		return err

@@ -27,6 +27,7 @@ func init() {
 
 	createTeamCmd.Flags().StringP("name", "n", "", "team name")
 	createTeamCmd.Flags().StringP("responsible", "r", "", "responsible user name")
+	createTeamCmd.Flags().StringP("team-admin", "a", "", "a team admin usern name. this user should have a teamlead role")
 }
 
 func createTeamRootCommand(cmd *cobra.Command, _ []string) {
@@ -51,7 +52,7 @@ func createTeamRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	var issueResponsible client.IssueResponsible
-	if !primitive.IsValidObjectID(responsible) {
+	if _, err = primitive.ObjectIDFromHex(responsible); err != nil {
 		issueResponsible = client.IssueResponsible{
 			Username: responsible,
 		}
@@ -61,7 +62,30 @@ func createTeamRootCommand(cmd *cobra.Command, _ []string) {
 		}
 	}
 
-	if err := c.CreateTeam(teamName, issueResponsible); err != nil {
+	// team admin is optional
+	teamadmin, err := cmd.Flags().GetString("team-admin")
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to parse the yeam-admin flag")
+	}
+
+	var teamAdmin client.TeamAdmin
+	if _, err = primitive.ObjectIDFromHex(teamadmin); err != nil {
+		teamAdmin = client.TeamAdmin{
+			Username: teamadmin,
+		}
+	} else {
+		teamAdmin = client.TeamAdmin{
+			ID: teamadmin,
+		}
+	}
+
+	var team = client.Team{
+		Name:             teamName,
+		IssueResponsible: issueResponsible,
+		TeamAdmin:        teamAdmin,
+	}
+
+	if err := c.CreateTeam(team); err != nil {
 		qwe(ExitCodeError, err, "failed to create team")
 	}
 

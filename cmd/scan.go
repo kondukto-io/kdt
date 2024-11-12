@@ -86,6 +86,7 @@ func init() {
 	scanCmd.Flags().Bool("scope-include-empty", false, "enable to include SAST, SCA and IAC vulnerabilities with no path in this project.")
 	scanCmd.Flags().String("scope-included-paths", "", "a comma separated list of paths within your mono-repo so that Kondukto can decide on the SAST, SCA and IAC vulnerabilities to include in this project.")
 	scanCmd.Flags().String("scope-included-files", "", "a comma separated list of file names Kondukto should check for in vulnerabilities alongside paths")
+	scanCmd.Flags().Int("criticality-level", 0, "business criticality of the project, possible values are [ 4 = Major, 3 = High, 2 = Medium, 1 = Low, 0 = None, -1 = Auto ]. Default is [0]")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	scanCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")

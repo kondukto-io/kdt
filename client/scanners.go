@@ -18,14 +18,15 @@ import (
 type ScannerType string
 
 const (
-	ScannerTypeSAST ScannerType = "sast"
-	ScannerTypeDAST ScannerType = "dast"
-	ScannerTypeSCA  ScannerType = "sca"
-	ScannerTypeCS   ScannerType = "cs"
-	ScannerTypeIAC  ScannerType = "iac"
-	ScannerTypeIAST ScannerType = "iast"
-	ScannerTypeCSPM ScannerType = "cspm"
-	ScannerTypeMAST ScannerType = "mast"
+	ScannerTypeSAST  ScannerType = "sast"
+	ScannerTypeDAST  ScannerType = "dast"
+	ScannerTypeSCA   ScannerType = "sca"
+	ScannerTypeCS    ScannerType = "cs"
+	ScannerTypeIAC   ScannerType = "iac"
+	ScannerTypeIAST  ScannerType = "iast"
+	ScannerTypeCSPM  ScannerType = "cspm"
+	ScannerTypeMAST  ScannerType = "mast"
+	ScannerTypeINFRA ScannerType = "infra"
 )
 
 func (s ScannerType) String() string {
@@ -36,6 +37,7 @@ func ScannerTypes() []ScannerType {
 	return []ScannerType{
 		ScannerTypeSAST, ScannerTypeDAST, ScannerTypeSCA, ScannerTypeCS,
 		ScannerTypeIAC, ScannerTypeIAST, ScannerTypeCSPM, ScannerTypeMAST,
+		ScannerTypeINFRA,
 	}
 }
 
@@ -199,7 +201,7 @@ func (c *Client) ListActiveScanners(input *ListActiveScannersInput) (*ScannersRe
 }
 
 // IsValidTool returns true if the given tool name is a valid tool
-func (c *Client) IsValidTool(tool string) bool {
+func (c *Client) IsValidTool(tool string) (*ScannerInfo, bool) {
 	klog.Debugf("validating given tool name [%s]", tool)
 
 	scanners, err := c.ListActiveScanners(&ListActiveScannersInput{
@@ -207,21 +209,21 @@ func (c *Client) IsValidTool(tool string) bool {
 	})
 	if err != nil {
 		klog.Debugf("failed to get active tools: %v", err)
-		return false
+		return nil, false
 	}
 
 	if scanners.Total == 0 {
 		klog.Debugf("no tool found by given tool name. invalid or inactive tool name: %s", tool)
-		return false
+		return nil, false
 	}
 
 	var scanner = scanners.ActiveScanners[0]
 	if scanner.Disabled {
 		klog.Printf("the scanner [%s] is disabled on the Kondukto", tool)
-		return false
+		return nil, false
 	}
 
-	return true
+	return &scanner, true
 }
 
 // IsRescanOnlyLabel returns true if the given label is a rescan only label

@@ -1320,7 +1320,12 @@ func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 		WaitDuration:               time.Second * 5,
 	}
 
-	rs, err := c.ReleaseStatus(scan.Project, scan.Branch, releaseOpts)
+	var project = scan.Project
+	if scan.InfraSourceProjectID != "" {
+		project = scan.InfraSourceProjectID
+	}
+
+	rs, err := c.ReleaseStatus(project, scan.Branch, releaseOpts)
 	if err != nil {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}
@@ -1365,6 +1370,9 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 	}
 	if release.MAST.Status == statusFail {
 		failedScans["MAST"] = scan.ID
+	}
+	if release.INFRA.Status == statusFail {
+		failedScans["INFRA"] = scan.ID
 	}
 
 	if breakByScannerType {

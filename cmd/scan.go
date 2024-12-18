@@ -6,6 +6,7 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -114,8 +115,15 @@ var scanCmd = &cobra.Command{
 		}
 		t, _ := cmd.Flags().GetString("tool")
 		s, _ := cmd.Flags().GetString("scan-id")
-		if s == "" && !c.IsValidTool(t) {
+
+		toolInfo, isValid := c.IsValidTool(t)
+		if s == "" && !isValid {
 			qwm(ExitCodeError, "unknown, disabled or inactive tool name. Run `kdt list scanners` to see the supported active scanner's list.")
+		}
+
+		if toolInfo != nil {
+			ctx := context.WithValue(cmd.Context(), "internal-scan-type", toolInfo.Type)
+			cmd.SetContext(ctx)
 		}
 	},
 }
@@ -159,7 +167,9 @@ type Scan struct {
 }
 
 func (s *Scan) startScan() (string, error) {
+	scanType := s.cmd.Context().Value("internal-scan-type").(string)
 	var scanMode = getScanMode(s.cmd)
+
 	incremental, err := s.cmd.Flags().GetBool("incremental-scan")
 	if err != nil {
 		return "", err
@@ -172,7 +182,7 @@ func (s *Scan) startScan() (string, error) {
 	switch scanMode {
 	case modeByFileImport:
 		// scan mode to start a scan by importing a file
-		eventID, err := s.scanByFileImport()
+		eventID, err := s.scanByFileImport(scanType)
 		if err != nil {
 			return "", err
 		}
@@ -278,7 +288,7 @@ func (s *Scan) scanByImage() (string, error) {
 	return eventID, nil
 }
 
-func (s *Scan) scanByFileImport() (string, error) {
+func (s *Scan) scanByFileImport(scanType string) (string, error) {
 	// Parse command line flags needed for file uploads
 	project, err := s.findORCreateProject()
 	if err != nil {
@@ -289,9 +299,15 @@ func (s *Scan) scanByFileImport() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse tool flag: %w", err)
 	}
-	if !s.cmd.Flag("branch").Changed {
+
+	if !s.cmd.Flag("branch").Changed && scanType != client.ScannerTypeINFRA.String() {
 		return "", errors.New("branch parameter is required to import scan results")
 	}
+
+	if !s.cmd.Flag("meta").Changed && scanType == client.ScannerTypeINFRA.String() {
+		return "", errors.New("meta parameter is required to import infra scan results")
+	}
+
 	pathToFile, err := s.cmd.Flags().GetString("file")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse file path: %w", err)
@@ -1304,7 +1320,12 @@ func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 		WaitDuration:               time.Second * 5,
 	}
 
-	rs, err := c.ReleaseStatus(scan.Project, scan.Branch, releaseOpts)
+	var project = scan.Project
+	if scan.InfraSourceProjectID != "" {
+		project = scan.InfraSourceProjectID
+	}
+
+	rs, err := c.ReleaseStatus(project, scan.Branch, releaseOpts)
 	if err != nil {
 		return fmt.Errorf("failed to get release status: %w", err)
 	}
@@ -1349,6 +1370,9 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 	}
 	if release.MAST.Status == statusFail {
 		failedScans["MAST"] = scan.ID
+	}
+	if release.INFRA.Status == statusFail {
+		failedScans["INFRA"] = scan.ID
 	}
 
 	if breakByScannerType {

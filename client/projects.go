@@ -162,6 +162,7 @@ type ReleaseStatus struct {
 	CS             PlaybookTypeDetail `json:"cs"`
 	IAC            PlaybookTypeDetail `json:"iac"`
 	MAST           PlaybookTypeDetail `json:"mast"`
+	INFRA          PlaybookTypeDetail `json:"infra"`
 }
 
 const ReleaseStatusHistoryInprogress = "in_progress"

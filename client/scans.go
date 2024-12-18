@@ -34,18 +34,19 @@ type (
 	}
 
 	ScanDetail struct {
-		ID          string     `json:"id"`
-		Name        string     `json:"name"`
-		Branch      string     `json:"branch"`
-		ScanType    string     `json:"scan_type"`
-		MetaData    string     `json:"meta_data"`
-		Tool        string     `json:"tool"`
-		ScannerType string     `json:"scanner_type"`
-		Date        *time.Time `json:"date"`
-		Project     string     `json:"project"`
-		Score       int        `json:"score"`
-		Summary     Summary    `json:"summary"`
-		Links       struct {
+		ID                   string     `json:"id"`
+		Name                 string     `json:"name"`
+		Branch               string     `json:"branch"`
+		ScanType             string     `json:"scan_type"`
+		MetaData             string     `json:"meta_data"`
+		Tool                 string     `json:"tool"`
+		ScannerType          string     `json:"scanner_type"`
+		Date                 *time.Time `json:"date"`
+		Project              string     `json:"project"`
+		Score                int        `json:"score"`
+		Summary              Summary    `json:"summary"`
+		InfraSourceProjectID string     `json:"infra_source_project_id"`
+		Links                struct {
 			HTML string `json:"html"`
 		} `json:"links"`
 	}

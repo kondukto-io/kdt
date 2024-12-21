@@ -357,6 +357,23 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		return "", errors.New("the fork-scan and merge-target commands cannot be used together")
 	}
 
+	var scanFileAfterImport bool
+
+	scanner, err := s.getScanner()
+	if err != nil {
+		return "", err
+	}
+	var custom = client.Custom{Type: scanner.CustomType}
+	if s.cmd.Flags().Changed("params") {
+		custom = s.parseCustomParams(custom, *scanner, nil)
+	}
+	// check custom that contains sbom-scan:true
+	if custom.Params != nil {
+		if _, ok := custom.Params["sbom-scan"]; ok {
+			scanFileAfterImport = true
+		}
+	}
+
 	var form = client.ImportForm{
 		"project":                     project.Name,
 		"branch":                      branch,
@@ -372,6 +389,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		"override-fork-source":        strconv.FormatBool(overrideForkSourceBranch),
 		"override_old_analyze":        strconv.FormatBool(override),
 		"incremental-scan":            strconv.FormatBool(incrementalScan),
+		"scan_file_after_import":      strconv.FormatBool(scanFileAfterImport),
 	}
 
 	eventID, err := s.client.ImportScanResult(absoluteFilePath, form)
@@ -573,7 +591,7 @@ func (s *Scan) parseCustomParams(custom client.Custom, scanner client.ScannerInf
 		var fieldDetail = scanner.Params.Find(key)
 		if fieldDetail == nil {
 			klog.Debugf("params [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
-			qwm(ExitCodeError, "params key is not allowed by the scanner tool")
+			qwm(ExitCodeError, fmt.Sprintf("params key [%s] is not allowed by the scanner tool", key))
 		}
 
 		parsedValue, err := fieldDetail.Parse(value)
@@ -1057,22 +1075,10 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 
 func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 	klog.Debug("checking for rescan only tools")
-	name, err := s.cmd.Flags().GetString("tool")
-	if err != nil || name == "" {
-		return false, nil, errors.New("missing require tool flag")
-	}
-	scanners, err := s.client.ListActiveScanners(&client.ListActiveScannersInput{Name: name, Limit: 1})
+	scanner, err := s.getScanner()
 	if err != nil {
-		return false, nil, fmt.Errorf("failed to get active scanners: %w", err)
+		return false, nil, fmt.Errorf("failed to get scanner: %w", err)
 	}
-	if scanners.Total == 0 {
-		return false, nil, fmt.Errorf("invalid or inactive scanner tool name: %s", name)
-	}
-	if scanners.Total > 1 {
-		return false, nil, fmt.Errorf("multiple scanners found for tool: %s", name)
-	}
-
-	scanner := scanners.ActiveScanners.First()
 	if scanner.HasLabel(client.ScannerLabelCreatableOnTool) {
 		return false, scanner, nil
 	}
@@ -1089,6 +1095,27 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 	}
 
 	return false, scanner, nil
+}
+
+func (s *Scan) getScanner() (*client.ScannerInfo, error) {
+	name, err := s.cmd.Flags().GetString("tool")
+	if err != nil || name == "" {
+		return nil, errors.New("missing require tool flag")
+	}
+	scanners, err := s.client.ListActiveScanners(&client.ListActiveScannersInput{Name: name, Limit: 1})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active scanners: %w", err)
+	}
+	if scanners.Total == 0 {
+		return nil, fmt.Errorf("invalid or inactive scanner tool name: %s", name)
+	}
+	if scanners.Total > 1 {
+		return nil, fmt.Errorf("multiple scanners found for tool: %s", name)
+	}
+
+	scanner := scanners.ActiveScanners.First()
+
+	return scanner, nil
 }
 
 func (s *Scan) findORCreateProject() (*client.Project, error) {

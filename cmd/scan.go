@@ -357,7 +357,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		return "", errors.New("the fork-scan and merge-target commands cannot be used together")
 	}
 
-	var scanFileAfterImport bool
+	var sbomFileScan bool
 
 	scanner, err := s.getScanner()
 	if err != nil {
@@ -369,8 +369,8 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 	}
 	// check custom that contains sbom-scan:true
 	if custom.Params != nil {
-		if _, ok := custom.Params["sbom-scan"]; ok {
-			scanFileAfterImport = true
+		if _, ok := custom.Params["sbom-file-scan"]; ok {
+			sbomFileScan = true
 		}
 	}
 
@@ -389,7 +389,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		"override-fork-source":        strconv.FormatBool(overrideForkSourceBranch),
 		"override_old_analyze":        strconv.FormatBool(override),
 		"incremental-scan":            strconv.FormatBool(incrementalScan),
-		"scan_file_after_import":      strconv.FormatBool(scanFileAfterImport),
+		"sbom_file_scan":              strconv.FormatBool(sbomFileScan),
 	}
 
 	eventID, err := s.client.ImportScanResult(absoluteFilePath, form)

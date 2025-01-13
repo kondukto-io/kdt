@@ -31,7 +31,7 @@ func (c *Client) ImportEndpoint(filePath string, projectName string) error {
 		return fmt.Errorf("file does not exist: %s", filePath)
 	}
 
-	path := fmt.Sprintf("/api/v2/projects/%s/openapispec", projectDoc.ID)
+	path := fmt.Sprintf("/api/v2/projects/%s/apispecs", projectDoc.ID)
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)
 

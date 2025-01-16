@@ -357,21 +357,9 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		return "", errors.New("the fork-scan and merge-target commands cannot be used together")
 	}
 
-	var sbomFileScan bool
-
-	scanner, err := s.getScanner()
+	sbomFileScan, err := s.sbomFileScanEnabled()
 	if err != nil {
 		return "", err
-	}
-	var custom = client.Custom{Type: scanner.CustomType}
-	if s.cmd.Flags().Changed("params") {
-		custom = s.parseCustomParams(custom, *scanner, nil)
-	}
-	// check custom that contains sbom-scan:true
-	if custom.Params != nil {
-		if _, ok := custom.Params["sbom-file-scan"]; ok {
-			sbomFileScan = true
-		}
 	}
 
 	var form = client.ImportForm{
@@ -398,6 +386,26 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 	}
 
 	return eventID, nil
+}
+
+func (s *Scan) sbomFileScanEnabled() (bool, error) {
+	var sbomFileScan bool
+
+	scanner, err := s.getScanner()
+	if err != nil {
+		return false, err
+	}
+	var custom = client.Custom{Type: scanner.CustomType}
+	if s.cmd.Flags().Changed("params") {
+		custom = s.parseCustomParams(custom, *scanner, nil)
+	}
+	// check custom that contains sbom-file-scan:true
+	if custom.Params != nil {
+		if _, ok := custom.Params["sbom-file-scan"]; ok {
+			sbomFileScan = true
+		}
+	}
+	return sbomFileScan, nil
 }
 
 func (s *Scan) startScanByProjectTool() (string, error) {
@@ -1099,9 +1107,13 @@ func (s *Scan) checkForRescanOnlyTool() (bool, *client.ScannerInfo, error) {
 
 func (s *Scan) getScanner() (*client.ScannerInfo, error) {
 	name, err := s.cmd.Flags().GetString("tool")
-	if err != nil || name == "" {
-		return nil, errors.New("missing require tool flag")
+	if err != nil {
+		return nil, errors.New("failed to parse flag 'tool'")
 	}
+	if name == "" {
+		return nil, errors.New("missing required flag 'tool'")
+	}
+
 	scanners, err := s.client.ListActiveScanners(&client.ListActiveScannersInput{Name: name, Limit: 1})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active scanners: %w", err)

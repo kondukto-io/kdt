@@ -29,7 +29,7 @@ func (l loggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 }
 
 // CheckUpdate checks if there is a new version
-func CheckUpdate(ver string) (bool, string) {
+func CheckUpdate(installedVersion string) (bool, string) {
 	client := &http.Client{
 		Timeout: time.Second * 3,
 		Transport: &loggingRoundTripper{
@@ -41,37 +41,36 @@ func CheckUpdate(ver string) (bool, string) {
 
 	resp, err := client.Head(url)
 	if err != nil {
-		return false, ver
+		return false, installedVersion
 	}
 	defer resp.Body.Close()
 
 	if len(location) == 0 {
-		return false, ver
+		return false, installedVersion
 	}
 
 	// Extract version from URL
 	locationParts := strings.Split(location, "/")
 	lastVersion := locationParts[len(locationParts)-1]
 
-	if lastVersion == "v1.40.1" {
-		// Set the correct version for "v1.40.0"
-		lastVersion = "v1.0.41"
-		return true, lastVersion
+	if installedVersion == "v1.40.1-kdt-version-check" {
+		// downgrade the installed version to v1.0.40
+		installedVersion = "v1.0.40"
 	}
 
-	currentVersion, err := version.NewVersion(ver)
+	currentVersion, err = version.NewVersion(installedVersion)
 	if err != nil {
-		return false, ver
+		return false, installedVersion
 	}
 
 	latestVersion, err := version.NewVersion(lastVersion)
 	if err != nil {
-		return false, ver
+		return false, installedVersion
 	}
 
 	if latestVersion.GreaterThan(currentVersion) {
 		return true, lastVersion
 	}
 
-	return false, ver
+	return false, installedVersion
 }

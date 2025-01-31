@@ -53,12 +53,12 @@ func CheckUpdate(installedVersion string) (bool, string) {
 	locationParts := strings.Split(location, "/")
 	lastVersion := locationParts[len(locationParts)-1]
 
-	if installedVersion == "v1.40.1-kdt-version-check" {
+	if installedVersion == "v1.40.1" {
 		// downgrade the installed version to v1.0.40
 		installedVersion = "v1.0.40"
 	}
 
-	currentVersion, err = version.NewVersion(installedVersion)
+	currentVersion, err := version.NewVersion(installedVersion)
 	if err != nil {
 		return false, installedVersion
 	}

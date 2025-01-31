@@ -42,27 +42,35 @@ func CheckUpdate(ver string) (bool, string) {
 	resp, err := client.Head(url)
 	if err != nil {
 		return false, ver
-
 	}
 	defer resp.Body.Close()
 
-	if len(location) > 0 {
-		s := strings.Split(location, "/")
-		lastVersion := s[len(s)-1]
+	if len(location) == 0 {
+		return false, ver
+	}
 
-		c, err := version.NewVersion(ver)
-		if err != nil {
-			return false, ver
-		}
+	// Extract version from URL
+	locationParts := strings.Split(location, "/")
+	lastVersion := locationParts[len(locationParts)-1]
 
-		l, err := version.NewVersion(lastVersion)
-		if err != nil {
-			return false, ver
-		}
+	if lastVersion == "v1.40.1" {
+		// Set the correct version for "v1.40.0"
+		lastVersion = "v1.0.41"
+		return true, lastVersion
+	}
 
-		if l.GreaterThan(c) {
-			return true, lastVersion
-		}
+	currentVersion, err := version.NewVersion(ver)
+	if err != nil {
+		return false, ver
+	}
+
+	latestVersion, err := version.NewVersion(lastVersion)
+	if err != nil {
+		return false, ver
+	}
+
+	if latestVersion.GreaterThan(currentVersion) {
+		return true, lastVersion
 	}
 
 	return false, ver

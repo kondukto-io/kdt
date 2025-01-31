@@ -13,9 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/kondukto-io/kdt/klog"
-
 	"github.com/kondukto-io/kdt/internal/pkg"
+	"github.com/kondukto-io/kdt/klog"
 )
 
 const (
@@ -47,13 +46,13 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if verbose {
+			klog.DefaultLogger.Level = klog.LevelDebug
+		}
+
 		// check if there is update
 		if ok, newVersion := pkg.CheckUpdate(Version); ok {
 			fmt.Printf("A new version of KDT %s is available\nPlease run `curl -sSl https://cli.kondukto.io | sh`\n\n", newVersion)
-		}
-
-		if verbose {
-			klog.DefaultLogger.Level = klog.LevelDebug
 		}
 	},
 }

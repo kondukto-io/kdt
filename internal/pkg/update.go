@@ -32,7 +32,8 @@ func (l loggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 // CheckUpdate checks if there is a new version
 func CheckUpdate(installedVersion string) (bool, string) {
 	if installedVersion == "" {
-		klog.Debugf("installed version is not defined, skipping update check")
+		klog.Debug("installed version is not defined, the update checking is skipped")
+		return false, installedVersion
 	}
 
 	client := &http.Client{

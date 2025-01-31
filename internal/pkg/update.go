@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-version"
+	"github.com/kondukto-io/kdt/klog"
 )
 
 var location = ""
@@ -30,6 +31,10 @@ func (l loggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 
 // CheckUpdate checks if there is a new version
 func CheckUpdate(installedVersion string) (bool, string) {
+	if installedVersion == "" {
+		klog.Debugf("installed version is not defined, skipping update check")
+	}
+
 	client := &http.Client{
 		Timeout: time.Second * 3,
 		Transport: &loggingRoundTripper{
@@ -41,11 +46,13 @@ func CheckUpdate(installedVersion string) (bool, string) {
 
 	resp, err := client.Head(url)
 	if err != nil {
+		klog.Debugf("failed to get latest version from %s: %v", url, err)
 		return false, installedVersion
 	}
 	defer resp.Body.Close()
 
 	if len(location) == 0 {
+		klog.Debug("could not get the location of the version request")
 		return false, installedVersion
 	}
 
@@ -60,11 +67,13 @@ func CheckUpdate(installedVersion string) (bool, string) {
 
 	currentVersion, err := version.NewVersion(installedVersion)
 	if err != nil {
+		klog.Debugf("failed to parsing version [%s]: %v", installedVersion, err)
 		return false, installedVersion
 	}
 
 	latestVersion, err := version.NewVersion(lastVersion)
 	if err != nil {
+		klog.Debugf("failed to parsing version [%s]: %v", lastVersion, err)
 		return false, installedVersion
 	}
 

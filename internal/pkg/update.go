@@ -54,7 +54,7 @@ func CheckUpdate(installedVersion string) (bool, string) {
 	lastVersion := locationParts[len(locationParts)-1]
 
 	if installedVersion == "v1.40.1" {
-		// downgrade the installed version to v1.0.40
+		// downgrade the installed version to v1.0.40 to make sure the update message is shown for versions > v1.0.40
 		installedVersion = "v1.0.40"
 	}
 

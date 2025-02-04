@@ -16,8 +16,6 @@ import (
 	"net/url"
 
 	"github.com/spf13/viper"
-
-	"github.com/kondukto-io/kdt/klog"
 )
 
 const (
@@ -93,29 +91,32 @@ func (c *Client) newRequest(method string, path string, body interface{}) (*http
 func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return resp, err
+		return nil, fmt.Errorf("failed to do request: %v", err)
 	}
+
 	defer func() { _ = resp.Body.Close() }()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return resp, err
+		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		err = json.Unmarshal(data, &v)
-		return resp, err
+		if err := json.Unmarshal(data, &v); err != nil {
+			return nil, fmt.Errorf("failed to parse response: %v: %s", err, string(data))
+		}
+
+		return resp, nil
 	}
 
 	var e KonduktoError
 	if err = json.Unmarshal(data, &e); err != nil {
-		klog.Debugf("failed to parse error message: %v: %v", err, data)
-		return nil, err
+		return nil, fmt.Errorf("failed to parse error message: %v: %s", err, string(data))
 	}
 
 	if e.Error != "" {
 		return nil, fmt.Errorf("response not OK: response status:%d error message: %s", resp.StatusCode, e.Error)
 	}
 
-	return nil, fmt.Errorf("respons not OK: %s", string(data))
+	return nil, fmt.Errorf("response not OK: %s", string(data))
 }

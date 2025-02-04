@@ -34,7 +34,7 @@ jobs:
 
       - name: Checkout Project
         id: checkout_project
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: master
 
@@ -47,7 +47,7 @@ jobs:
 
       - name: Archive GoSec Scan Results
         id: archive_gosec_results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: results.json
           path: results.json

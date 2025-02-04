@@ -100,6 +100,7 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	if !p.cmd.Flags().Changed("product-name") {
 		qwm(ExitCodeSuccess, "project created successfully")
 	}
+
 	var pr = Product{
 		cmd:       cmd,
 		client:    c,
@@ -116,8 +117,12 @@ func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeSuccess, "product created successfully")
 	}
 
-	pr.updateProduct(product, []client.Project{*project})
-	qwm(ExitCodeSuccess, "the project assigned to the product")
+	updatedProduct, err := pr.updateProduct(product, []client.Project{*project})
+	if err != nil {
+		qwe(ExitCodeError, err, "failed to update product")
+	}
+
+	qwm(ExitCodeSuccess, fmt.Sprintf("project [%s] assigned to the product [%s]", project.Name, updatedProduct.Name))
 }
 
 func (p *Project) createProject(repo, projectName string, force bool, overwrite string) *client.Project {

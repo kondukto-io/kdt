@@ -7,6 +7,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -89,10 +90,15 @@ func createProductsRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	if len(parsedProjects) > 0 {
-		p.updateProduct(product, parsedProjects)
-		qwm(ExitCodeSuccess, "product updated successfully")
+		updatedProduct, err := p.updateProduct(product, parsedProjects)
+		if err != nil {
+			qwe(ExitCodeError, err, "failed to update product")
+		}
+
+		qwm(ExitCodeSuccess, fmt.Sprintf("product [%s] updated successfully", updatedProduct.Name))
 	}
-	qwm(ExitCodeSuccess, "product already exists")
+
+	qwm(ExitCodeSuccess, fmt.Sprintf("product [%s] already exists", name))
 }
 
 func (p *Product) createProduct(name string, projects []client.Project) (*client.Product, bool) {
@@ -126,14 +132,14 @@ func (p *Product) createProduct(name string, projects []client.Project) (*client
 	return product, true
 }
 
-func (p *Product) updateProduct(product *client.Product, projects []client.Project) *client.Product {
+func (p *Product) updateProduct(product *client.Product, projects []client.Project) (*client.Product, error) {
 	if len(p.printRows) == 0 {
 		p.printRows = productPrintHeaders()
 	}
 
 	detail, err := p.client.GetProductDetail(product.ID)
 	if err != nil {
-		qwe(ExitCodeError, err, "failed to get product detail")
+		return nil, fmt.Errorf("failed to get product detail [%s]: %w", product.ID, err)
 	}
 
 	for _, pr := range projects {
@@ -153,14 +159,15 @@ func (p *Product) updateProduct(product *client.Product, projects []client.Proje
 
 	product, err = p.client.UpdateProduct(detail.ID, *detail)
 	if err != nil {
-		qwe(ExitCodeError, err, "failed to update product")
+		return nil, fmt.Errorf("failed to update product [%s]: %w", detail.ID, err)
 	}
+
 	product.ProjectsCount = len(detail.Projects)
 
 	p.printRows = append(p.printRows, Row{Columns: product.FieldsAsRow()})
 	TableWriter(p.printRows...)
 
-	return product
+	return product, nil
 }
 
 func productPrintHeaders() []Row {

@@ -491,16 +491,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	if scan != nil && !s.cmd.Flags().Changed("params") {
-		klog.Printf("completed scan [%s] found with the same parameters", scan.ID)
-		klog.Println("Restarting")
-
-		eventID, err := s.client.RestartScanByScanID(scan.ID)
-		if err != nil {
-			return "", fmt.Errorf("failed to restart scan by scan id [%s]: %w", scan.ID, err)
-		}
-
-		klog.Debugf("scan restarted with event id [%s]", eventID)
-		return eventID, nil
+		return s.restartScanByScanID(scan.ID)
 	}
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
@@ -522,7 +513,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	if s.cmd.Flags().Changed("params") {
 		parsedCustom, err := s.parseCustomParams(custom, *scanner, sp)
 		if err != nil {
-			return "", fmt.Errorf("failed to parse custom params: %w", err)
+			return "", customParamsParseError(err)
 		}
 
 		custom = parsedCustom
@@ -538,14 +529,10 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	}
 
 	if sp != nil {
-		klog.Debugf("a scanparams [%s] found with the same parameters", sp.ID)
-		scanData.ScanparamsID = sp.ID
-		return s.client.CreateNewScan(scanData)
+		return s.createScan(scanData, sp)
 	}
 
-	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
-		return "", fmt.Errorf("scanner tool [%s] is only allowing rescans", tool)
-	}
+	klog.Debug("no scanparams found with the same parameters, creating a new scan")
 
 	scanparamsData := client.ScanparamsDetail{
 		Branch:   branch,
@@ -564,28 +551,12 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		Environment: applicationEnvironment,
 	}
 
-	klog.Debug("no scanparams found with the same parameters, creating a new scan")
-	if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
-		agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
-		if err != nil {
-			return "", fmt.Errorf("failed to get active agents: %v", err)
-		}
-
-		if agents.Total == 0 {
-			return "", errors.New("no found agent to start scan")
-		}
-
-		if agents.Total > 1 {
-			return "", multipleAgentFoundError(agents.Total)
-		}
-
-		firstAgent := agents.ActiveAgents.First()
-		klog.Debugf("agent [%s] found. Setting scan with agent", firstAgent.Label)
-		scanData.AgentID = firstAgent.ID
-		scanparamsData.Agent = &client.ScanparamsItem{ID: firstAgent.ID}
+	if err := s.rescanControl(rescanOnly, scanner, tool, agent, scanData); err != nil {
+		return "", fmt.Errorf("failed to control rescan: %w", err)
 	}
 
 	klog.Printf("creating a new scanparams")
+	scanparamsData.Agent = &client.ScanparamsItem{ID: scanData.AgentID}
 	scanparams, err := s.client.CreateScanparams(project.ID, scanparamsData)
 	if err != nil {
 		return "", fmt.Errorf("failed to create scanparams: %w", err)
@@ -595,6 +566,27 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	scanData.Custom = *scanparams.Custom
 
 	return s.client.CreateNewScan(scanData)
+}
+
+func (s *Scan) rescanControl(rescanOnly bool, scanner *client.ScannerInfo, tool string, agent string, scanData *client.Scan) error {
+	if !rescanOnly {
+		return nil
+	}
+
+	hasAgentLabel := scanner.HasLabel(client.ScannerLabelAgent)
+	if !hasAgentLabel && !s.cmd.Flags().Changed("params") {
+		return fmt.Errorf("scanner tool %s is only allowing rescans", tool)
+	}
+
+	if hasAgentLabel {
+		if err := s.setAgent(agent, scanData); err != nil {
+			return fmt.Errorf("failed to set agent: %w", err)
+		}
+
+		return nil
+	}
+
+	return nil
 }
 
 func (s *Scan) parseCustomParams(custom *client.Custom, scanner client.ScannerInfo, existParams *client.Scanparams) (*client.Custom, error) {
@@ -756,7 +748,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	if s.cmd.Flags().Changed("params") {
 		parsedCustom, err := s.parseCustomParams(custom, *scanner, nil)
 		if err != nil {
-			return "", fmt.Errorf("failed to parse custom params: %w", err)
+			return "", customParamsParseError(err)
 		}
 
 		custom = parsedCustom
@@ -818,9 +810,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	}
 
 	if sp != nil {
-		klog.Debugf("a scanparams [%s] found with the same parameters", sp.ID)
-		scanData.ScanparamsID = sp.ID
-		return s.client.CreateNewScan(scanData)
+		return s.createScan(scanData, sp)
 	}
 
 	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
@@ -828,22 +818,9 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	}
 
 	if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
-		agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
-		if err != nil {
-			return "", fmt.Errorf("failed to get active agents: %v", err)
+		if err := s.setAgent(agent, scanData); err != nil {
+			return "", fmt.Errorf("failed to set agent: %w", err)
 		}
-
-		if agents.Total == 0 {
-			return "", errors.New("no found agent to start scan")
-		}
-
-		if agents.Total > 1 {
-			return "", multipleAgentFoundError(agents.Total)
-		}
-
-		firstAgent := agents.ActiveAgents.First()
-		klog.Debugf("agent [%s] found. Setting scan with agent", firstAgent.Label)
-		scanData.AgentID = firstAgent.ID
 	}
 
 	return s.client.CreateNewScan(scanData)
@@ -912,7 +889,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	if s.cmd.Flags().Changed("params") {
 		parsedCustom, err := s.parseCustomParams(custom, *scanner, nil)
 		if err != nil {
-			return "", fmt.Errorf("failed to parse custom params: %w", err)
+			return "", customParamsParseError(err)
 		}
 
 		custom = parsedCustom
@@ -973,9 +950,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	}
 
 	if sp != nil {
-		klog.Debugf("a scanparams [%s] found with the same parameters", sp.ID)
-		scanData.ScanparamsID = sp.ID
-		return s.client.CreateNewScan(scanData)
+		return s.createScan(scanData, sp)
 	}
 
 	if rescanOnly && !scanner.HasLabel(client.ScannerLabelAgent) && !s.cmd.Flags().Changed("params") {
@@ -983,22 +958,9 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	}
 
 	if rescanOnly && scanner.HasLabel(client.ScannerLabelAgent) {
-		agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
-		if err != nil {
-			return "", fmt.Errorf("failed to get active agents: %v", err)
+		if err := s.setAgent(agent, scanData); err != nil {
+			return "", fmt.Errorf("failed to set agent: %w", err)
 		}
-
-		if agents.Total == 0 {
-			return "", errors.New("no found agent to start scan")
-		}
-
-		if agents.Total > 1 {
-			return "", multipleAgentFoundError(agents.Total)
-		}
-
-		firstAgent := agents.ActiveAgents.First()
-		klog.Debugf("agent [%s] found. Setting scan with agent", firstAgent.Label)
-		scanData.AgentID = firstAgent.ID
 	}
 
 	return s.client.CreateNewScan(scanData)
@@ -1074,13 +1036,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	}
 
 	if scan != nil {
-		eventID, err := s.client.RestartScanByScanID(scan.ID)
-		if err != nil {
-			return "", fmt.Errorf("failed to restart scan by scan id [%s]: %w", scan.ID, err)
-		}
-
-		klog.Debugf("scan restarted with event id [%s]", eventID)
-		return eventID, nil
+		return s.restartScanByScanID(scan.ID)
 	}
 
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
@@ -1100,7 +1056,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	if s.cmd.Flags().Changed("params") {
 		parsedCustom, err := s.parseCustomParams(custom, *scanner, sp)
 		if err != nil {
-			return "", fmt.Errorf("failed to parse custom params: %w", err)
+			return "", customParamsParseError(err)
 		}
 
 		custom = parsedCustom
@@ -1119,9 +1075,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	}
 
 	if sp != nil {
-		klog.Debugf("a scanparams [%s] found with the same parameters", sp.ID)
-		scanData.ScanparamsID = sp.ID
-		return s.client.CreateNewScan(scanData)
+		return s.createScan(scanData, sp)
 	}
 
 	if rescanOnly {
@@ -1699,6 +1653,54 @@ func appendKeyToParamsMap(key string, custom *client.Custom, parsedValue interfa
 	return custom, nil
 }
 
+func (s *Scan) getFirstActiveAgent(agent string) (*client.Agent, error) {
+	agents, err := s.client.ListActiveAgents(&client.AgentSearchParams{Label: agent})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active agents: %v", err)
+	}
+
+	if agents.Total == 0 {
+		return nil, errors.New("no found agent to start scan")
+	}
+
+	if agents.Total > 1 {
+		return nil, multipleAgentFoundError(agents.Total)
+	}
+
+	firstAgent := agents.ActiveAgents.First()
+	return &firstAgent, nil
+}
+
+func (s *Scan) setAgent(agent string, scanData *client.Scan) error {
+	firstAgent, err := s.getFirstActiveAgent(agent)
+	if err != nil {
+		return fmt.Errorf("failed to get first active agent: %w", err)
+	}
+	klog.Debugf("agent [%s] found. Setting scan with agent", firstAgent.Label)
+	scanData.AgentID = firstAgent.ID
+
+	return nil
+}
+
+func (s *Scan) restartScanByScanID(scanID string) (string, error) {
+	klog.Printf("completed scan [%s] found with the same parameters", scanID)
+	klog.Println("Restarting")
+
+	eventID, err := s.client.RestartScanByScanID(scanID)
+	if err != nil {
+		return "", fmt.Errorf("failed to restart scan by scan id [%s]: %w", scanID, err)
+	}
+
+	klog.Debugf("scan restarted with event id [%s]", eventID)
+	return eventID, nil
+}
+
+func (s *Scan) createScan(scanData *client.Scan, sp *client.Scanparams) (string, error) {
+	klog.Debugf("a scanparams [%s] found with the same parameters", sp.ID)
+	scanData.ScanparamsID = sp.ID
+	return s.client.CreateNewScan(scanData)
+}
+
 func validatePullRequestFieldsError(err error) error {
 	return fmt.Errorf("failed to validate pull request fields: %w", err)
 }
@@ -1714,4 +1716,8 @@ func failedToGetCompletedScanError(projectName string, err error) {
 
 func multipleAgentFoundError(count int) error {
 	return fmt.Errorf("[%d] agents found. Please specify it which one should be selected", count)
+}
+
+func customParamsParseError(err error) error {
+	return fmt.Errorf("failed to parse custom params: %w", err)
 }

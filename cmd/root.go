@@ -13,9 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/kondukto-io/kdt/klog"
-
 	"github.com/kondukto-io/kdt/internal/pkg"
+	"github.com/kondukto-io/kdt/klog"
 )
 
 const (
@@ -52,8 +51,8 @@ var rootCmd = &cobra.Command{
 		}
 
 		// check if there is update
-		if ok, v := pkg.CheckUpdate(Version); ok {
-			fmt.Printf("A new version of KDT %s is available\nPlease run `curl -sSl https://cli.kondukto.io | sh`\n\n", v)
+		if ok, newVersion := pkg.CheckUpdate(Version); ok {
+			fmt.Printf("A new version of KDT %s is available\nPlease run `curl -sSl https://cli.kondukto.io | sh`\n\n", newVersion)
 		}
 	},
 }

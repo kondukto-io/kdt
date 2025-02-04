@@ -395,7 +395,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 
 	prInfo, override, err := s.getValidatedPullRequestFields()
 	if err != nil {
-		return "", fmt.Errorf("failed to validate pull request fields: %w", err)
+		return "", validatePullRequestFieldsError(err)
 	}
 
 	if forkScan && prInfo.MergeTarget != "" {
@@ -431,7 +431,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 func (s *Scan) startScanByProjectTool() (string, error) {
 	rescanOnly, scanner, err := s.checkForRescanOnlyTool()
 	if err != nil {
-		return "", fmt.Errorf("failed to check for rescan only tool: %w", err)
+		return "", checkForRescanOnlyError(err)
 	}
 	// Parse command line flags
 	project, err := s.findORCreateProject()
@@ -487,8 +487,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 
 	scan, err := s.client.FindScan(project.Name, params)
 	if err != nil {
-		klog.Debugf("failed to get completed scans for project [%s]: %v", project.Name, err)
-		klog.Debug("trying to get scanparams")
+		failedToGetCompletedScanError(project.Name, err)
 	}
 
 	if scan != nil && !s.cmd.Flags().Changed("params") {
@@ -577,7 +576,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		}
 
 		if agents.Total > 1 {
-			return "", fmt.Errorf("[%d] agents found. Please specify it which one should be selected", agents.Total)
+			return "", multipleAgentFoundError(agents.Total)
 		}
 
 		firstAgent := agents.ActiveAgents.First()
@@ -694,7 +693,7 @@ func (*Scan) updateCustomParamsWithDefaultValue(scanner client.ScannerInfo, cust
 func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	rescanOnly, scanner, err := s.checkForRescanOnlyTool()
 	if err != nil {
-		return "", fmt.Errorf("failed to check for rescan only tool: %w", err)
+		return "", checkForRescanOnlyError(err)
 	}
 	// Parse command line flags
 	project, err := s.findORCreateProject()
@@ -733,7 +732,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 	prInfo, override, err := s.getValidatedPullRequestFields()
 	if err != nil {
-		return "", fmt.Errorf("failed to validate pull request fields: %w", err)
+		return "", validatePullRequestFieldsError(err)
 	}
 
 	var agentID string
@@ -765,8 +764,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 	scan, err := s.client.FindScan(project.Name, params)
 	if err != nil {
-		klog.Debugf("failed to get completed scans for project [%s]: %v", project.Name, err)
-		klog.Debug("trying to get scanparams")
+		failedToGetCompletedScanError(project.Name, err)
 	}
 
 	if scan != nil {
@@ -840,7 +838,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		}
 
 		if agents.Total > 1 {
-			return "", fmt.Errorf("[%d] agents found. Please specify it which one should be selected", agents.Total)
+			return "", multipleAgentFoundError(agents.Total)
 		}
 
 		firstAgent := agents.ActiveAgents.First()
@@ -854,7 +852,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	rescanOnly, scanner, err := s.checkForRescanOnlyTool()
 	if err != nil {
-		return "", fmt.Errorf("failed to check for rescan only tool: %w", err)
+		return "", checkForRescanOnlyError(err)
 	}
 	// Parse command line flags
 	project, err := s.findORCreateProject()
@@ -889,7 +887,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 
 	prInfo, override, err := s.getValidatedPullRequestFields()
 	if err != nil {
-		return "", fmt.Errorf("failed to validate pull request fields: %w", err)
+		return "", validatePullRequestFieldsError(err)
 	}
 
 	var agentID string
@@ -922,8 +920,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 
 	scan, err := s.client.FindScan(project.Name, params)
 	if err != nil {
-		klog.Debugf("failed to get completed scans for project [%s]: %v", project.Name, err)
-		klog.Debug("trying to get scanparams")
+		failedToGetCompletedScanError(project.Name, err)
 	}
 
 	if scan != nil {
@@ -996,7 +993,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		}
 
 		if agents.Total > 1 {
-			return "", fmt.Errorf("[%d] agents found. Please specify it which one should be selected", agents.Total)
+			return "", multipleAgentFoundError(agents.Total)
 		}
 
 		firstAgent := agents.ActiveAgents.First()
@@ -1010,7 +1007,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	rescanOnly, scanner, err := s.checkForRescanOnlyTool()
 	if err != nil {
-		return "", fmt.Errorf("failed to check for rescan only tool: %w", err)
+		return "", checkForRescanOnlyError(err)
 	}
 	// Parse command line flags
 	project, err := s.findORCreateProject()
@@ -1073,8 +1070,10 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 
 	scan, err := s.client.FindScan(project.Name, params)
 	if err != nil {
-		klog.Debugf("failed to get completed scans: %v, trying to get scanparams", err)
-	} else {
+		failedToGetCompletedScanError(project.Name, err)
+	}
+
+	if scan != nil {
 		eventID, err := s.client.RestartScanByScanID(scan.ID)
 		if err != nil {
 			return "", fmt.Errorf("failed to restart scan by scan id [%s]: %w", scan.ID, err)
@@ -1698,4 +1697,21 @@ func appendKeyToParamsMap(key string, custom *client.Custom, parsedValue interfa
 	}
 
 	return custom, nil
+}
+
+func validatePullRequestFieldsError(err error) error {
+	return fmt.Errorf("failed to validate pull request fields: %w", err)
+}
+
+func checkForRescanOnlyError(err error) error {
+	return fmt.Errorf("failed to check for rescan only tool: %w", err)
+}
+
+func failedToGetCompletedScanError(projectName string, err error) {
+	klog.Debugf("failed to get completed scans for project [%s]: %v", projectName, err)
+	klog.Debug("trying to get scanparams")
+}
+
+func multipleAgentFoundError(count int) error {
+	return fmt.Errorf("[%d] agents found. Please specify it which one should be selected", count)
 }

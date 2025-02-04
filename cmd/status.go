@@ -6,6 +6,7 @@ Copyright © 2019 Kondukto
 package cmd
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -25,6 +26,7 @@ func init() {
 
 	statusCmd.Flags().StringP("project", "p", "", "project name or id")
 	statusCmd.Flags().StringP("branch", "b", "", "project branch name, default is the branch of the latest completed scan")
+	statusCmd.Flags().StringP("event", "e", "", "event id")
 	statusCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
 	statusCmd.Flags().Int("threshold-crit", 0, "threshold for number of vulnerabilities with critical severity")
 	statusCmd.Flags().Int("threshold-high", 0, "threshold for number of vulnerabilities with high severity")
@@ -37,6 +39,24 @@ func statusRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
 		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+	}
+
+	eid := cmd.Flag("event").Value.String()
+	if eid != "" {
+		event, err := c.GetScanStatus(eid)
+		if err != nil {
+			qwe(ExitCodeError, err, fmt.Sprintf("could not retrieve scan statusof event [%s]", eid))
+		}
+
+		eventRows := []Row{
+			{Columns: []string{"EventID", "Event Status", "UI Link"}},
+			{Columns: []string{"-------", "------------", "-------"}},
+			{Columns: []string{event.ID, event.StatusText, event.Links.HTML}},
+		}
+		TableWriter(eventRows...)
+		qwm(ExitCodeSuccess, fmt.Sprintf("event [%s] status: %s", eid, event.StatusText))
+
+		return
 	}
 
 	var pid = cmd.Flag("project").Value.String()

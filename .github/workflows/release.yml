@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Add SHORT_SHA env property
         id: set_short_sha_variable
@@ -32,9 +32,9 @@ jobs:
           echo "VERSION_TAG=${{ env.GIT_TAG }}" | cut -d '-' -f 1 >> $GITHUB_ENV  
 
       - name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.22.x
+          go-version: 1.23.x
           cache: true
           cache-dependency-path: ./go.sum
 
@@ -72,20 +72,20 @@ jobs:
           assets_path: ./_release/
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build/Push Tags
         id: docker_build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
@@ -101,7 +101,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

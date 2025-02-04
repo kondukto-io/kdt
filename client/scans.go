@@ -145,7 +145,6 @@ type (
 )
 
 func (c *Client) CreateNewScan(scan *Scan) (string, error) {
-	klog.Debug("creating new scan with given parameters")
 	if scan == nil {
 		return "", errors.New("missing scan fields")
 	}
@@ -153,7 +152,7 @@ func (c *Client) CreateNewScan(scan *Scan) (string, error) {
 	path := "/api/v2/scans/create"
 	req, err := c.newRequest(http.MethodPost, path, scan)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
 	type scanResponse struct {
@@ -161,44 +160,31 @@ func (c *Client) CreateNewScan(scan *Scan) (string, error) {
 		Message string `json:"message"`
 	}
 	var rsr scanResponse
-	_, err = c.do(req, &rsr)
+	resp, err := c.do(req, &rsr)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create new scan: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	}
+
+	if rsr.EventID == "" {
+		return "", errors.New("event id not found in new scan response")
 	}
 
 	return rsr.EventID, nil
 }
 
 func (c *Client) RestartScanByScanID(id string) (string, error) {
-	klog.Debug("starting scan by scan_id")
+	if id == "" {
+		return "", errors.New("scan id cannot be empty")
+	}
+
 	path := fmt.Sprintf("/api/v2/scans/%s/restart", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
-		return "", err
-	}
-
-	type restartScanResponse struct {
-		Event   string `json:"event"`
-		Message string `json:"message"`
-	}
-	var rsr restartScanResponse
-	_, err = c.do(req, &rsr)
-	if err != nil {
-		return "", err
-	}
-
-	return rsr.Event, nil
-}
-
-func (c *Client) RestartScanWithOption(id string, opt *ScanRestartOptions) (string, error) {
-	if opt == nil {
-		return "", errors.New("missing scan options")
-	}
-
-	path := fmt.Sprintf("/api/v2/scans/%s/restart_with_option", id)
-	req, err := c.newRequest(http.MethodPost, path, opt)
-	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
 	type restartScanResponse struct {
@@ -208,7 +194,43 @@ func (c *Client) RestartScanWithOption(id string, opt *ScanRestartOptions) (stri
 	var rsr restartScanResponse
 	resp, err := c.do(req, &rsr)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to restart scan: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("HTTP response not OK: %d", resp.StatusCode)
+	}
+
+	if rsr.Event == "" {
+		return "", errors.New("event not found in restart scan response")
+	}
+
+	return rsr.Event, nil
+}
+
+func (c *Client) RestartScanWithOption(id string, opt *ScanRestartOptions) (string, error) {
+	if id == "" {
+		return "", errors.New("scan id cannot be empty")
+	}
+
+	if opt == nil {
+		return "", errors.New("missing scan options")
+	}
+
+	path := fmt.Sprintf("/api/v2/scans/%s/restart_with_option", id)
+	req, err := c.newRequest(http.MethodPost, path, opt)
+	if err != nil {
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	type restartScanResponse struct {
+		Event   string `json:"event"`
+		Message string `json:"message"`
+	}
+	var rsr restartScanResponse
+	resp, err := c.do(req, &rsr)
+	if err != nil {
+		return "", fmt.Errorf("failed to restart scan: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusCreated {
@@ -243,6 +265,10 @@ func (i *ScanByImageInput) prepareRequestQueryParameters() ImageScanParams {
 }
 
 func (c *Client) ScanByImage(pr *ScanByImageInput) (string, error) {
+	if pr == nil {
+		return "", errors.New("missing scan fields")
+	}
+
 	path := "/api/v2/scans/image"
 
 	req, err := c.newRequest(http.MethodPost, path, pr.prepareRequestQueryParameters())
@@ -271,7 +297,9 @@ func (c *Client) ScanByImage(pr *ScanByImageInput) (string, error) {
 type ImportForm map[string]string
 
 func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) {
-	klog.Debugf("importing scan results using the file:%s", file)
+	if file == "" {
+		return "", errors.New("file path cannot be empty")
+	}
 
 	path := "/api/v2/scans/import"
 	rel := &url.URL{Path: path}
@@ -281,20 +309,24 @@ func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) 
 	writer := multipart.NewWriter(body)
 
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return "", err
+		return "", fmt.Errorf("file not found: %s", file)
 	}
+
 	f, err := os.Open(file)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to open file: %w", err)
 	}
+
 	defer func() { _ = f.Close() }()
+
 	part, err := writer.CreateFormFile("file", filepath.Base(f.Name()))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create form file: %w", err)
 	}
+
 	_, err = io.Copy(part, f)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to copy file: %w", err)
 	}
 
 	for k := range form {
@@ -307,10 +339,10 @@ func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) 
 
 	req, err := http.NewRequest(http.MethodPost, u.String(), body)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
 	}
-	req.Header.Add("Content-Type", writer.FormDataContentType())
 
+	req.Header.Add("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("X-Cookie", viper.GetString("token"))
@@ -324,29 +356,37 @@ func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) 
 	var importResponse importScanResultResponse
 	resp, err := c.do(req, &importResponse)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to import scan results: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed to import scan results: %s", importResponse.Error)
 	}
 
+	if importResponse.EventID == "" {
+		return "", errors.New("event id not found in import response")
+	}
+
 	return importResponse.EventID, nil
 }
 
 func (c *Client) ListScans(project string, params *ScanSearchParams) ([]ScanDetail, error) {
+	if project == "" {
+		return nil, errors.New("project name cannot be empty")
+	}
+
 	klog.Debugf("retrieving scans of the project: %s", project)
 
 	scans := make([]ScanDetail, 0)
 	path := fmt.Sprintf("/api/v2/projects/%s/scans", project)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
-		return scans, err
+		return scans, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
 	v, err := query.Values(params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to encode query params: %w", err)
 	}
 	req.URL.RawQuery = v.Encode()
 
@@ -358,7 +398,7 @@ func (c *Client) ListScans(project string, params *ScanSearchParams) ([]ScanDeta
 
 	resp, err := c.do(req, &ps)
 	if err != nil {
-		return scans, err
+		return scans, fmt.Errorf("failed to get scans: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -372,6 +412,9 @@ func (c *Client) FindScan(project string, params *ScanSearchParams) (*ScanDetail
 	if params == nil {
 		return nil, errors.New("scan query params cannot be empty")
 	}
+
+	klog.Debugf("finding scan of the project: %s", project)
+
 	params.Limit = 1
 	scans, err := c.ListScans(project, params)
 	if err != nil {
@@ -386,16 +429,22 @@ func (c *Client) FindScan(project string, params *ScanSearchParams) (*ScanDetail
 }
 
 func (c *Client) FindScanByID(id string) (*ScanDetail, error) {
+	if id == "" {
+		return nil, errors.New("scan id cannot be empty")
+	}
+
+	klog.Debugf("finding scan by id: %s", id)
+
 	path := fmt.Sprintf("/api/v2/scans/%s", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
 	var scan ScanDetail
 	resp, err := c.do(req, &scan)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get scan: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -406,16 +455,22 @@ func (c *Client) FindScanByID(id string) (*ScanDetail, error) {
 }
 
 func (c *Client) GetScanStatus(eventId string) (*Event, error) {
+	if eventId == "" {
+		return nil, errors.New("event id cannot be empty")
+	}
+
+	klog.Debugf("retrieving scan status of the event: %s", eventId)
+
 	path := fmt.Sprintf("/api/v2/events/%s/status", eventId)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
 	var e Event
 	resp, err := c.do(req, &e)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get scan status: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -426,16 +481,22 @@ func (c *Client) GetScanStatus(eventId string) (*Event, error) {
 }
 
 func (c *Client) GetLastResults(id string) (map[string]*ResultSet, error) {
+	if id == "" {
+		return nil, errors.New("scan id cannot be empty")
+	}
+
+	klog.Debugf("retrieving last results of the scan: %s", id)
+
 	path := fmt.Sprintf("/api/v2/scans/%s/last_results", id)
 	req, err := c.newRequest(http.MethodGet, path, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
 	m := make(map[string]*ResultSet)
 	resp, err := c.do(req, &m)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get last results: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {

@@ -246,8 +246,8 @@ func (p *Project) createProject(repo, projectName string, force bool, overwrite 
 
 	pd := client.ProjectDetail{
 		Name:   overwriteName,
-		Source: projectSource,
-		Team: client.ProjectTeam{
+		Source: &projectSource,
+		Team: &client.ProjectTeam{
 			Name: team,
 		},
 		Labels:                         parsedLabels,
@@ -257,7 +257,7 @@ func (p *Project) createProject(repo, projectName string, force bool, overwrite 
 		FeatureBranchRetention:         featureBranchRetention,
 		FeatureBranchInfiniteRetention: featureBranchNoRetention,
 		DefaultBranch:                  defaultBranch,
-		CriticalityLevel:               businessCriticalityLevel,
+		CriticalityLevel:               &businessCriticalityLevel,
 	}
 
 	project, err := p.client.CreateProject(pd)

@@ -91,8 +91,8 @@ func (c *Client) FindProjectByName(name string) (*Project, error) {
 
 type ProjectDetail struct {
 	Name      string         `json:"name"`
-	Source    ProjectSource  `json:"source"`
-	Team      ProjectTeam    `json:"team"`
+	Source    *ProjectSource `json:"source"`
+	Team      *ProjectTeam   `json:"team"`
 	Labels    []ProjectLabel `json:"labels"`
 	Override  bool           `json:"override"`  // That means, if the project already exists, create a new one with suffix "-"
 	Overwrite bool           `json:"overwrite"` // That means, if the project already exists, overwrite it
@@ -104,7 +104,7 @@ type ProjectDetail struct {
 	// FeatureBranchInfiniteRetention holds a value that disables the feature branch retention period.
 	FeatureBranchInfiniteRetention bool   `json:"feature_branch_no_retention"`
 	DefaultBranch                  string `json:"default_branch"`
-	CriticalityLevel               int    `json:"criticality_level"`
+	CriticalityLevel               *int   `json:"criticality_level"`
 }
 
 type ProjectSource struct {
@@ -265,4 +265,18 @@ func (c *Client) IsAvailable(project, almTool string) (bool, error) {
 	}
 
 	return checkProjectResponse.Exist, nil
+}
+
+func (c *Client) Update(projectID string, pd ProjectDetail) error {
+	req, err := c.newRequest(http.MethodPatch, fmt.Sprintf("/api/v2/projects/%s", projectID), pd)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.do(req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

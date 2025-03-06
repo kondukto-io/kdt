@@ -793,6 +793,27 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 	}
 
 	if scan != nil {
+		// get scanparams by information that we already have
+		scanparams, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
+			ToolID:      scanner.ID,
+			Branch:      scan.Branch,
+			Agent:       agent,
+			MetaData:    metaData,
+			Environment: applicationEnvironment,
+		})
+
+		if err != nil {
+			qwe(ExitCodeError, err, "failed to get scanparams")
+		}
+
+		// pass scanparams.Custom.Params items to custom params if not exist
+		for k, v := range scanparams.Custom.Params {
+			_, ok := custom.Params[k]
+			if !ok {
+				custom.Params[k] = v
+			}
+		}
+
 		opt := &client.ScanRestartOptions{
 			MergeSourceBranch:        branch,
 			MergeTargetBranch:        prInfo.MergeTarget,

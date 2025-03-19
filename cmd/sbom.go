@@ -31,7 +31,7 @@ func init() {
 	importSbomCmd.Flags().StringP("file", "f", "", "SBOM file to be imported. Currently only .json format is supported")
 	importSbomCmd.Flags().StringP("project", "p", "", "Kondukto project id or name")
 	importSbomCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository")
-	importSbomCmd.Flags().StringP("sbom-type", "s", "", "Custom type(optional). Passing a different value than existing type(i.e application, container etc.) is advised")
+	importSbomCmd.Flags().StringP("sbom-type", "s", "", "Custom type(optional). Supported values are [source_dir, image, application, os, container]")
 	importSbomCmd.Flags().StringP("branch", "b", "", "Branch name for the project receiving the sbom")
 	importSbomCmd.Flags().BoolP("allow-empty", "a", false, "Allow empty components in sbom")
 }
@@ -93,6 +93,12 @@ func (s *SBOMImport) sbomImport() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse sbom-type flag: %w", err)
 	}
+
+	_, ok := supportedSBOMTypes[sbomType]
+	if !ok {
+		return fmt.Errorf("sbom-type [%s] is not supported, supported values are [source_dir, image, application, os, container]", sbomType)
+	}
+
 	allowEmpty, err := s.cmd.Flags().GetBool("allow-empty")
 	if err != nil {
 		return fmt.Errorf("failed to parse allow-empty flag: %w", err)
@@ -120,4 +126,13 @@ func (s *SBOMImport) sbomImport() error {
 	klog.Printf("sbom file imported successfully for: [%s]", importInfo)
 
 	return nil
+}
+
+var supportedSBOMTypes = map[string]struct{}{
+	"image":       {},
+	"source_dir":  {},
+	"application": {},
+	"os":          {},
+	"container":   {},
+	"":            {},
 }

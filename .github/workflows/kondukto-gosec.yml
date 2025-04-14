@@ -34,20 +34,20 @@ jobs:
 
       - name: Checkout Project
         id: checkout_project
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: master
 
       - name: Run Gosec Security Scanner
         id: run_gosec
-        uses: securego/gosec@master
+        uses: securego/gosec@955a68d0d19f4afb7503068f95059f7d0c529017
         with:
           # we let the report trigger content trigger a failure using the GitHub Security features.
           args: "-no-fail -fmt json -out results.json ./..."
 
       - name: Archive GoSec Scan Results
         id: archive_gosec_results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: results.json
           path: results.json

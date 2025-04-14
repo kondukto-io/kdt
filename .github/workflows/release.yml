@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Add SHORT_SHA env property
         id: set_short_sha_variable
@@ -32,7 +32,7 @@ jobs:
           echo "VERSION_TAG=${{ env.GIT_TAG }}" | cut -d '-' -f 1 >> $GITHUB_ENV  
 
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe
         with:
           go-version: 1.23.x
           cache: true
@@ -64,7 +64,7 @@ jobs:
 
       - name: Upload Release Assets
         id: upload-release-assets
-        uses: dwenegar/upload-release-assets@v1
+        uses: dwenegar/upload-release-assets@5bc3024cf83521df8ebfadf00ad0c4614fd59148
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -72,20 +72,20 @@ jobs:
           assets_path: ./_release/
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
 
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build/Push Tags
         id: docker_build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
         with:
           context: .
           file: Dockerfile
@@ -101,7 +101,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

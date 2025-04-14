@@ -34,14 +34,14 @@ jobs:
 
       - name: Checkout Project
         id: checkout_project
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: kondukto-io/kdt
           ref: master
 
       - name: Setup Go
         id: setup_go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe
         with:
           go-version: 1.23
           cache: true
@@ -56,7 +56,7 @@ jobs:
 
       - name: Archive Nancy Scan Results
         id: archive_nancy_results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: results.json
           path: results.json

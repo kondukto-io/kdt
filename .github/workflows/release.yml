@@ -94,8 +94,8 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ env.VERSION_TAG }}
             ${{ env.IMAGE_NAME }}:${{ env.VERSION_TAG }}-${{ env.SHORT_SHA }}
-          cache-from: type=registry,ref=kondukto/${{ inputs.image-name }}:buildcache-${{ inputs.image-tag }}
-          cache-to: type=registry,ref=kondukto/${{ inputs.image-name }}:buildcache-${{ inputs.
+          cache-from: type=registry,ref=kondukto/${{ env.IMAGE_NAME }}:buildcache-${{ env.SHORT_SHA }}
+          cache-to: type=registry,ref=kondukto/${{ env.IMAGE_NAME }}:buildcache-${{ env.SHORT_SHA }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

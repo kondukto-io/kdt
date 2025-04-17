@@ -32,7 +32,7 @@ jobs:
           echo "VERSION_TAG=${{ env.GIT_TAG }}" | cut -d '-' -f 1 >> $GITHUB_ENV  
 
       - name: Install Go
-        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b
         with:
           go-version: 1.23.x
           cache: true
@@ -94,8 +94,8 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ env.VERSION_TAG }}
             ${{ env.IMAGE_NAME }}:${{ env.VERSION_TAG }}-${{ env.SHORT_SHA }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=kondukto/${{ env.IMAGE_NAME }}:buildcache-${{ env.SHORT_SHA }}
+          cache-to: type=registry,ref=kondukto/${{ env.IMAGE_NAME }}:buildcache-${{ env.SHORT_SHA }},mode=max
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

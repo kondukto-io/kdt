@@ -18,15 +18,16 @@ import (
 type ScannerType string
 
 const (
-	ScannerTypeSAST  ScannerType = "sast"
-	ScannerTypeDAST  ScannerType = "dast"
-	ScannerTypeSCA   ScannerType = "sca"
-	ScannerTypeCS    ScannerType = "cs"
-	ScannerTypeIAC   ScannerType = "iac"
-	ScannerTypeIAST  ScannerType = "iast"
-	ScannerTypeCSPM  ScannerType = "cspm"
-	ScannerTypeMAST  ScannerType = "mast"
-	ScannerTypeINFRA ScannerType = "infra"
+	ScannerTypeSAST    ScannerType = "sast"
+	ScannerTypeDAST    ScannerType = "dast"
+	ScannerTypeSCA     ScannerType = "sca"
+	ScannerTypeCS      ScannerType = "cs"
+	ScannerTypeIAC     ScannerType = "iac"
+	ScannerTypeIAST    ScannerType = "iast"
+	ScannerTypeCSPM    ScannerType = "cspm"
+	ScannerTypeMAST    ScannerType = "mast"
+	ScannerTypeINFRA   ScannerType = "infra"
+	ScannerTypeFuzzing ScannerType = "fuzzing"
 )
 
 func (s ScannerType) String() string {
@@ -37,7 +38,7 @@ func ScannerTypes() []ScannerType {
 	return []ScannerType{
 		ScannerTypeSAST, ScannerTypeDAST, ScannerTypeSCA, ScannerTypeCS,
 		ScannerTypeIAC, ScannerTypeIAST, ScannerTypeCSPM, ScannerTypeMAST,
-		ScannerTypeINFRA,
+		ScannerTypeINFRA, ScannerTypeINFRA, ScannerTypeFuzzing,
 	}
 }
 

@@ -61,10 +61,11 @@ type (
 	}
 
 	ScanParamsDeleteParams struct {
-		ScanParamsID string `json:"id"`
-		ToolName     string `json:"tool_name"`
-		Branch       string `json:"branch"`
-		MetaData     string `json:"meta_data"`
+		ScanParamsID    string `json:"id"`
+		ToolName        string `json:"tool_name"`
+		Branch          string `json:"branch"`
+		MetaData        string `json:"meta_data"`
+		MetaDataIsEmpty bool   `json:"meta_data_is_empty"`
 	}
 )
 

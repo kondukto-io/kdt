@@ -102,6 +102,10 @@ func (s *ScanParamsDelete) delete() error {
 		MetaData: meta,
 	}
 
+	if meta == "" && s.cmd.Flags().Changed("meta") {
+		request.MetaDataIsEmpty = true
+	}
+
 	if err := s.client.DeleteScanparamsBy(projectName, request); err != nil {
 		return fmt.Errorf("failed to delete scan parameters: %w", err)
 	}

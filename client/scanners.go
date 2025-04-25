@@ -38,7 +38,7 @@ func ScannerTypes() []ScannerType {
 	return []ScannerType{
 		ScannerTypeSAST, ScannerTypeDAST, ScannerTypeSCA, ScannerTypeCS,
 		ScannerTypeIAC, ScannerTypeIAST, ScannerTypeCSPM, ScannerTypeMAST,
-		ScannerTypeINFRA, ScannerTypeINFRA, ScannerTypeFuzzing,
+		ScannerTypeINFRA, ScannerTypeFuzzing,
 	}
 }
 

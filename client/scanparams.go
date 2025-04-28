@@ -59,6 +59,14 @@ type (
 	ScanparamsItem struct {
 		ID string `json:"id,omitempty"`
 	}
+
+	ScanParamsDeleteParams struct {
+		ScanParamsID    string `json:"id"`
+		ToolName        string `json:"tool_name"`
+		Branch          string `json:"branch"`
+		MetaData        string `json:"meta_data"`
+		MetaDataIsEmpty bool   `json:"meta_data_is_empty"`
+	}
 )
 
 func (c *Client) FindScanparams(project string, params *ScanparamSearchParams) (*Scanparams, error) {
@@ -113,4 +121,21 @@ func (c *Client) CreateScanparams(pID string, sp ScanparamsDetail) (*Scanparams,
 	}
 
 	return &pr.Scanparams, nil
+}
+
+func (c *Client) DeleteScanparamsBy(pID string, deleteParams ScanParamsDeleteParams) error {
+	klog.Debug("deleting scanparams")
+
+	path := fmt.Sprintf("/api/v2/projects/%s/scanparams/delete", pID)
+	req, err := c.newRequest(http.MethodPost, path, deleteParams)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.do(req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

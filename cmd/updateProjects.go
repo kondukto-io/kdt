@@ -11,7 +11,7 @@ import (
 
 func init() {
 	updateCmd.AddCommand(updateProjectCMD)
-	updateProjectCMD.Flags().String("project-id", "", "id of the project")
+	updateProjectCMD.Flags().String("project-id", "", "id or name of the project")
 	updateProjectCMD.Flags().Int("criticality-level", 0, "business criticality of the project, possible values are [ 4 = Major, 3 = High, 2 = Medium, 1 = Low, 0 = None, -1 = Auto ]. Default is [0]")
 }
 

@@ -57,6 +57,7 @@ func init() {
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
 	scanCmd.Flags().StringP("meta", "m", "", "meta data")
+	scanCmd.Flags().StringP("scan-tag", "", "", "scan tag")
 	scanCmd.Flags().StringP("file", "f", "", "scan result file")
 	scanCmd.Flags().StringP("branch", "b", "", "branch")
 
@@ -298,6 +299,11 @@ func (s *Scan) scanByImage() (string, error) {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
 
+	scanTag, err := s.cmd.Flags().GetString("scan-tag")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse scan-tag flag: %w", err)
+	}
+
 	image, err := s.cmd.Flags().GetString("image")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse image flag: %w", err)
@@ -313,6 +319,7 @@ func (s *Scan) scanByImage() (string, error) {
 		Branch:      branch,
 		Image:       image,
 		MetaData:    meta,
+		ScanTag:     scanTag,
 		Environment: applicationEnvironment,
 	}
 	eventID, err := s.client.ScanByImage(pr)
@@ -364,6 +371,11 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
 
+	scanTag, err := s.cmd.Flags().GetString("scan-tag")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse scan-tag flag: %w", err)
+	}
+
 	applicationEnvironment, err := s.cmd.Flags().GetString("env")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse env flag: %w", err)
@@ -412,6 +424,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		"branch":                      branch,
 		"tool":                        tool,
 		"meta_data":                   meta,
+		"scan_tag":                    scanTag,
 		"target":                      prInfo.MergeTarget,
 		"pr_number":                   prInfo.PRNumber,
 		"pr_decoration_scanner_types": prInfo.PRDecorationScannerTypes,
@@ -492,6 +505,11 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
 
+	scanTag, err := s.cmd.Flags().GetString("scan-tag")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse scan-tag flag: %w", err)
+	}
+
 	applicationEnvironment, err := s.cmd.Flags().GetString("env")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse env flag: %w", err)
@@ -554,6 +572,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 
 	scanData := &client.Scan{
 		MetaData:    meta,
+		ScanTag:     scanTag,
 		Branch:      branch,
 		Project:     project.Name,
 		ToolID:      scanner.ID,
@@ -570,6 +589,7 @@ func (s *Scan) startScanByProjectTool() (string, error) {
 	scanparamsData := client.ScanparamsDetail{
 		Branch:   branch,
 		MetaData: meta,
+		ScanTag:  scanTag,
 		Custom:   *custom,
 		ScanType: "kdt",
 		Tool: &client.ScanparamsItem{
@@ -745,6 +765,11 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
 	}
 
+	scanTag, err := s.cmd.Flags().GetString("scan-tag")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse scan-tag flag: %w", err)
+	}
+
 	agent, err := s.cmd.Flags().GetString("agent")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse agent flag: %w", err)
@@ -830,6 +855,7 @@ func (s *Scan) startScanByProjectToolAndPR() (string, error) {
 
 	scanData := &client.Scan{
 		MetaData: metaData,
+		ScanTag:  scanTag,
 		Branch:   branch,
 		Custom:   *custom,
 		Project:  project.Name,
@@ -878,6 +904,11 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 	metaData, err := s.cmd.Flags().GetString("meta")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
+	}
+
+	scanTag, err := s.cmd.Flags().GetString("scan-tag")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse scan-tag flag: %w", err)
 	}
 
 	agent, err := s.cmd.Flags().GetString("agent")
@@ -973,6 +1004,7 @@ func (s *Scan) startScanByProjectToolAndPRNumber() (string, error) {
 		ToolID:   scanner.ID,
 		Custom:   *custom,
 		MetaData: metaData,
+		ScanTag:  scanTag,
 		PR: client.PRInfo{
 			OK:                       false, // its not a PR scan, its just a pr decoration
 			PRNumber:                 prInfo.PRNumber,
@@ -1027,6 +1059,11 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	meta, err := s.cmd.Flags().GetString("meta")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse meta flag: %w", err)
+	}
+
+	scanTag, err := s.cmd.Flags().GetString("scan-tag")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse scan-tag flag: %w", err)
 	}
 
 	applicationEnvironment, err := s.cmd.Flags().GetString("env")
@@ -1098,6 +1135,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 	var scanData = &client.Scan{
 		Branch:                   branch,
 		MetaData:                 meta,
+		ScanTag:                  scanTag,
 		Project:                  project.Name,
 		ToolID:                   scanner.ID,
 		Custom:                   *custom,

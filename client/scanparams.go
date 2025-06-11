@@ -49,6 +49,7 @@ type (
 		Branch      string          `json:"branch"`
 		ScanType    string          `json:"scan_type"`
 		MetaData    string          `json:"meta_data"`
+		ScanTag     string          `json:"scan_tag"`
 		ForkScan    bool            `json:"fork_scan"`
 		PR          PRInfo          `json:"pr"`
 		Manual      bool            `json:"manual"`

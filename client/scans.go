@@ -30,6 +30,7 @@ type (
 		Branch      string `json:"branch"`
 		Image       string `json:"image"`
 		MetaData    string `json:"meta_data"`
+		ScanTag     string `json:"scan_tag"`
 		Environment string `json:"environment"`
 	}
 
@@ -119,6 +120,8 @@ type (
 		Custom Custom `json:"custom"`
 		// MetaData is holding value of scanparam meta-data
 		MetaData string `json:"meta_data"`
+		// ScanTag is holding value of scanparam scan-tag
+		ScanTag string `json:"scan_tag"`
 		// ForkScan is holding value of baseline scan
 		ForkScan bool `json:"fork_scan"`
 		// ForkSourceBranch is holding value of baseline scan branch
@@ -256,6 +259,7 @@ type ScanByImageInput struct {
 	Branch      string
 	Image       string
 	MetaData    string
+	ScanTag     string
 	Environment string
 }
 
@@ -266,6 +270,7 @@ func (i *ScanByImageInput) prepareRequestQueryParameters() ImageScanParams {
 		Branch:      i.Branch,
 		Image:       i.Image,
 		MetaData:    i.MetaData,
+		ScanTag:     i.ScanTag,
 		Environment: i.Environment,
 	}
 }

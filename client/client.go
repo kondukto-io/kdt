@@ -165,9 +165,8 @@ func isSSLError(err error) bool {
 	}
 
 	// Check for TLS handshake errors
-	if strings.Contains(err.Error(), "tls:") ||
-		strings.Contains(err.Error(), "certificate") ||
-		strings.Contains(err.Error(), "handshake") {
+	var tlsErr *tls.HandshakeError
+	if errors.As(err, &tlsErr) {
 		return true
 	}
 

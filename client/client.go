@@ -8,12 +8,15 @@ package client
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
+	"sync"
 
 	"github.com/spf13/viper"
 )
@@ -25,6 +28,9 @@ const (
 var (
 	ProductNotFound = errors.New("product not found")
 	ProjectNotFound = errors.New("project not found")
+
+	sslValidationOnce sync.Once
+	sslValidationErr  error
 )
 
 type Client struct {
@@ -55,6 +61,18 @@ func New() (*Client, error) {
 	}
 
 	client.httpClient = httpClient
+
+	sslValidationOnce.Do(func() {
+		if err := client.Ping(); err != nil {
+			if isSSLError(err) {
+				sslValidationErr = fmt.Errorf("SSL/TLS certificate error: %v\n\nThis appears to be a certificate verification issue. You can bypass SSL verification using the --insecure flag if you trust the server", err)
+			}
+		}
+	})
+
+	if sslValidationErr != nil {
+		return nil, sslValidationErr
+	}
 
 	return client, nil
 }
@@ -119,4 +137,39 @@ func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 	}
 
 	return nil, fmt.Errorf("response not OK: %s", string(data))
+}
+
+// isSSLError checks if the error is related to SSL/TLS certificate issues
+func isSSLError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check for specific SSL/TLS error types
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		err = urlErr.Err
+	}
+
+	// Check for x509 certificate errors
+	var x509Err *x509.CertificateInvalidError
+	var x509UnknownAuthorityErr *x509.UnknownAuthorityError
+	var x509HostnameErr *x509.HostnameError
+	var x509SystemRootsErr *x509.SystemRootsError
+
+	if errors.As(err, &x509Err) ||
+		errors.As(err, &x509UnknownAuthorityErr) ||
+		errors.As(err, &x509HostnameErr) ||
+		errors.As(err, &x509SystemRootsErr) {
+		return true
+	}
+
+	// Check for TLS handshake errors
+	if strings.Contains(err.Error(), "tls:") ||
+		strings.Contains(err.Error(), "certificate") ||
+		strings.Contains(err.Error(), "handshake") {
+		return true
+	}
+
+	return false
 }

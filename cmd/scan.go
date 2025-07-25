@@ -1090,25 +1090,6 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 		return "", errors.New("fork-source flag cannot be empty when override-fork-source flag is set")
 	}
 
-	params := &client.ScanSearchParams{
-		Tool:             tool,
-		Branch:           branch,
-		MetaData:         meta,
-		Environment:      applicationEnvironment,
-		ForkScan:         forkScan,
-		ForkSourceBranch: forkSourceBranch,
-		Limit:            1,
-	}
-
-	scan, err := s.client.FindScan(project.Name, params)
-	if err != nil {
-		failedToGetCompletedScanError(project.Name, err)
-	}
-
-	if scan != nil {
-		return s.restartScanByScanID(scan.ID)
-	}
-
 	sp, err := s.client.FindScanparams(project.Name, &client.ScanparamSearchParams{
 		ToolID:           scanner.ID,
 		Branch:           branch,

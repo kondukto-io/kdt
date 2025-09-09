@@ -419,6 +419,11 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		return "", fmt.Errorf("failed to check sbom-file-scan flag: %w", err)
 	}
 
+	apiFileScan, err := s.apiFileScanEnabled()
+	if err != nil {
+		return "", fmt.Errorf("failed to check api-file-scan flag: %w", err)
+	}
+
 	var form = client.ImportForm{
 		"project":                     project.Name,
 		"branch":                      branch,
@@ -436,6 +441,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		"override_old_analyze":        strconv.FormatBool(override),
 		"incremental-scan":            strconv.FormatBool(incrementalScan),
 		"sbom_file_scan":              strconv.FormatBool(sbomFileScan),
+		"api_file_scan":               strconv.FormatBool(apiFileScan),
 	}
 
 	eventID, err := s.client.ImportScanResult(absoluteFilePath, form)
@@ -472,6 +478,33 @@ func (s *Scan) sbomFileScanEnabled() (bool, error) {
 	}
 
 	return sbomFileScan, nil
+}
+
+func (s *Scan) apiFileScanEnabled() (bool, error) {
+	var apiFileScan bool
+
+	scanner, err := s.getScanner()
+	if err != nil {
+		return false, fmt.Errorf("failed to get scanner: %w", err)
+	}
+
+	custom := &client.Custom{Type: scanner.CustomType}
+	if s.cmd.Flags().Changed("params") {
+		parsedCustom, err := s.parseCustomParams(custom, *scanner, nil)
+		if err != nil {
+			return false, customParamsParseError(err)
+		}
+
+		custom = parsedCustom
+	}
+	// check custom that contains api_file_scan:true
+	if custom.Params != nil {
+		if _, ok := custom.Params["api_file_scan"]; ok {
+			apiFileScan = true
+		}
+	}
+
+	return apiFileScan, nil
 }
 
 func (s *Scan) startScanByProjectTool() (string, error) {

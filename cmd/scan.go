@@ -453,9 +453,8 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 	return eventID, nil
 }
 
-func (s *Scan) sbomFileScanEnabled() (bool, error) {
-	var sbomFileScan bool
-
+// isCustomParamEnabled checks if a specific custom parameter is enabled in the scanner configuration
+func (s *Scan) isCustomParamEnabled(paramName string) (bool, error) {
 	scanner, err := s.getScanner()
 	if err != nil {
 		return false, fmt.Errorf("failed to get scanner: %w", err)
@@ -470,41 +469,23 @@ func (s *Scan) sbomFileScanEnabled() (bool, error) {
 
 		custom = parsedCustom
 	}
-	// check custom that contains sbom-file-scan:true
+
+	// check if the specified parameter exists in custom params
 	if custom.Params != nil {
-		if _, ok := custom.Params["sbom-file-scan"]; ok {
-			sbomFileScan = true
+		if _, ok := custom.Params[paramName]; ok {
+			return true, nil
 		}
 	}
 
-	return sbomFileScan, nil
+	return false, nil
+}
+
+func (s *Scan) sbomFileScanEnabled() (bool, error) {
+	return s.isCustomParamEnabled("sbom-file-scan")
 }
 
 func (s *Scan) apiFileScanEnabled() (bool, error) {
-	var apiFileScan bool
-
-	scanner, err := s.getScanner()
-	if err != nil {
-		return false, fmt.Errorf("failed to get scanner: %w", err)
-	}
-
-	custom := &client.Custom{Type: scanner.CustomType}
-	if s.cmd.Flags().Changed("params") {
-		parsedCustom, err := s.parseCustomParams(custom, *scanner, nil)
-		if err != nil {
-			return false, customParamsParseError(err)
-		}
-
-		custom = parsedCustom
-	}
-	// check custom that contains api_file_scan:true
-	if custom.Params != nil {
-		if _, ok := custom.Params["api_file_scan"]; ok {
-			apiFileScan = true
-		}
-	}
-
-	return apiFileScan, nil
+	return s.isCustomParamEnabled("api_file_scan")
 }
 
 func (s *Scan) startScanByProjectTool() (string, error) {

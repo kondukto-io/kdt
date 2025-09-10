@@ -419,6 +419,11 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		return "", fmt.Errorf("failed to check sbom-file-scan flag: %w", err)
 	}
 
+	apiFileScan, err := s.apiFileScanEnabled()
+	if err != nil {
+		return "", fmt.Errorf("failed to check api-file-scan flag: %w", err)
+	}
+
 	var form = client.ImportForm{
 		"project":                     project.Name,
 		"branch":                      branch,
@@ -436,6 +441,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		"override_old_analyze":        strconv.FormatBool(override),
 		"incremental-scan":            strconv.FormatBool(incrementalScan),
 		"sbom_file_scan":              strconv.FormatBool(sbomFileScan),
+		"api_file_scan":               strconv.FormatBool(apiFileScan),
 	}
 
 	eventID, err := s.client.ImportScanResult(absoluteFilePath, form)
@@ -447,9 +453,8 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 	return eventID, nil
 }
 
-func (s *Scan) sbomFileScanEnabled() (bool, error) {
-	var sbomFileScan bool
-
+// isCustomParamEnabled checks if a specific custom parameter is enabled in the scanner configuration
+func (s *Scan) isCustomParamEnabled(paramName string) (bool, error) {
 	scanner, err := s.getScanner()
 	if err != nil {
 		return false, fmt.Errorf("failed to get scanner: %w", err)
@@ -464,14 +469,23 @@ func (s *Scan) sbomFileScanEnabled() (bool, error) {
 
 		custom = parsedCustom
 	}
-	// check custom that contains sbom-file-scan:true
+
+	// check if the specified parameter exists in custom params
 	if custom.Params != nil {
-		if _, ok := custom.Params["sbom-file-scan"]; ok {
-			sbomFileScan = true
+		if _, ok := custom.Params[paramName]; ok {
+			return true, nil
 		}
 	}
 
-	return sbomFileScan, nil
+	return false, nil
+}
+
+func (s *Scan) sbomFileScanEnabled() (bool, error) {
+	return s.isCustomParamEnabled("sbom-file-scan")
+}
+
+func (s *Scan) apiFileScanEnabled() (bool, error) {
+	return s.isCustomParamEnabled("api_file_scan")
 }
 
 func (s *Scan) startScanByProjectTool() (string, error) {

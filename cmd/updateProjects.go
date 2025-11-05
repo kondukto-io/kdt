@@ -13,6 +13,7 @@ func init() {
 	updateCmd.AddCommand(updateProjectCMD)
 	updateProjectCMD.Flags().String("project-id", "", "id or name of the project")
 	updateProjectCMD.Flags().Int("criticality-level", 0, "business criticality of the project, possible values are [ 4 = Major, 3 = High, 2 = Medium, 1 = Low, 0 = None, -1 = Auto ]. Default is [0]")
+	updateProjectCMD.Flags().StringSlice("label", []string{}, "labels of the project, this option overrides existing labels, example usage: --label=Internal,Sensitive Data,Payment")
 }
 
 // updateBCCMd represents the sbom import command
@@ -53,6 +54,11 @@ func (p *ProjectUpdate) Update() error {
 		return fmt.Errorf("failed to parse level flag: %w", err)
 	}
 
+	labels, err := p.cmd.Flags().GetStringSlice("label")
+	if err != nil {
+		return fmt.Errorf("failed to parse label flag: %w", err)
+	}
+
 	var hasUpdate bool
 	var pd = new(client.ProjectDetail)
 
@@ -61,8 +67,16 @@ func (p *ProjectUpdate) Update() error {
 		hasUpdate = true
 	}
 
+	if p.cmd.Flags().Changed("label") {
+		pd.Labels = make([]client.ProjectLabel, len(labels))
+		for i, label := range labels {
+			pd.Labels[i] = client.ProjectLabel{Name: label}
+		}
+		hasUpdate = true
+	}
+
 	if !hasUpdate {
-		klog.Println("mo update flags found, no updates will be made")
+		klog.Println("no update flags found, no updates will be made")
 		return nil
 	}
 

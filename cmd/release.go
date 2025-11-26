@@ -86,6 +86,11 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	}
 	TableWriter(releaseCriteriaRows...)
 
+	scannerTypeSpecified, scannerTypeMap := parseReleaseFlags(cmd)
+	isReleaseFailed(rs, scannerTypeSpecified, scannerTypeMap)
+}
+
+func parseReleaseFlags(cmd *cobra.Command) (bool, map[string]bool) {
 	sast, err := cmd.Flags().GetBool("sast")
 	if err != nil {
 		qwm(ExitCodeError, "failed to parse sast flag")
@@ -131,23 +136,24 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeError, "failed to parse sbom flag")
 	}
 
-	isSpecific := sast || dast || pentest || iast || sca || cs || iac || mast || sbom
+	scannerTypeSpecified := sast || dast || pentest || iast || sca || cs || iac || mast || sbom
 
-	var spesificMap = make(map[string]bool, 0)
-	spesificMap["SAST"] = sast
-	spesificMap["DAST"] = dast
-	spesificMap["PENTEST"] = pentest
-	spesificMap["IAST"] = iast
-	spesificMap["SCA"] = sca
-	spesificMap["CS"] = cs
-	spesificMap["IAC"] = iac
-	spesificMap["MAST"] = mast
-	spesificMap["SBOM"] = sbom
+	scannerTypeMap := map[string]bool{
+		"SAST":    sast,
+		"DAST":    dast,
+		"PENTEST": pentest,
+		"IAST":    iast,
+		"SCA":     sca,
+		"CS":      cs,
+		"IAC":     iac,
+		"MAST":    mast,
+		"SBOM":    sbom,
+	}
 
-	isReleaseFailed(rs, isSpecific, spesificMap)
+	return scannerTypeSpecified, scannerTypeMap
 }
 
-func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap map[string]bool) {
+func isReleaseFailed(release *client.ReleaseStatus, scannerTypeSpecified bool, scannerTypeMap map[string]bool) {
 	const statusFail = "fail"
 
 	if release.Status != statusFail {
@@ -191,8 +197,8 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 		}
 
 		for toolType, scanID := range failedScans {
-			if isSpecific {
-				if !specificMap[toolType] {
+			if scannerTypeSpecified {
+				if !scannerTypeMap[toolType] {
 					continue
 				}
 			}
@@ -216,8 +222,8 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 	var failedToolTypes []string
 
 	for toolType := range failedScans {
-		if isSpecific {
-			if specificMap[toolType] {
+		if scannerTypeSpecified {
+			if scannerTypeMap[toolType] {
 				failedToolTypes = append(failedToolTypes, toolType)
 			}
 		} else {
@@ -226,7 +232,7 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 	}
 
 	if len(failedToolTypes) == 0 {
-		returnMSG := fmt.Sprintf("project passes release criteria")
+		returnMSG := "project passes release criteria"
 		qwe(ExitCodeSuccess, errors.New(returnMSG))
 	} else {
 		returnMSG := fmt.Sprintf("project does not pass release criteria due to [%s] failure", strings.Join(failedToolTypes, ", "))

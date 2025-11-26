@@ -162,6 +162,7 @@ type ReleaseStatus struct {
 	CS             PlaybookTypeDetail `json:"cs"`
 	IAC            PlaybookTypeDetail `json:"iac"`
 	MAST           PlaybookTypeDetail `json:"mast"`
+	SBOM           PlaybookTypeDetail `json:"sbom"`
 	INFRA          PlaybookTypeDetail `json:"infra"`
 }
 

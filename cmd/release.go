@@ -36,6 +36,7 @@ func init() {
 	releaseCmd.Flags().Bool("cs", false, "cs criteria status")
 	releaseCmd.Flags().Bool("iac", false, "iac criteria status")
 	releaseCmd.Flags().Bool("mast", false, "mast criteria status")
+	releaseCmd.Flags().Bool("sbom", false, "sbom criteria status")
 	releaseCmd.Flags().Int("timeout", 5, "minutes to wait for release criteria check to finish")
 	_ = releaseCmd.MarkFlagRequired("project")
 }
@@ -79,9 +80,9 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	releaseCriteriaRows := []Row{
-		{Columns: []string{"STATUS", "SAST", "DAST", "PENTEST", "IAST", "SCA", "CS", "IAC", "MAST"}},
-		{Columns: []string{"------", "----", "----", "-------", "----", "---", "--", "---", "----"}},
-		{Columns: []string{rs.Status, rs.SAST.Status, rs.DAST.Status, rs.PENTEST.Status, rs.IAST.Status, rs.SCA.Status, rs.CS.Status, rs.IAC.Status, rs.MAST.Status}},
+		{Columns: []string{"STATUS", "SAST", "DAST", "PENTEST", "IAST", "SCA", "CS", "IAC", "MAST", "SBOM"}},
+		{Columns: []string{"------", "----", "----", "-------", "----", "---", "--", "---", "----", "----"}},
+		{Columns: []string{rs.Status, rs.SAST.Status, rs.DAST.Status, rs.PENTEST.Status, rs.IAST.Status, rs.SCA.Status, rs.CS.Status, rs.IAC.Status, rs.MAST.Status, rs.SBOM.Status}},
 	}
 	TableWriter(releaseCriteriaRows...)
 
@@ -125,7 +126,12 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeError, "failed to parse mast flag")
 	}
 
-	isSpecific := sast || dast || pentest || iast || sca || cs || iac || mast
+	sbom, err := cmd.Flags().GetBool("sbom")
+	if err != nil {
+		qwm(ExitCodeError, "failed to parse sbom flag")
+	}
+
+	isSpecific := sast || dast || pentest || iast || sca || cs || iac || mast || sbom
 
 	var spesificMap = make(map[string]bool, 0)
 	spesificMap["SAST"] = sast
@@ -136,6 +142,7 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	spesificMap["CS"] = cs
 	spesificMap["IAC"] = iac
 	spesificMap["MAST"] = mast
+	spesificMap["SBOM"] = sbom
 
 	isReleaseFailed(rs, isSpecific, spesificMap)
 }
@@ -173,6 +180,9 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 	if release.MAST.Status == statusFail {
 		failedScans["MAST"] = release.MAST.ScanID
 	}
+	if release.SBOM.Status == statusFail {
+		failedScans["SBOM"] = ""
+	}
 
 	if verbose {
 		c, err := client.New()
@@ -190,12 +200,15 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 			fmt.Println()
 			fmt.Println("-----------------------------------------------------------------")
 			fmt.Printf("[!] project does not pass release criteria due to [%s] failure\n", toolType)
-			scan, err := c.FindScanByID(scanID)
-			if err != nil {
-				qwe(ExitCodeError, err, "failed to fetch scan summary")
-			}
 
-			printScanSummary(scan)
+			// SBOM doesn't have a scan_id, skip fetching scan details
+			if scanID != "" {
+				scan, err := c.FindScanByID(scanID)
+				if err != nil {
+					qwe(ExitCodeError, err, "failed to fetch scan summary")
+				}
+				printScanSummary(scan)
+			}
 			fmt.Println("-----------------------------------------------------------------")
 		}
 	}

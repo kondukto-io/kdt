@@ -1439,8 +1439,8 @@ func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 	}
 
 	var project = scan.Project
-	if scan.InfraSourceProjectID != "" {
-		project = scan.InfraSourceProjectID
+	if scan.SourceProjectID != "" {
+		project = scan.SourceProjectID
 	}
 
 	rs, err := c.ReleaseStatus(project, scan.Branch, releaseOpts)

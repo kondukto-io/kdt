@@ -36,6 +36,7 @@ func init() {
 	releaseCmd.Flags().Bool("cs", false, "cs criteria status")
 	releaseCmd.Flags().Bool("iac", false, "iac criteria status")
 	releaseCmd.Flags().Bool("mast", false, "mast criteria status")
+	releaseCmd.Flags().Bool("sbom", false, "sbom criteria status")
 	releaseCmd.Flags().Int("timeout", 5, "minutes to wait for release criteria check to finish")
 	_ = releaseCmd.MarkFlagRequired("project")
 }
@@ -79,12 +80,17 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	}
 
 	releaseCriteriaRows := []Row{
-		{Columns: []string{"STATUS", "SAST", "DAST", "PENTEST", "IAST", "SCA", "CS", "IAC", "MAST"}},
-		{Columns: []string{"------", "----", "----", "-------", "----", "---", "--", "---", "----"}},
-		{Columns: []string{rs.Status, rs.SAST.Status, rs.DAST.Status, rs.PENTEST.Status, rs.IAST.Status, rs.SCA.Status, rs.CS.Status, rs.IAC.Status, rs.MAST.Status}},
+		{Columns: []string{"STATUS", "SAST", "DAST", "PENTEST", "IAST", "SCA", "CS", "IAC", "MAST", "SBOM"}},
+		{Columns: []string{"------", "----", "----", "-------", "----", "---", "--", "---", "----", "----"}},
+		{Columns: []string{rs.Status, rs.SAST.Status, rs.DAST.Status, rs.PENTEST.Status, rs.IAST.Status, rs.SCA.Status, rs.CS.Status, rs.IAC.Status, rs.MAST.Status, rs.SBOM.Status}},
 	}
 	TableWriter(releaseCriteriaRows...)
 
+	scannerTypeSpecified, scannerTypeMap := parseReleaseFlags(cmd)
+	isReleaseFailed(rs, scannerTypeSpecified, scannerTypeMap)
+}
+
+func parseReleaseFlags(cmd *cobra.Command) (bool, map[string]bool) {
 	sast, err := cmd.Flags().GetBool("sast")
 	if err != nil {
 		qwm(ExitCodeError, "failed to parse sast flag")
@@ -125,22 +131,29 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwm(ExitCodeError, "failed to parse mast flag")
 	}
 
-	isSpecific := sast || dast || pentest || iast || sca || cs || iac || mast
+	sbom, err := cmd.Flags().GetBool("sbom")
+	if err != nil {
+		qwm(ExitCodeError, "failed to parse sbom flag")
+	}
 
-	var spesificMap = make(map[string]bool, 0)
-	spesificMap["SAST"] = sast
-	spesificMap["DAST"] = dast
-	spesificMap["PENTEST"] = pentest
-	spesificMap["IAST"] = iast
-	spesificMap["SCA"] = sca
-	spesificMap["CS"] = cs
-	spesificMap["IAC"] = iac
-	spesificMap["MAST"] = mast
+	scannerTypeSpecified := sast || dast || pentest || iast || sca || cs || iac || mast || sbom
 
-	isReleaseFailed(rs, isSpecific, spesificMap)
+	scannerTypeMap := map[string]bool{
+		"SAST":    sast,
+		"DAST":    dast,
+		"PENTEST": pentest,
+		"IAST":    iast,
+		"SCA":     sca,
+		"CS":      cs,
+		"IAC":     iac,
+		"MAST":    mast,
+		"SBOM":    sbom,
+	}
+
+	return scannerTypeSpecified, scannerTypeMap
 }
 
-func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap map[string]bool) {
+func isReleaseFailed(release *client.ReleaseStatus, scannerTypeSpecified bool, scannerTypeMap map[string]bool) {
 	const statusFail = "fail"
 
 	if release.Status != statusFail {
@@ -173,6 +186,9 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 	if release.MAST.Status == statusFail {
 		failedScans["MAST"] = release.MAST.ScanID
 	}
+	if release.SBOM.Status == statusFail {
+		failedScans["SBOM"] = ""
+	}
 
 	if verbose {
 		c, err := client.New()
@@ -181,8 +197,8 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 		}
 
 		for toolType, scanID := range failedScans {
-			if isSpecific {
-				if !specificMap[toolType] {
+			if scannerTypeSpecified {
+				if !scannerTypeMap[toolType] {
 					continue
 				}
 			}
@@ -190,12 +206,15 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 			fmt.Println()
 			fmt.Println("-----------------------------------------------------------------")
 			fmt.Printf("[!] project does not pass release criteria due to [%s] failure\n", toolType)
-			scan, err := c.FindScanByID(scanID)
-			if err != nil {
-				qwe(ExitCodeError, err, "failed to fetch scan summary")
-			}
 
-			printScanSummary(scan)
+			// SBOM doesn't have a scan_id, skip fetching scan details
+			if scanID != "" {
+				scan, err := c.FindScanByID(scanID)
+				if err != nil {
+					qwe(ExitCodeError, err, "failed to fetch scan summary")
+				}
+				printScanSummary(scan)
+			}
 			fmt.Println("-----------------------------------------------------------------")
 		}
 	}
@@ -203,8 +222,8 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 	var failedToolTypes []string
 
 	for toolType := range failedScans {
-		if isSpecific {
-			if specificMap[toolType] {
+		if scannerTypeSpecified {
+			if scannerTypeMap[toolType] {
 				failedToolTypes = append(failedToolTypes, toolType)
 			}
 		} else {
@@ -213,7 +232,7 @@ func isReleaseFailed(release *client.ReleaseStatus, isSpecific bool, specificMap
 	}
 
 	if len(failedToolTypes) == 0 {
-		returnMSG := fmt.Sprintf("project passes release criteria")
+		returnMSG := "project passes release criteria"
 		qwe(ExitCodeSuccess, errors.New(returnMSG))
 	} else {
 		returnMSG := fmt.Sprintf("project does not pass release criteria due to [%s] failure", strings.Join(failedToolTypes, ", "))

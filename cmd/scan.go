@@ -1497,6 +1497,10 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 		failedScans["MAST"] = scan.ID
 	}
 
+	if release.SBOM.Status == statusFail {
+		failedScans["SBOM"] = ""
+	}
+
 	if release.INFRA.Status == statusFail {
 		failedScans["INFRA"] = scan.ID
 	}
@@ -1522,12 +1526,16 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 			fmt.Println()
 			fmt.Println("-----------------------------------------------------------------")
 			fmt.Printf("[!] project does not pass release criteria due to [%s] failure\n", toolType)
-			scan, err := c.FindScanByID(scanID)
-			if err != nil {
-				return fmt.Errorf("failed to fetch scan [%s] summary: %w", scanID, err)
-			}
 
-			printScanSummary(scan)
+			// SBOM doesn't have a scan_id, skip fetching scan details
+			if scanID != "" {
+				scan, err := c.FindScanByID(scanID)
+				if err != nil {
+					return fmt.Errorf("failed to fetch scan [%s] summary: %w", scanID, err)
+				}
+
+				printScanSummary(scan)
+			}
 			fmt.Println("-----------------------------------------------------------------")
 		}
 	}

@@ -82,18 +82,20 @@ KDT requires an Invicti ASPM host URL and an API token for authentication. API t
 #### 1. Environment Variables
 
 ```shell
-export KONDUKTO_HOST=https://your-kondukto-instance.com
-export KONDUKTO_TOKEN=your_api_token_here
+export INVICTI_ASPM_HOST=https://your-invicti-aspm-instance.com
+export INVICTI_ASPM_TOKEN=your_api_token_here
 ```
 
 For persistence, add these to your shell profile (`~/.bashrc`, `~/.zshrc`, `~/.profile`).
+
+> **Note:** The legacy environment variables `KONDUKTO_HOST` and `KONDUKTO_TOKEN` are still supported for backward compatibility but are deprecated. If you use them, you will see a deprecation warning. Please migrate to `INVICTI_ASPM_HOST` and `INVICTI_ASPM_TOKEN`.
 
 #### 2. Configuration File
 
 Default location: `$HOME/.kdt.yaml`
 
 ```yaml
-host: https://your-kondukto-instance.com
+host: https://your-invicti-aspm-instance.com
 token: your_api_token_here
 insecure: false
 verbose: false
@@ -107,7 +109,7 @@ kdt --config=/path/to/config.yaml list projects
 #### 3. Command Line Flags
 
 ```shell
-kdt --host https://your-kondukto-instance.com --token your_api_token list projects
+kdt --host https://your-invicti-aspm-instance.com --token your_api_token list projects
 ```
 
 **Configuration Priority:** Command line flags > Environment variables > Configuration file
@@ -778,8 +780,8 @@ kdt ping -a  # With authentication
 
 ```shell
 # Check if host and token are set
-echo $KONDUKTO_HOST
-echo $KONDUKTO_TOKEN
+echo $INVICTI_ASPM_HOST
+echo $INVICTI_ASPM_TOKEN
 
 # Or use a test command
 kdt list projects

@@ -105,17 +105,75 @@ func initConfig() {
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".kdt")
 		viper.SetConfigType("yaml")
-		viper.SetEnvPrefix("kondukto")
 	}
-
-	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		// fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
+	// Handle environment variables with backward compatibility
+	// New environment variables: INVICTI_ASPM_HOST, INVICTI_ASPM_TOKEN
+	// Deprecated environment variables: KONDUKTO_HOST, KONDUKTO_TOKEN
+	configureEnvVars()
+
 	if viper.GetString("host") == "" || viper.GetString("token") == "" {
-		qwm(ExitCodeError, fmt.Sprintf("Host and token configuration is required. Provide them via a config file, environment variables or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL))
+		qwm(ExitCodeError, fmt.Sprintf("Host and token configuration is required. Provide them via a config file, environment variables (INVICTI_ASPM_HOST, INVICTI_ASPM_TOKEN) or command line arguments. For more information on configuration, see README on GitHub repository. %s\n", repoURL))
 	}
+}
+
+// envVarMapping defines the relationship between config keys and their environment variables.
+type envVarMapping struct {
+	configKey     string
+	newEnvVar     string
+	legacyEnvVar  string
+}
+
+// configureEnvVars sets up environment variables with backward compatibility.
+// New INVICTI_ASPM_* variables take precedence over deprecated KONDUKTO_* variables.
+func configureEnvVars() {
+	mappings := []envVarMapping{
+		{configKey: "host", newEnvVar: "INVICTI_ASPM_HOST", legacyEnvVar: "KONDUKTO_HOST"},
+		{configKey: "token", newEnvVar: "INVICTI_ASPM_TOKEN", legacyEnvVar: "KONDUKTO_TOKEN"},
+	}
+
+	var deprecatedVars []string
+	for _, m := range mappings {
+		if used := resolveEnvVar(m); used != "" {
+			deprecatedVars = append(deprecatedVars, fmt.Sprintf("%s (use %s instead)", used, m.newEnvVar))
+		}
+	}
+
+	if len(deprecatedVars) > 0 {
+		printDeprecationWarning(deprecatedVars)
+	}
+}
+
+// resolveEnvVar checks environment variables and sets the config value.
+// Returns the name of the deprecated variable if it was used, empty string otherwise.
+func resolveEnvVar(m envVarMapping) string {
+	if viper.GetString(m.configKey) != "" {
+		return ""
+	}
+
+	if value := os.Getenv(m.newEnvVar); value != "" {
+		viper.Set(m.configKey, value)
+		return ""
+	}
+
+	if value := os.Getenv(m.legacyEnvVar); value != "" {
+		viper.Set(m.configKey, value)
+		return m.legacyEnvVar
+	}
+
+	return ""
+}
+
+func printDeprecationWarning(vars []string) {
+	fmt.Fprintln(os.Stderr, "WARNING: Deprecated environment variable(s) detected:")
+	for _, v := range vars {
+		fmt.Fprintf(os.Stderr, "  - %s\n", v)
+	}
+	fmt.Fprintln(os.Stderr, "Please update to the new environment variables. The deprecated ones will be removed in a future release.")
+	fmt.Fprintln(os.Stderr)
 }

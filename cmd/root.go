@@ -124,9 +124,9 @@ func initConfig() {
 
 // envVarMapping defines the relationship between config keys and their environment variables.
 type envVarMapping struct {
-	configKey    string
-	newEnvVar    string
-	legacyEnvVar string
+	configKey     string
+	newEnvVar     string
+	legacyEnvVar  string
 }
 
 // configureEnvVars sets up environment variables with backward compatibility.

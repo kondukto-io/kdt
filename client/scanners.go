@@ -220,7 +220,7 @@ func (c *Client) IsValidTool(tool string) (*ScannerInfo, bool) {
 
 	var scanner = scanners.ActiveScanners[0]
 	if scanner.Disabled {
-		klog.Printf("the scanner [%s] is disabled on the Kondukto", tool)
+		klog.Printf("the scanner [%s] is disabled on the Invicti ASPM", tool)
 		return nil, false
 	}
 

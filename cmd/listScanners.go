@@ -15,7 +15,7 @@ var listScannersCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		c, err := client.New()
 		if err != nil {
-			qwe(ExitCodeError, err, "could not initialize Kondukto client")
+			qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 		}
 
 		var scannerTypes []client.ScannerType
@@ -30,7 +30,7 @@ var listScannersCmd = &cobra.Command{
 			Labels: scannerLabels,
 		})
 		if err != nil {
-			qwe(ExitCodeError, err, "could not get Kondukto active scanners")
+			qwe(ExitCodeError, err, "could not get Invicti ASPM active scanners")
 		}
 
 		var rescanOnly = func(labels []string) string {

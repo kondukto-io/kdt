@@ -29,7 +29,7 @@ func init() {
 	sbomCmd.AddCommand(importSbomCmd)
 
 	importSbomCmd.Flags().StringP("file", "f", "", "SBOM file to be imported. Currently only .json format is supported")
-	importSbomCmd.Flags().StringP("project", "p", "", "Kondukto project id or name")
+	importSbomCmd.Flags().StringP("project", "p", "", "Invicti ASPM project ID or name")
 	importSbomCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository")
 	importSbomCmd.Flags().StringP("sbom-type", "s", "", "Custom type(optional). Supported values are [source_dir, image, application, os, container]")
 	importSbomCmd.Flags().StringP("branch", "b", "", "Branch name for the project receiving the sbom")
@@ -39,15 +39,15 @@ func init() {
 // importSbomCmd represents the sbom import command
 var importSbomCmd = &cobra.Command{
 	Use:   "import",
-	Short: "imports sbom file to Kondukto",
+	Short: "imports sbom file to Invicti ASPM",
 	Run:   importSbomRootCommand,
 }
 
 func importSbomRootCommand(cmd *cobra.Command, _ []string) {
-	// Initialize Kondukto client
+	// Initialize Invicti ASPM client
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 	sbomImport := SBOMImport{
 		cmd:    cmd,
@@ -120,7 +120,7 @@ func (s *SBOMImport) sbomImport() error {
 	if projectName == "" {
 		importInfo = fmt.Sprintf("%s(ALM)", repo)
 	} else {
-		importInfo = fmt.Sprintf("%s(kondukto project)", projectName)
+		importInfo = fmt.Sprintf("%s(Invicti ASPM project)", projectName)
 	}
 
 	klog.Printf("sbom file imported successfully for: [%s]", importInfo)

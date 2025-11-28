@@ -55,7 +55,7 @@ var projectCmd = &cobra.Command{
 // createProjectsRootCommand is the root command for
 var availableCmd = &cobra.Command{
 	Use:   "available",
-	Short: "Check if a project is available on Kondukto",
+	Short: "Check if a project is available on Invicti ASPM",
 	Run: func(cmd *cobra.Command, args []string) {
 		checkProject(cmd)
 	},
@@ -88,11 +88,11 @@ func checkProject(cmd *cobra.Command) {
 
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	if err := c.HealthCheck(); err != nil {
-		qwe(ExitCodeNotAuthorized, err, "could not connect to Kondukto")
+		qwe(ExitCodeNotAuthorized, err, "could not connect to Invicti ASPM")
 	}
 
 	available, err := c.IsAvailable(repositoryID, almTool)

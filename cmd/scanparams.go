@@ -24,7 +24,7 @@ func init() {
 
 	scanParamsCmd.AddCommand(deleteScanParamsCmd)
 
-	deleteScanParamsCmd.Flags().StringP("project", "p", "", "kondukto project id or name (required)")
+	deleteScanParamsCmd.Flags().StringP("project", "p", "", "Invicti ASPM project ID or name (required)")
 	deleteScanParamsCmd.Flags().StringP("tool", "t", "", "tool name of scan params (required)")
 	deleteScanParamsCmd.Flags().StringP("meta", "m", "", "meta data of scan params")
 	deleteScanParamsCmd.Flags().StringP("branch", "b", "", "branch of scan params")
@@ -33,14 +33,14 @@ func init() {
 
 var deleteScanParamsCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "delete scan parameters and vulnerabilities from Kondukto",
+	Short: "delete scan parameters and vulnerabilities from Invicti ASPM",
 	Run:   deleteScanParamsRootCommand,
 }
 
 func deleteScanParamsRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	scanParams := ScanParamsDelete{

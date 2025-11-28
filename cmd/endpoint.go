@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/kondukto-io/kdt/client"
@@ -18,7 +19,7 @@ var endpointCmd = &cobra.Command{
 // importEndpointCmd represents the endpoint import command
 var importEndpointCmd = &cobra.Command{
 	Use:   "import",
-	Short: "imports endpoint file to Kondukto",
+	Short: "imports endpoint file to Invicti ASPM",
 	RunE:  importEndpointRootCommand,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if !cmd.Flags().Changed("file") {
@@ -36,7 +37,7 @@ func init() {
 	endpointCmd.AddCommand(importEndpointCmd)
 
 	importEndpointCmd.Flags().StringP("file", "f", "", "endpoint file to be imported")
-	importEndpointCmd.Flags().StringP("project", "p", "", "Kondukto project id or name")
+	importEndpointCmd.Flags().StringP("project", "p", "", "Invicti ASPM project ID or name")
 
 	_ = importEndpointCmd.MarkFlagRequired("file")
 	_ = importEndpointCmd.MarkFlagRequired("project")
@@ -45,7 +46,7 @@ func init() {
 func importEndpointRootCommand(cmd *cobra.Command, args []string) error {
 	c, err := client.New()
 	if err != nil {
-		return fmt.Errorf("could not initialize Kondukto client: %w", err)
+		return fmt.Errorf("could not initialize Invicti ASPM client: %w", err)
 	}
 
 	file, err := cmd.Flags().GetString("file")

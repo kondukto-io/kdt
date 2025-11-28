@@ -14,7 +14,7 @@ import (
 // listProjectsCmd represents the listProjects command
 var listProjectsCmd = &cobra.Command{
 	Use:   "projects",
-	Short: "lists projects in Kondukto",
+	Short: "lists projects in Invicti ASPM",
 	Run:   projectsRootCommand,
 }
 
@@ -25,7 +25,7 @@ func init() {
 func projectsRootCommand(_ *cobra.Command, args []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	var name string

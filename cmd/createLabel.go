@@ -16,7 +16,7 @@ import (
 // createLabelCmd represents the create project command
 var createLabelCmd = &cobra.Command{
 	Use:   "label",
-	Short: "creates a new label on Kondukto",
+	Short: "creates a new label on Invicti ASPM",
 	Run:   createLabelRootCommand,
 }
 
@@ -30,7 +30,7 @@ func init() {
 func createLabelRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	labelName, err := cmd.Flags().GetString("name")

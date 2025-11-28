@@ -5,7 +5,7 @@ Copyright © 2023 Kondukto
 
 package client
 
-// HealthCheck is a healthcheck for Kondukto service
+// HealthCheck is a health check for the Invicti ASPM service
 // Requires a valid API token
 func (c *Client) HealthCheck() error {
 	req, err := c.newRequest("GET", "/api/v2/health/check", nil)
@@ -21,7 +21,7 @@ func (c *Client) HealthCheck() error {
 	return nil
 }
 
-// Ping is a healthcheck for Kondukto service
+// Ping is a health check for the Invicti ASPM service
 // Does not require a valid API token
 func (c *Client) Ping() error {
 	req, err := c.newRequest("GET", "/core/version", nil)

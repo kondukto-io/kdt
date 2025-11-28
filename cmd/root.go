@@ -41,8 +41,8 @@ const (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "kdt",
-	Short: "Command line interface to interact with Kondukto",
-	Long:  `KDT is the command line interface of Kondukto for starting scans and setting release criteria. It is made to ease integration of Kondukto to DevSecOps pipelines.`,
+	Short: "Command line interface to interact with Invicti ASPM",
+	Long:  `KDT is the command line interface of Invicti ASPM for starting scans and setting release criteria. It is designed to ease integration of Invicti ASPM into DevSecOps pipelines.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -77,8 +77,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kdt.yaml)")
-	rootCmd.PersistentFlags().StringVar(&host, "host", "", "Kondukto server host")
-	rootCmd.PersistentFlags().StringVar(&token, "token", "", "Kondukto API token")
+	rootCmd.PersistentFlags().StringVar(&host, "host", "", "Invicti ASPM server host")
+	rootCmd.PersistentFlags().StringVar(&token, "token", "", "Invicti ASPM API token")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "more logs")
 	rootCmd.PersistentFlags().BoolVar(&insecure, "insecure", false, "skip TLS verification and use insecure http client")
 	rootCmd.PersistentFlags().Int("exit-code", 0, "override the exit code")

@@ -15,14 +15,14 @@ import (
 )
 
 // ping represents the ping command
-// check if the kondukto service is up and running
+// check if the Invicti ASPM service is up and running
 var ping = &cobra.Command{
 	Use:   "ping",
-	Short: "check kondukto service up and running",
+	Short: "check Invicti ASPM service is up and running",
 	Run: func(cmd *cobra.Command, args []string) {
 		c, err := client.New()
 		if err != nil {
-			qwe(ExitCodeError, err, "could not initialize kondukto client")
+			qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 		}
 
 		if authorize, _ := cmd.Flags().GetBool("auth"); authorize {
@@ -31,7 +31,7 @@ var ping = &cobra.Command{
 			err = c.Ping()
 		}
 		if err != nil {
-			qwe(ExitCodeError, err, "could not connect to kondukto service")
+			qwe(ExitCodeError, err, "could not connect to Invicti ASPM service")
 		}
 
 		fmt.Println("OK")

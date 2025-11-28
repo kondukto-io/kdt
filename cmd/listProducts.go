@@ -14,7 +14,7 @@ import (
 // listProductsCmd represents the listProductsCmd command
 var listProductsCmd = &cobra.Command{
 	Use:   "products",
-	Short: "lists products in Kondukto",
+	Short: "lists products in Invicti ASPM",
 	Run:   productsRootCommand,
 }
 
@@ -27,7 +27,7 @@ func init() {
 func productsRootCommand(cmd *cobra.Command, args []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	name, err := cmd.Flags().GetString("name")

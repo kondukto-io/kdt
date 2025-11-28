@@ -1,14 +1,14 @@
-<p align="center"><a href="https://kondukto.io" target="_blank" rel="noopener noreferrer"><img width="200" src="https://kondukto.io/logo.png" alt="Kondukto logo"></a></p>
+<p align="center"><a href="https://kondukto.io" target="_blank" rel="noopener noreferrer"><img width="200" src="https://kondukto.io/logo.png" alt="Invicti ASPM logo"></a></p>
 
 # KDT
 
-KDT is an open-source command line interface for [Kondukto](https://kondukto.io), an Application Security Posture Management (ASPM) platform. Written in [Go](https://golang.org), KDT interacts with the Kondukto engine through its public API.
+KDT is an open-source command line interface for [Invicti ASPM](https://kondukto.io), an Application Security Posture Management (ASPM) platform. Written in [Go](https://golang.org), KDT interacts with the Invicti ASPM engine through its public API.
 
-With KDT, you can list projects and their scans in **Kondukto**, trigger scans with specific application security tools, import scan results, manage SBOM files, and break releases if scan results don't meet specified release criteria. KDT is designed to seamlessly integrate with CI/CD pipelines for automated DevSecOps workflows.
+With KDT, you can list projects and their scans in **Invicti ASPM**, trigger scans with specific application security tools, import scan results, manage SBOM files, and break releases if scan results don't meet specified release criteria. KDT is designed to seamlessly integrate with CI/CD pipelines for automated DevSecOps workflows.
 
-## What is Kondukto?
+## What is Invicti ASPM?
 
-[Kondukto](https://kondukto.io) is an Application Security Posture Management (ASPM) platform that helps you centralize and automate your entire AppSec vulnerability management process. It provides:
+[Invicti ASPM](https://kondukto.io) is an Application Security Posture Management (ASPM) platform that helps you centralize and automate your entire AppSec vulnerability management process. It provides:
 - Centralized security health monitoring for applications
 - DevSecOps pipeline integration
 - Automated AppSec workflow orchestration
@@ -75,7 +75,7 @@ make all
 
 ## Configuration
 
-KDT requires a Kondukto host URL and an API token for authentication. API tokens can be created under **Integrations > API Tokens** in the Kondukto UI.
+KDT requires an Invicti ASPM host URL and an API token for authentication. API tokens can be created under **Integrations > API Tokens** in the Invicti ASPM UI.
 
 ### Configuration Methods
 
@@ -119,8 +119,8 @@ These flags can be used with any KDT command:
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--config` | Path to configuration file | `$HOME/.kdt.yaml` |
-| `--host` | Kondukto server host URL | - |
-| `--token` | Kondukto API token | - |
+| `--host` | Invicti ASPM server host URL | - |
+| `--token` | Invicti ASPM API token | - |
 | `--insecure` | Skip TLS certificate verification (not recommended for production) | `false` |
 | `-v, --verbose` | Enable verbose logging for debugging | `false` |
 | `--exit-code` | Override the exit code | `0` |
@@ -135,7 +135,7 @@ kdt --config=prod-config.yaml --verbose scan -p MyProject -t semgrep -b main
 ### Health Checks
 
 #### Verify Connection
-Test connectivity to Kondukto service:
+Test connectivity to Invicti ASPM service:
 ```shell
 kdt ping
 ```
@@ -753,7 +753,7 @@ KDT uses the following exit codes:
 
 ## Supported Scanners
 
-KDT supports all scanners enabled in your Kondukto instance. To view available scanners:
+KDT supports all scanners enabled in your Invicti ASPM instance. To view available scanners:
 
 ```shell
 kdt list scanners

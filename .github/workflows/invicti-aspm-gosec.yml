@@ -1,4 +1,4 @@
-name: Kondukto Gosec Scan
+name: Invicti ASPM Gosec Scan
 
 on:
   workflow_dispatch:
@@ -17,17 +17,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
-      KONDUKTO_TOKEN: ${{ secrets.KONDUKTO_TOKEN }}
-      KONDUKTO_HOST: ${{ secrets.KONDUKTO_HOST }}
-    name: Kondukto GoSec Scan
+      INVICTI_ASPM_TOKEN: ${{ secrets.INVICTI_ASPM_TOKEN }}
+      INVICTI_ASPM_HOST: ${{ secrets.INVICTI_ASPM_HOST }}
+    name: Invicti ASPM GoSec Scan
 
     steps:
-      - name: Configure Kondukto CLI
-        id: configure_kondukto_cli
+      - name: Configure Invicti ASPM CLI
+        id: configure_invicti_aspm_cli
         run: |
           curl -sSL https://cli.kondukto.io | sh
 
-      - name: Get Kondukto CLI Version
+      - name: Get Invicti ASPM CLI Version
         id: kdt_version
         run: |
           kdt version
@@ -52,7 +52,7 @@ jobs:
           name: results.json
           path: results.json
 
-      - name: Upload Gosec Scan Results To Kondukto
+      - name: Upload Gosec Scan Results To Invicti ASPM
         id: upload_gosec_results
         run: |
           kdt scan -p ${{ github.event.repository.name }} -t gosec -b ${{ github.ref_name }} -f results.json          

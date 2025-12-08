@@ -1,4 +1,4 @@
-name: Kondukto Nancy Scan
+name: Invicti ASPM Nancy Scan
 
 on:
   workflow_dispatch:
@@ -17,17 +17,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
-      KONDUKTO_TOKEN: ${{ secrets.KONDUKTO_TOKEN }}
-      KONDUKTO_HOST: ${{ secrets.KONDUKTO_HOST }}
-    name: Kondukto Nancy Scan
+      INVICTI_ASPM_TOKEN: ${{ secrets.INVICTI_ASPM_TOKEN }}
+      INVICTI_ASPM_HOST: ${{ secrets.INVICTI_ASPM_HOST }}
+    name: Invicti ASPM Nancy Scan
 
     steps:
-      - name: Configure Kondukto CLI
-        id: configure_kondukto_cli
+      - name: Configure Invicti ASPM CLI
+        id: configure_invicti_aspm_cli
         run: |
           curl -sSL https://cli.kondukto.io | sh
 
-      - name: Get Kondukto CLI Version
+      - name: Get Invicti ASPM CLI Version
         id: kdt_version
         run: |
           kdt version
@@ -61,7 +61,7 @@ jobs:
           name: results.json
           path: results.json
 
-      - name: Upload Nancy Scan Results To Kondukto
+      - name: Upload Nancy Scan Results To Invicti ASPM
         id: upload_nancy_results
         run: |
           kdt scan -p ${{ github.event.repository.name }} -t nancy -b ${{ github.ref_name }} -f results.json          

@@ -1,416 +1,831 @@
-<p align="center"><a href="https://kondukto.io" target="_blank" rel="noopener noreferrer"><img width="200" src="https://kondukto.io/logo.png" alt="Kondukto logo"></a></p>
+<p align="center"><a href="https://kondukto.io" target="_blank" rel="noopener noreferrer"><img width="200" src="https://kondukto.io/logo.png" alt="Invicti ASPM logo"></a></p>
 
 # KDT
-KDT is a command line client for [Kondukto](https://kondukto.io) written in [Go](https://golang.org). It interacts with Kondukto engine through public API.
 
-With KDT, you can list projects and their scans in **Kondukto**, and restart a scan with a specific application security tool. KDT is also easy to use in CI/CD pipelines to trigger scans and break releases if a scan fails or scan results don't met specified release criteria.
+KDT is an open-source command line interface for [Invicti ASPM](https://kondukto.io), an Application Security Posture Management (ASPM) platform. Written in [Go](https://golang.org), KDT interacts with the Invicti ASPM engine through its public API.
 
-### What is Kondukto?
-[Kondukto](https://kondukto.io) is an Application Security Testing Orchestration and DevSecOps platform that helps you centralize and automate your entire AppSec related vulnerability management process. Providing an interface where security health of applications can be continuously monitored, and a command line interface where your AppSec operations can be integrated into DevOps pipelines, Kondukto lets you manage your AppSec processes automatically with ease.
+With KDT, you can list projects and their scans in **Invicti ASPM**, trigger scans with specific application security tools, import scan results, manage SBOM files, and break releases if scan results don't meet specified release criteria. KDT is designed to seamlessly integrate with CI/CD pipelines for automated DevSecOps workflows.
+
+## What is Invicti ASPM?
+
+[Invicti ASPM](https://kondukto.io) is an Application Security Posture Management (ASPM) platform that helps you centralize and automate your entire AppSec vulnerability management process. It provides:
+- Centralized security health monitoring for applications
+- DevSecOps pipeline integration
+- Automated AppSec workflow orchestration
+- Release criteria enforcement
+- SBOM management
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Global Flags](#global-flags)
+- [Commands](#commands)
+  - [Health Checks](#health-checks)
+  - [Scan Command](#scan-command)
+  - [Release Command](#release-command)
+  - [List Commands](#list-commands)
+  - [Create Commands](#create-commands)
+  - [SBOM Commands](#sbom-commands)
+  - [Endpoint Commands](#endpoint-commands)
+  - [Status Command](#status-command)
+  - [Project Commands](#project-commands)
+- [Advanced Usage Examples](#advanced-usage-examples)
+- [Contributing](#contributing)
 
 ## Installation
-You can install the CLI with a `curl` utility script or by downloading the pre-compiled binary from the GitHub release page.
-Once installed you'll get the `kdt-cli` command and `kdt` alias.
 
-Utility script with `curl`:
+You can install KDT using several methods:
+
+### Using curl (Linux/macOS)
+
+**With sudo (installs system-wide):**
 ```shell
-$ curl -sSL https://cli.kondukto.io | sudo sh
+curl -sSL https://cli.kondukto.io | sudo sh
 ```
 
-Non-root with curl:
+**Without sudo (user installation):**
 ```shell
-$ curl -sSL https://cli.kondukto.io | sh
+curl -sSL https://cli.kondukto.io | sh
 ```
 
 ### Windows
-To install the kdt-cli on Windows go to [Releases](https://github.com/kondukto-io/kdt/releases) and download the latest kdt-cli.exe.
 
+Download the latest `kdt-cli.exe` from [Releases](https://github.com/kondukto-io/kdt/releases).
 
-Or you can also simply run the following if you have an existing [Go](https://golang.org) environment:
+### Using Go
+
+If you have a Go environment:
 ```shell
 go get github.com/kondukto-io/kdt
 ```
 
-If you want to build it yourself, clone the source files using GitHub, change into the `kdt` directory and compile:
+### Building from Source
+
 ```shell
 git clone https://github.com/kondukto-io/kdt.git
 cd kdt
 go build . -o kdt
 ```
-or simply run 
-```
+
+Or simply:
+```shell
 make all
 ```
 
 ## Configuration
-KDT needs Kondukto host and an API token for authentication. API tokens can be created under Integrations/API Tokens menu.
 
-You can provide configuration via three different ways:
+KDT requires an Invicti ASPM host URL and an API token for authentication. API tokens can be created under **Integrations > API Tokens** in the Invicti ASPM UI.
 
-##### 1) Setting environment variables:
+### Configuration Methods
 
-*(example is for BASH shell)*
+#### 1. Environment Variables
+
 ```shell
-$ export KONDUKTO_HOST=http://localhost:8080
-$ export KONDUKTO_TOKEN=WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
-```
-It is always better to set environment variables in shell profile files(`~/.bashrc`, `~/.zshrc`, `~/.profile` etc.)
-##### 2) Providing a configuration file.
-
-Default path for config file is `$HOME/.kdt.yaml`. Another file can be provided with `--config` command line flag.
-```
-kdt --config=config.yaml list projects
+export INVICTI_ASPM_HOST=https://your-invicti-aspm-instance.com
+export INVICTI_ASPM_TOKEN=your_api_token_here
 ```
 
-A config file example.
-```
-// $HOME/.kdt.yaml 
-host: http://localhost:8088
-token: WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
-insecure: true
+For persistence, add these to your shell profile (`~/.bashrc`, `~/.zshrc`, `~/.profile`).
+
+> **Note:** The legacy environment variables `KONDUKTO_HOST` and `KONDUKTO_TOKEN` are still supported for backward compatibility but are deprecated. If you use them, you will see a deprecation warning. Please migrate to `INVICTI_ASPM_HOST` and `INVICTI_ASPM_TOKEN`.
+
+#### 2. Configuration File
+
+Default location: `$HOME/.kdt.yaml`
+
+```yaml
+host: https://your-invicti-aspm-instance.com
+token: your_api_token_here
+insecure: false
+verbose: false
 ```
 
-##### 3) Using command line flags
-```
-kdt list projects --host http://localhost:8088 --token WmQ2eHFDRzE3elplN0ZRbUVsRDd3VnpUSHk0TmF6Uko5OGlyQ1JvR2JOOXhoWEFtY2ZrcDJZUGtrb2tV
+You can specify a custom config file:
+```shell
+kdt --config=/path/to/config.yaml list projects
 ```
 
-## Running
-KDT comes with an internal documentation. To see the documentation just type `kdt --help`.
-Most KDT commands are straightforward but for the details of a command you can always take a peak to the documentation. `kdt <command> --help` or `kdt <command> <sub-command> --help`.
+#### 3. Command Line Flags
+
+```shell
+kdt --host https://your-invicti-aspm-instance.com --token your_api_token list projects
+```
+
+**Configuration Priority:** Command line flags > Environment variables > Configuration file
+
+## Global Flags
+
+These flags can be used with any KDT command:
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--config` | Path to configuration file | `$HOME/.kdt.yaml` |
+| `--host` | Invicti ASPM server host URL | - |
+| `--token` | Invicti ASPM API token | - |
+| `--insecure` | Skip TLS certificate verification (not recommended for production) | `false` |
+| `-v, --verbose` | Enable verbose logging for debugging | `false` |
+| `--exit-code` | Override the exit code | `0` |
+
+**Example:**
+```shell
+kdt --config=prod-config.yaml --verbose scan -p MyProject -t semgrep -b main
+```
+
+## Commands
 
 ### Health Checks
 
-Regular health checks are critical in ensuring uninterrupted communication between KDT and the Kondukto service. This section provides the necessary commands to perform these checks.
-
-- **Verify KDT Connection to Kondukto Service**
-
-  This command allows you to check whether KDT is successfully connected to the Kondukto service.
-
-    ```shell
-    $ kdt ping
-    ```
-
-- **Validate API Token**
-
-  This command enables you to confirm that your API token is valid.
-
-    ```shell
-    $ kdt ping -a
-    ```
-
-## Command Overview
-
-This section provides an overview of key KDT commands, including instructions on how to list projects, list project scans, check ALM project availability, restart a scan, and import scan results.
-
-### Listing Projects
-
-To retrieve a list of all projects, utilize the following command:
-
+#### Verify Connection
+Test connectivity to Invicti ASPM service:
 ```shell
-$ kdt list projects
+kdt ping
 ```
 
-### Listing Scans for a Specific Project
-
-To list all scans associated with a specific project, use the command below. Remember to replace "ExampleProject" with the name of your project:
-
+#### Validate API Token
+Verify that your API token is valid:
 ```shell
-$ kdt list scans -p ExampleProject
+kdt ping -a
 ```
 
-### Checking ALM Project Availability
+### Scan Command
 
-The command below checks the availability of an ALM project. The `$ALM_TOOL` placeholder should be replaced with the name of your ALM tool, and the `$PROJECT_ID` placeholder with your project ID.
+The `scan` command is the primary command for triggering security scans and importing scan results.
 
+#### Scan Flags
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--async` | - | Run scan asynchronously (non-blocking) | `false` |
+| `--project` | `-p` | Project name or ID | - |
+| `--tool` | `-t` | Scanner tool name | - |
+| `--scan-id` | `-s` | Scan ID to restart | - |
+| `--branch` | `-b` | Branch name | - |
+| `--file` | `-f` | Scan result file to import | - |
+| `--image` | `-I` | Container image to scan | - |
+| `--agent` | `-a` | Agent name for agent-based scanners | - |
+| `--meta` | `-m` | Metadata | - |
+| `--scan-tag` | - | Tag for the scan | - |
+| `--env` | - | Environment: `production`, `staging`, `develop`, `feature` | - |
+| `--timeout` | - | Minutes to wait for scan completion (0 = no timeout) | `0` |
+| `--release-timeout` | - | Minutes to wait for release criteria check | `5` |
+
+#### Pull Request Scanning Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--merge-target` | `-M` | Target branch for PR scans |
+| `--pr-number` | - | PR number for decoration |
+| `--pr-decoration-scanner-types` | - | Scanner types for PR decoration (e.g., `all`, `sast`, `dast`, `sca`) |
+| `--override` | - | Override old analysis results for PR scans |
+| `--no-decoration` | - | Disable PR decoration (deprecated) |
+
+> **Note:** For pull request scans, the target branch (specified with `--merge-target`) must be scanned at least once before triggering PR scans. This baseline scan is required for comparison.
+
+#### Fork Scanning Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--fork-scan` | `-B` | Enable fork scan based on default branch |
+| `--fork-source` | - | Source branch for fork scans |
+| `--override-fork-source` | - | Override project's fork source branch |
+
+> **Note:** For fork scans, the source branch (specified with `--fork-source` or the project's default branch) must be scanned at least once before triggering fork scans. This establishes the baseline for comparison.
+
+#### Threshold Flags
+
+Break the build if vulnerabilities exceed thresholds:
+
+| Flag | Description |
+|------|-------------|
+| `--threshold-crit` | Maximum critical vulnerabilities |
+| `--threshold-high` | Maximum high vulnerabilities |
+| `--threshold-med` | Maximum medium vulnerabilities |
+| `--threshold-low` | Maximum low vulnerabilities |
+| `--threshold-risk` | Fail if risk score increases |
+| `--break-by-scanner-type` | Only break for specific scanner type |
+
+#### Project Creation Flags
+
+Automatically create projects during scan:
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--create-project` | - | Create project if not found |
+| `--project-name` | - | Name for new project |
+| `--repo-id` | `-r` | Repository URL or ID |
+| `--alm-tool` | - | ALM tool name (e.g., `github`, `gitlab`) |
+| `--team` | `-T` | Team name |
+| `--labels` | `-l` | Comma-separated labels |
+| `--product-name` | `-P` | Product name |
+| `--default-branch` | - | Default branch | `main` |
+| `--disable-clone` | - | Disable repository cloning |
+| `--criticality-level` | - | Business criticality: 4=Major, 3=High, 2=Medium, 1=Low, 0=None, -1=Auto |
+| `--feature-branch-retention` | - | Days to retain feature branches |
+| `--feature-branch-infinite-retention` | - | Never delete feature branches |
+| `--scope-include-empty` | - | Include vulnerabilities with no path |
+| `--scope-included-paths` | - | Comma-separated paths for mono-repo scoping |
+| `--scope-included-files` | - | Comma-separated file names for scoping |
+
+#### Custom Parameters
+
+| Flag | Description |
+|------|-------------|
+| `--params` | Custom scanner parameters (format: `key:value`) |
+| `--incremental-scan` | `-i` | Enable incremental scanning (Semgrep only) |
+
+#### Scan Examples
+
+**1. Restart an existing scan by scan ID:**
 ```shell
-$ kdt project available -a $ALM_TOOL -r $PROJECT_ID
+kdt scan -s 5da6cafa5ab6e436faf643dc
 ```
 
-The command will return an exit code of 0 if the project is available, and an exit code of -1 (255) if the project is not available.
-
-### Restarting a Scan
-
-There are two options to restart a scan:
-
-1. Using the scan ID:
-
-    ```shell
-    $ kdt scan -s 5da6cafa5ab6e436faf643dc
-    ```
-
-2. Using the project and tool names:
-
-    ```shell
-    $ kdt scan -p ExampleProject -t ExampleTool
-    ```
-
-### Importing Scan Results
-
-To import scan results as a file, use the following command:
-
+**2. Trigger scan with project and tool:**
 ```shell
-$ kdt scan -p ExampleProject -t ExampleTool -b master -f results.json
+kdt scan -p MyProject -t semgrep -b main
 ```
 
-## Command Line Flags
-
-KDT offers a range of useful flags to streamline the management of scans. These include both global flags, applicable to all KDT commands, and command-specific flags.
-
-### Global Flags
-
-The following flags can be applied across all KDT commands:
-
-- `--host`: Defines the HTTP address of the Kondukto server, including the port.
-
-- `--token`: Specifies the API token generated by Kondukto.
-
-- `--config`: Points to the configuration file to use, superseding the default one (`$HOME/.kdt.yaml`).
-
-- `--async`: Initiates an asynchronous scan that won't block the process while waiting for the scan to complete. KDT will exit gracefully once the scan has successfully started.
-
-- `--insecure`: Bypasses the client's verification of the server's certificates and host name. Please note that this mode exposes TLS to potential man-in-the-middle attacks. It is not recommended unless you fully understand the potential risks.
-
-- `-v` or `--verbose`: Enables verbose output, providing more detailed logs. This flag is particularly useful for debugging purposes.
-
-### Scan Command Flags
-
-The following flags are exclusive to the scan commands:
-
-- `-p` or `--project`: Specifies the project name or ID.
-
-- `-t` or `--tool`: Specifies the tool name.
-
-- `-s` or `--scan-id`: Indicates the scan ID.
-
-- `-b` or `--branch`: Designates the branch to be scanned.
-
-Please note that these flags are only applicable for scan commands.
-
-#### Additional Note
-If these flags are used in conjunction with the `-v` (verbose) flag, more detailed information about the scan will be provided.
-
-### Release Command Flags
-
-The following flags are specific to the release commands:
-
-- `-p` or `--project`: Specifies the project name or ID.
-
-- `-b` or `--branch`: Specifies the project branch name, default is the project's default branch.
-
-- `--cs`: Processes CS (Code Security) criteria status.
-
-- `--dast`: Processes DAST (Dynamic Application Security Testing) criteria status.
-
-- `--iac`: Processes IAC (Infrastructure as Code) criteria status.
-
-- `--iast`: Processes IAST (Interactive Application Security Testing) criteria status.
-
-- `--pentest`: Processes Penetration Testing criteria status.
-
-- `--sast`: Processes SAST (Static Application Security Testing) criteria status.
-
-- `--sca`: Processes SCA (Software Composition Analysis) criteria status.
-
-Please note that these flags are only valid for release commands.
-
-#### Additional Note
-If these flags are used in conjunction with the `-v` (verbose) flag, more detailed information about the criteria status of the release will be provided.
-
-### Threshold Flags
-
-The following flags represent thresholds for the maximum number of vulnerabilities, of a specified severity, to be ignored. Should these thresholds be exceeded, KDT will terminate with a non-zero status code.
-
-- `--threshold-crit`: Defines the threshold for critical severity vulnerabilities.
-
-- `--threshold-high`: Sets the threshold for high severity vulnerabilities.
-
-- `--threshold-med`: Establishes the threshold for medium severity vulnerabilities.
-
-- `--threshold-low`: Determines the threshold for low severity vulnerabilities.
-
-- `--threshold-risk`: Sets the risk threshold for failing tests if the scan results in a higher risk score than the previous scan's risk score. This flag is useful for maintaining a project's security level. If used with every scan in DevOps pipelines, it ensures the project's vulnerability does not increase.
-
-Please note that the risk threshold only considers the last two scans performed with the same tool. If the project has not been scanned with the tool, KDT will fail as it cannot compare risk scores. Also, these threshold flags do not function with the `--async` flag since KDT will exit when the scan begins, and thus cannot check scan results.
-
-#### Example Usage:
-
-The following command scans the project "SampleProject" with the tool "SampleTool", setting thresholds for critical vulnerabilities at 3, high vulnerabilities at 10, and considering the risk:
-
+**3. Import scan results from file:**
 ```shell
-$ kdt scan -p SampleProject -t SampleTool --threshold-crit 3 --threshold-high 10 --threshold-risk
+kdt scan -p MyProject -t checkmarx -b develop -f results.xml
 ```
 
-## Supported Scanners (Tools)
-
-KDT is designed to support all scanners enabled in the Kondukto server. The list of available scanners is dynamically updated as new tools are added, ensuring KDT remains adaptable and scalable to your scanning needs.
-
-To view the currently available scanners, use the `kdt list scanners` command:
-
+**4. Scan with thresholds (break build):**
 ```shell
-kdt --config kondukto.yaml list scanners
+kdt scan -p MyProject -t trivy -b main \
+  --threshold-crit 0 \
+  --threshold-high 5 \
+  --threshold-med 10
 ```
 
-Example output:
+**5. Async scan (non-blocking):**
+```shell
+kdt scan -p MyProject -t gosec -b main --async
+```
+
+**6. Container image scan:**
+```shell
+kdt scan -p MyProject -t trivy \
+  --image myapp:latest \
+  -b main
+```
+
+**7. Pull request scan:**
+```shell
+kdt scan -p MyProject -t semgrep \
+  -b feature/new-feature \
+  -M main \
+  --pr-number 123
+```
+
+**8. Fork scan (feature branch vs default):**
+```shell
+kdt scan -p MyProject -t semgrep \
+  -b feature/test \
+  --fork-scan \
+  --env feature
+```
+
+**9. Create project and scan:**
+```shell
+kdt scan -p NewProject -t semgrep -b main \
+  --create-project \
+  --repo-id https://github.com/org/repo \
+  --alm-tool github \
+  --team security
+```
+
+**10. Custom parameters:**
+```shell
+kdt scan -p MyProject -t semgrep -b develop \
+  --params=ruleset_type:2 \
+  --params=ruleset_options.ruleset:/custom/rules/
+```
+
+**11. Risk threshold (prevent regression):**
+```shell
+kdt scan -p MyProject -t sonarqube -b main --threshold-risk
+```
+
+**12. Incremental scan (Semgrep):**
+```shell
+kdt scan -p MyProject -t semgrep -b main \
+  -f semgrep-results.json \
+  --incremental-scan
+```
+
+### Release Command
+
+Check if a project passes release criteria.
+
+#### Release Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--project` | `-p` | Project name or ID (required) |
+| `--branch` | `-b` | Branch name (default: project's default branch) |
+| `--timeout` | - | Minutes to wait for criteria check | `5` |
+| `--sast` | - | Check SAST criteria |
+| `--dast` | - | Check DAST criteria |
+| `--sca` | - | Check SCA criteria |
+| `--iac` | - | Check IaC criteria |
+| `--cs` | - | Check Code Security criteria |
+| `--iast` | - | Check IAST criteria |
+| `--pentest` | - | Check Penetration Testing criteria |
+| `--mast` | - | Check MAST criteria |
+| `--sbom` | - | Check SBOM criteria |
+
+#### Release Examples
+
+**1. Check all release criteria:**
+```shell
+kdt release -p MyProject -b main
+```
+
+**2. Check specific criteria only:**
+```shell
+kdt release -p MyProject -b main --sast --sca
+```
+
+**3. With verbose output:**
+```shell
+kdt -v release -p MyProject -b main --sast --dast
+```
+
+**4. With custom timeout:**
+```shell
+kdt release -p MyProject -b main --timeout 10
+```
+
+### List Commands
+
+#### List Projects
 
 ```shell
+kdt list projects
+```
+
+#### List Scans
+
+**Flags:**
+- `-p, --project`: Project name or ID (required)
+
+**Example:**
+```shell
+kdt list scans -p MyProject
+```
+
+#### List Scanners
+
+View all available scanners:
+```shell
+kdt list scanners
+```
+
+**Example output:**
+```
 Name       ID                          Type    Trigger     Labels
 ----       --                          ----    -------     ------
 gosec      60eec8a83e9e5e6e2ae52d06    sast    new scan    docker,kdt
 semgrep    60eec8a53e9e5e6e2ae52d05    sast    rescan      template,docker,kdt
+trivy      60eec8a73e9e5e6e2ae52d07    sca     new scan    docker,kdt,container
 ```
 
-This output provides a summary of each available scanner, including its name, ID, type, trigger mechanism, and any associated labels.
+#### List Agents
 
-Please note that the actual list of supported scanners can vary as new tools are regularly added to improve the capabilities of KDT.
-
-### Custom Parameters
-For some tools the default behaviour of KDT is re-triggering or re-scanning of an existing scan. This means that, there should be a configured scan on Kondukto for KDT to run re-run this operation
-from the CLI. However, by passing some custom arguments to the scanner, Kondukto server can create and start a scan without having a configuration.
-
-The scanners that supports customer parameters are shown with `--params` arguments.
-A customized scan example:
+```shell
+kdt list agents
 ```
-# Run a scan using semgrep on a develop branch
-# with a custom rule path
-kdt scan -p SampleProject \
-         -b develop -t semgrep \
-	 --params=ruleset_type:2 --params=ruleset_options.ruleset:/rules/
+
+#### List Products
+
+```shell
+kdt list products
 ```
+
+### Create Commands
+
+#### Create Project
+
+**Flags:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--repo-id` | `-r` | Repository URL or ID (required) |
+| `--project-name` | - | Project name |
+| `--alm-tool` | `-a` | ALM tool name |
+| `--team` | `-t` | Team name |
+| `--labels` | `-l` | Comma-separated labels |
+| `--product-name` | `-P` | Product name |
+| `--force-create` | - | Create with suffix if name exists |
+| `--overwrite` | `-w` | Overwrite existing project |
+| `--default-branch` | - | Default branch | `main` |
+| `--disable-clone` | - | Disable repository cloning |
+| `--fork-source` | - | Source branch for feature branches |
+| `--criticality-level` | - | Business criticality (0-4, -1=Auto) |
+| `--feature-branch-retention` | - | Days to retain feature branches |
+| `--feature-branch-infinite-retention` | - | Never delete feature branches |
+| `--scope-include-empty` | - | Include vulnerabilities with no path |
+| `--scope-included-paths` | - | Paths for mono-repo scoping |
+| `--scope-included-files` | - | File names for scoping |
+
+**Examples:**
+
+**1. Create project from repository:**
+```shell
+kdt create project \
+  --repo-id https://github.com/kondukto-io/kdt \
+  --alm-tool github \
+  --labels GDPR,Internal \
+  --team security
+```
+
+**2. Create with custom name:**
+```shell
+kdt create project \
+  --repo-id https://gitlab.com/org/app \
+  --project-name MyCustomName \
+  --alm-tool gitlab \
+  --default-branch develop
+```
+
+**3. Create with product:**
+```shell
+kdt create project \
+  --repo-id https://github.com/org/repo \
+  --alm-tool github \
+  --product-name "Mobile_Apps" \
+  --criticality-level 4
+```
+
+**4. Mono-repo with scoping:**
+```shell
+kdt create project \
+  --repo-id https://github.com/org/monorepo \
+  --project-name backend-api \
+  --alm-tool github \
+  --scope-included-paths "services/api,shared/common" \
+  --scope-included-files "package.json,go.mod"
+```
+
+#### Create Team
+
+**Flags:**
+- `-n, --name`: Team name (required)
+- `-r, --responsible`: Responsible user name
+
+**Example:**
+```shell
+kdt create team --name "security-team" --responsible "john.doe"
+```
+
+#### Create Label
+
+**Flags:**
+- `-n, --name`: Label name (required)
+- `-c, --color`: Label color in hex format (default: `000000`)
+
+**Examples:**
+```shell
+# Create label with default color
+kdt create label --name "GDPR"
+
+# Create label with custom color
+kdt create label --name "Critical" --color "FF0000"
+```
+
+#### Create Product
+
+**Flags:**
+- `-n, --name`: Product name (required)
+- `-p, --projects`: Comma-separated project names or IDs
+
+**Examples:**
+```shell
+# Create empty product
+kdt create product --name "mobile-apps"
+
+# Create product with projects
+kdt create product --name "web-services" --projects "api-service,web-app,auth-service"
+```
+
+### SBOM Commands
+
+#### Import SBOM
+
+Import Software Bill of Materials (CycloneDX format).
+
+**Flags:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--file` | `-f` | SBOM file path (JSON format, required) |
+| `--project` | `-p` | Project name or ID |
+| `--repo-id` | `-r` | Repository URL or ID |
+| `--branch` | `-b` | Branch name |
+| `--sbom-type` | `-s` | Type: `source_dir`, `image`, `application`, `os`, `container` |
+| `--allow-empty` | `-a` | Allow empty components |
+
+**Examples:**
+
+**1. Import SBOM for project:**
+```shell
+kdt sbom import \
+  -f cyclonedx-sbom.json \
+  -p MyProject \
+  -b main
+```
+
+**2. Import with specific type:**
+```shell
+kdt sbom import \
+  -f sbom.json \
+  -p MyProject \
+  -b main \
+  --sbom-type image
+```
+
+**3. Import using repository ID:**
+```shell
+kdt sbom import \
+  -f sbom.json \
+  --repo-id https://github.com/org/repo \
+  -b main
+```
+
+### Endpoint Commands
+
+#### Import Endpoint
+
+Import API endpoint definitions (Swagger/OpenAPI).
+
+**Flags:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--file` | `-f` | Endpoint file path (required) |
+| `--project` | `-p` | Project name or ID (required) |
+
+**Example:**
+```shell
+kdt endpoint import -f swagger.json -p MyProject
+```
+
+### Status Command
+
+Query project status and vulnerability counts.
+
+**Flags:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--project` | `-p` | Project name or ID |
+| `--branch` | `-b` | Branch name |
+| `--event` | `-e` | Event ID |
+| `--threshold-crit` | - | Critical threshold |
+| `--threshold-high` | - | High threshold |
+| `--threshold-med` | - | Medium threshold |
+| `--threshold-low` | - | Low threshold |
+| `--threshold-risk` | - | Risk threshold |
+
+**Examples:**
+
+**1. Get project status:**
+```shell
+kdt status -p MyProject -b main
+```
+
+**2. Check status with thresholds:**
+```shell
+kdt status -p MyProject -b main \
+  --threshold-crit 0 \
+  --threshold-high 5
+```
+
+**3. Query by event ID:**
+```shell
+kdt status -e 5da6cafa5ab6e436faf643dc
+```
+
+### Project Commands
+
+#### Check Project Availability
+
+Check if a project exists in ALM.
+
+**Flags:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--alm-tool` | `-a` | ALM tool name |
+| `--repo-id` | `-r` | Repository URL or ID |
+
+**Example:**
+```shell
+kdt project available \
+  --alm-tool github \
+  --repo-id https://github.com/kondukto-io/kdt
+```
+
+Returns exit code 0 if available, -1 (255) if not.
 
 ## Advanced Usage Examples
 
-KDT can be utilized in various ways within your pipeline. The following example demonstrates an advanced use case:
+### CI/CD Pipeline Integration
+
+#### GitHub Actions
+
+```yaml
+- name: Run Security Scan
+  run: |
+    kdt scan \
+      -p ${{ github.event.repository.name }} \
+      -t semgrep \
+      -b ${{ github.ref_name }} \
+      --threshold-crit 0 \
+      --threshold-high 10
+```
+
+#### GitLab CI
+
+```yaml
+security_scan:
+  script:
+    - kdt scan -p ${CI_PROJECT_NAME} -t trivy -b ${CI_COMMIT_BRANCH} --threshold-crit 0
+```
+
+#### Jenkins
+
+```groovy
+stage('Security Scan') {
+  steps {
+    sh '''
+      kdt scan \
+        -p ${JOB_NAME} \
+        -t checkmarx \
+        -b ${GIT_BRANCH} \
+        --threshold-crit 0 \
+        --threshold-high 5
+    '''
+  }
+}
+```
+
+### Complex Workflow Examples
+
+#### 1. Complete DevSecOps Pipeline
 
 ```shell
-$ kdt --config kondukto-config.yml \
-    --insecure \
-    scan \
-    --project SampleProject \
-    --tool fortify \
-    --file results.fpr \
-    --branch develop \
-    --threshold-crit 0 \
-    --threshold-high 0
+# Import scan results from local tool
+kdt scan -p MyProject -t fortify -f results.fpr -b develop \
+  --threshold-crit 0 --threshold-high 0
+
+# Check release criteria
+kdt release -p MyProject -b develop --sast --sca --dast
 ```
 
-In this command:
-
-- `--config`: Specifies the Kondukto configuration file in yaml format.
-
-- `--insecure`: Indicates not to verify SSL certificates.
-
-- `scan`: Initiates a scan.
-
-- `--project`: Defines the name of the application on the Kondukto server.
-
-- `--tool`: Specifies the AST (Application Security Testing) tool to be used, in this case, 'fortify'.
-
-- `--file`: Determines the result filename. When this parameter is given, the scan will not be initiated, and only the results file (results.fpr) will be analyzed.
-
-- `--branch`: Specifies the branch name.
-
-- `--threshold-crit`: Sets the critical severity threshold value to "break the build" in the pipeline. When this parameter is provided, the entered security criteria will be overwritten.
-
----
+#### 2. Container Security Workflow
 
 ```shell
-$ kdt --config kondukto-config.yml \
-    scan \
-    --project SampleProject \
-    --tool trivy \
-    --image ubuntu@256:ab02134176aecfe0c0974ab4d3db43ca91eb6483a6b7fe6556b480489edd04a1 \
-    --branch develop
+# Scan container image
+kdt scan -p MyProject -t trivy \
+  --image myapp:${VERSION} \
+  -b main \
+  --threshold-crit 0
+
+# Import SBOM
+kdt sbom import -f sbom.json -p MyProject -b main --sbom-type container
 ```
 
-In this command:
-
-- `--config`: Specifies the Kondukto configuration file in yaml format.
-
-- `scan`: Initiates a scan.
-
-- `--project`: Defines the name of the application on the Kondukto server.
-
-- `--tool`: Specifies the AST (Application Security Testing) tool to be used, in this case, 'trivy'.
-
-- `--image`: Identifies the image to be scanned. The image name can be given with the digest or with the tag name (e.g., ubuntu:latest).
-
-- `--branch`: Specifies the branch name.
-
----
-
-The following example illustrates how to create a new project using KDT:
+#### 3. Pull Request Workflow
 
 ```shell
-$ kdt --config kondukto-config.yml \
-    create \
-    project \ 
-    --repo-id https://github.com/kondukto-io/kdt \
-    --labels GDPR,Internal \
-    --alm-tool github
+# Trigger PR scan
+kdt scan -p MyProject -t semgrep \
+  -b feature/new-feature \
+  -M main \
+  --pr-number ${PR_NUMBER} \
+  --pr-decoration-scanner-types all
 ```
 
-In this command:
+#### 4. Multi-Environment Setup
 
-- `--config`: Specifies the Kondukto configuration file in yaml format.
+```shell
+# Development
+kdt scan -p MyProject -t semgrep -b develop --env develop
 
-- `create`: Acts as the base command for the create operation.
+# Staging
+kdt scan -p MyProject -t sonarqube -b staging --env staging \
+  --threshold-high 10
 
-- `project`: Acts as a subcommand to create a new project.
-
-- `--repo-id`: Specifies the project repository URL or ALM ID.
-
-- `--labels`: Associates the project with a list of labels.
-
-- `--alm-tool`: Specifies the ALM (Application Lifecycle Management) tool. This is required if more than one ALM is enabled in Kondukto.
-
-Additional flags that can be set include:
-
-- `--team`: Specifies a team name. By default, the team name is 'default team'.
-
-- `--force-create`: Creates a project with a suffix `-` if there is another project with the same name.
-
-- `--overwrite`: Overwrites the project name, eliminating the need to add a `-` suffix.
-
-This command creates a project on Kondukto that matches the name in your ALM tool. If a project with the same name already exists, the command will print an error message and exit with a status code. You can pass the `--force-create` flag to create a project with a suffix `-`, or pass the `--overwrite` flag to overwrite the project name.
-
----
-
+# Production
+kdt scan -p MyProject -t checkmarx -b main --env production \
+  --threshold-crit 0 --threshold-high 0 \
+  --release-timeout 10
 ```
-kdt --config kondukto-config.yml \
-    sbom import \
-    --file cyclonedx-sbom.json \
-    --project SampleProject \
-    --branch develop
+
+#### 5. Custom Parameters for Advanced Configuration
+
+```shell
+# Semgrep with custom rules
+kdt scan -p MyProject -t semgrep -b main \
+  --params=ruleset_type:2 \
+  --params=ruleset_options.ruleset:/custom/rules/ \
+  --params=ruleset_options.config:auto
+
+# Container scan with custom registry
+kdt scan -p MyProject -t trivy \
+  --image registry.example.com/myapp:latest \
+  --params=registry.username:user \
+  --params=registry.password:pass
 ```
-- --config: Kondukto configuration file in yaml format
-- sbom import: Subcommand to import a Software Bill of Materials (SBOM) file
-- --file: The CycloneDX SBOM output file in JSON format
-- --project: The name or ID of the project in the Kondukto server
-- --branch: The name of the branch of the application
 
-This command allows you to update a previously generated SBOM file in the Kondukto system. Please note that currently, only the [CycloneDX](https://cyclonedx.org/) standard is supported for SBOM files.
+## Exit Codes
 
----
+KDT uses the following exit codes:
 
-## Contributing to KDT
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | General error |
+| `2` | Warning |
+| `100` | Not authorized |
+| `-1` (255) | Negative response (e.g., project not available) |
 
-Contributions to the KDT project are highly appreciated. Whether you're reporting issues, suggesting new features, or directly helping with development, your input is valuable.
+## Supported Scanners
 
-Here's how you can contribute:
+KDT supports all scanners enabled in your Invicti ASPM instance. To view available scanners:
 
-- Report issues or suggest new features by creating a new issue in the repository.
+```shell
+kdt list scanners
+```
 
-- Contribute directly to the codebase by forking the repository and creating pull requests.
+## Troubleshooting
 
-Before submitting your pull requests, please adhere to the following guidelines:
+### Enable Verbose Logging
 
-- Create and name your branches according to the [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/) methodology.
-  - For new features: `feature/example-feature-branch`
-  - For bug fixes: `bugfix/example-bugfix-branch`
+```shell
+kdt -v scan -p MyProject -t semgrep -b main
+```
 
-- Ensure that your code is properly documented, following idiomatic [Go](https://golang.org) practices. Exported functions should always be commented.
+### Test Connection
 
-- Write detailed PR descriptions and comments. This helps maintainers understand your changes and speeds up the review process.
+```shell
+kdt ping
+kdt ping -a  # With authentication
+```
 
-Thank you for helping to improve KDT!
+### Verify Configuration
+
+```shell
+# Check if host and token are set
+echo $INVICTI_ASPM_HOST
+echo $INVICTI_ASPM_TOKEN
+
+# Or use a test command
+kdt list projects
+```
+
+## Contributing
+
+Contributions to KDT are welcome! Here's how you can contribute:
+
+### Reporting Issues
+
+Create an issue in the [GitHub repository](https://github.com/kondukto-io/kdt/issues) with:
+- Clear description of the issue
+- Steps to reproduce
+- Expected vs actual behavior
+- KDT version (`kdt version`)
+
+### Pull Requests
+
+1. Fork the repository
+2. Create a feature/bugfix branch following [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/):
+   - Features: `feature/example-feature`
+   - Bugfixes: `bugfix/example-bugfix`
+3. Write idiomatic Go code
+4. Document exported functions
+5. Write detailed PR description
+6. Ensure tests pass
+
+### Development Setup
+
+```shell
+git clone https://github.com/kondukto-io/kdt.git
+cd kdt
+go mod download
+go build -o kdt
+./kdt --help
+```
+
+## License
+
+See the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- Documentation: [https://docs.kondukto.io](https://docs.kondukto.io)
+- Issues: [GitHub Issues](https://github.com/kondukto-io/kdt/issues)
+- Website: [https://kondukto.io](https://kondukto.io)

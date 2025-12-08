@@ -1,6 +1,6 @@
 /*
-Copyright © 2023 Kondukto
-
+Copyright © 2019 Invicti Security
+https://www.invicti.com/
 */
 
 package cmd
@@ -44,7 +44,7 @@ func init() {
 func releaseRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	project, err := getSanitizedFlagStr(cmd, "project")
@@ -193,7 +193,7 @@ func isReleaseFailed(release *client.ReleaseStatus, scannerTypeSpecified bool, s
 	if verbose {
 		c, err := client.New()
 		if err != nil {
-			qwe(ExitCodeError, err, "could not initialize Kondukto client")
+			qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 		}
 
 		for toolType, scanID := range failedScans {

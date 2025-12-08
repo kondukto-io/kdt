@@ -1,6 +1,6 @@
 /*
-Copyright © 2019 Kondukto
-
+Copyright © 2019 Invicti Security
+https://www.invicti.com/
 */
 
 package client
@@ -116,7 +116,7 @@ type (
 		AgentID string `json:"agent_id,omitempty"`
 		// PR is holding detail of pull requests branches to be scanned
 		PR PRInfo `json:"pr"`
-		// Custom is holding custom type of scanners that specified on the Kondukto side
+		// Custom is holding custom type of scanners that specified on the Invicti ASPM side
 		Custom Custom `json:"custom"`
 		// MetaData is holding value of scanparam meta-data
 		MetaData string `json:"meta_data"`

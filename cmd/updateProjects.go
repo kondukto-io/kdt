@@ -19,15 +19,15 @@ func init() {
 // updateBCCMd represents the sbom import command
 var updateProjectCMD = &cobra.Command{
 	Use:   "project",
-	Short: "updates the project on Kondukto",
+	Short: "updates the project on Invicti ASPM",
 	Run:   updateProjectBaseCommand,
 }
 
 func updateProjectBaseCommand(cmd *cobra.Command, _ []string) {
-	// Initialize Kondukto client
+	// Initialize Invicti ASPM client
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 	bc := ProjectUpdate{
 		cmd:    cmd,

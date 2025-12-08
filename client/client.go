@@ -1,6 +1,6 @@
 /*
-Copyright © 2019 Kondukto
-
+Copyright © 2019 Invicti Security
+https://www.invicti.com/
 */
 
 package client
@@ -39,7 +39,7 @@ type Client struct {
 	BaseURL *url.URL
 }
 
-type KonduktoError struct {
+type InvictiASPMError struct {
 	Error string `json:"error"`
 }
 
@@ -127,7 +127,7 @@ func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {
 		return resp, nil
 	}
 
-	var e KonduktoError
+	var e InvictiASPMError
 	if err = json.Unmarshal(data, &e); err != nil {
 		return nil, fmt.Errorf("failed to parse error message: %v: %s", err, string(data))
 	}

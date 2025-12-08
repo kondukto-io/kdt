@@ -1,6 +1,6 @@
 /*
-Copyright © 2021 Kondukto
-
+Copyright © 2019 Invicti Security
+https://www.invicti.com/
 */
 
 package cmd
@@ -19,7 +19,7 @@ import (
 // createProjectCmd represents the create project command
 var createProjectCmd = &cobra.Command{
 	Use:   "project",
-	Short: "creates a new project on Kondukto",
+	Short: "creates a new project on Invicti ASPM",
 	Run:   createProjectsRootCommand,
 }
 
@@ -28,7 +28,7 @@ func init() {
 
 	createProjectCmd.Flags().String("project-name", "", "name of the project")
 	createProjectCmd.Flags().Int("criticality-level", 0, "business criticality of the project, possible values are [ 4 = Major, 3 = High, 2 = Medium, 1 = Low, 0 = None, -1 = Auto ]. Default is [0]")
-	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another Kondukto project")
+	createProjectCmd.Flags().Bool("force-create", false, "ignore if the URL is used by another Invicti ASPM project")
 	createProjectCmd.Flags().StringP("overwrite", "w", "", "rename the project name when creating a new project")
 	createProjectCmd.Flags().StringP("labels", "l", "", "comma separated label names")
 	createProjectCmd.Flags().StringP("team", "t", "", "project team name")
@@ -41,8 +41,8 @@ func init() {
 	createProjectCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true.")
 	createProjectCmd.Flags().String("default-branch", "main", "sets the default branch for the project. When repo-id is given, this will be overridden by the repository's default branch.")
 	createProjectCmd.Flags().Bool("scope-include-empty", false, "enable to include SAST, SCA and IAC vulnerabilities with no path in this project.")
-	createProjectCmd.Flags().String("scope-included-paths", "", "a comma separated list of paths within your mono-repo so that Kondukto can decide on the SAST, SCA and IAC vulnerabilities to include in this project.")
-	createProjectCmd.Flags().String("scope-included-files", "", "a comma separated list of file names Kondukto should check for in vulnerabilities alongside paths")
+	createProjectCmd.Flags().String("scope-included-paths", "", "a comma-separated list of paths within your mono-repo so that Invicti ASPM can decide on the SAST, SCA, and IAC vulnerabilities to include in this project")
+	createProjectCmd.Flags().String("scope-included-files", "", "a comma-separated list of file names Invicti ASPM should check for in vulnerabilities alongside paths")
 }
 
 type Project struct {
@@ -54,7 +54,7 @@ type Project struct {
 func createProjectsRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	var p = Project{

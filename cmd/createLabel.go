@@ -1,6 +1,6 @@
 /*
-Copyright © 2023 Kondukto
-
+Copyright © 2019 Invicti Security
+https://www.invicti.com/
 */
 
 package cmd

@@ -1,7 +1,8 @@
 /*
-Copyright © 2019 Kondukto
-
+Copyright © 2019 Invicti Security
+https://www.invicti.com/
 */
+
 package main
 
 import (

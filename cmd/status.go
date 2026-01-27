@@ -1,6 +1,6 @@
 /*
-Copyright © 2019 Kondukto
-
+Copyright © 2019 Invicti Security
+https://www.invicti.com/
 */
 
 package cmd
@@ -35,10 +35,10 @@ func init() {
 }
 
 func statusRootCommand(cmd *cobra.Command, _ []string) {
-	// Initialize Kondukto client
+	// Initialize Invicti ASPM client
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	eid := cmd.Flag("event").Value.String()

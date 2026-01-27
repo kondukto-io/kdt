@@ -1,6 +1,6 @@
 /*
-Copyright © 2019 Kondukto
-
+Copyright © 2019 Invicti Security
+https://www.invicti.com/
 */
 
 package cmd
@@ -53,7 +53,7 @@ func init() {
 	rootCmd.AddCommand(scanCmd)
 
 	scanCmd.Flags().Bool("async", false, "does not block build process")
-	scanCmd.Flags().StringP("project", "p", "", "kondukto project id or name")
+	scanCmd.Flags().StringP("project", "p", "", "Invicti ASPM project ID or name")
 	scanCmd.Flags().StringP("tool", "t", "", "tool name")
 	scanCmd.Flags().StringP("scan-id", "s", "", "scan id")
 	scanCmd.Flags().StringP("meta", "m", "", "meta data")
@@ -89,8 +89,8 @@ func init() {
 	scanCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true [create-project]")
 	scanCmd.Flags().String("default-branch", "main", "Sets the default branch for the project. When repo-id is given, this will be overridden by the repository's default branch [create-project].")
 	scanCmd.Flags().Bool("scope-include-empty", false, "enable to include SAST, SCA and IAC vulnerabilities with no path in this project.")
-	scanCmd.Flags().String("scope-included-paths", "", "a comma separated list of paths within your mono-repo so that Kondukto can decide on the SAST, SCA and IAC vulnerabilities to include in this project.")
-	scanCmd.Flags().String("scope-included-files", "", "a comma separated list of file names Kondukto should check for in vulnerabilities alongside paths")
+	scanCmd.Flags().String("scope-included-paths", "", "a comma-separated list of paths within your mono-repo so that Invicti ASPM can decide on the SAST, SCA, and IAC vulnerabilities to include in this project")
+	scanCmd.Flags().String("scope-included-files", "", "a comma-separated list of file names Invicti ASPM should check for in vulnerabilities alongside paths")
 	scanCmd.Flags().Int("criticality-level", 0, "business criticality of the project, possible values are [ 4 = Major, 3 = High, 2 = Medium, 1 = Low, 0 = None, -1 = Auto ]. Default is [0]")
 
 	scanCmd.Flags().Bool("threshold-risk", false, "set risk score of last scan as threshold")
@@ -109,10 +109,10 @@ var scanCmd = &cobra.Command{
 	Short: "base command for starting scans",
 	Run:   scanRootCommand,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		// Initialize Kondukto client
+		// Initialize Invicti ASPM client
 		c, err := client.New()
 		if err != nil {
-			qwe(ExitCodeError, err, "could not initialize Kondukto client")
+			qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 		}
 
 		t, _ := cmd.Flags().GetString("tool")
@@ -131,10 +131,10 @@ var scanCmd = &cobra.Command{
 }
 
 func scanRootCommand(cmd *cobra.Command, _ []string) {
-	// Initialize Kondukto client
+	// Initialize Invicti ASPM client
 	c, err := client.New()
 	if err != nil {
-		qwe(ExitCodeError, err, "could not initialize Kondukto client")
+		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
 	}
 
 	scan := Scan{
@@ -1424,7 +1424,7 @@ func printScanSummary(scan *client.ScanDetail) {
 func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 	c, err := client.New()
 	if err != nil {
-		return fmt.Errorf("failed to initialize Kondukto client: %w", err)
+		return fmt.Errorf("failed to initialize Invicti ASPM client: %w", err)
 	}
 
 	releaseTimeoutFlag, err := cmd.Flags().GetInt("release-timeout")
@@ -1519,7 +1519,7 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 	if verbose {
 		c, err := client.New()
 		if err != nil {
-			return fmt.Errorf("failed to initialize Kondukto client: %w", err)
+			return fmt.Errorf("failed to initialize Invicti ASPM client: %w", err)
 		}
 
 		for toolType, scanID := range failedScans {
@@ -1551,7 +1551,7 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 func passTests(scan *client.ScanDetail, cmd *cobra.Command) error {
 	c, err := client.New()
 	if err != nil {
-		return fmt.Errorf("failed to initialize Kondukto client: %w", err)
+		return fmt.Errorf("failed to initialize Invicti ASPM client: %w", err)
 	}
 
 	if cmd.Flag("threshold-risk").Changed {

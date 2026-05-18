@@ -1,6 +1,6 @@
 module github.com/kondukto-io/kdt
 
-go 1.23.0
+go 1.26.3
 
 require (
 	github.com/google/go-querystring v1.1.0

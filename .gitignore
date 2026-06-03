@@ -1,6 +1,8 @@
 .idea/
 .vscode/
+.claude/
 _release/
+
 .DS_STORE
 kdt
 coverage.out

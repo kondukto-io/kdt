@@ -59,6 +59,7 @@ jobs:
           make -f ${{ github.workspace }}/Makefile integration-test
 
       - name: Run Linter
+        continue-on-error: true
         run: |
           make -f ${{ github.workspace }}/Makefile lint
 

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/kondukto-io/kdt/client"
+	"github.com/spf13/cobra"
 )
 
 func TestScan_prepareCustomParams(t *testing.T) {
@@ -106,6 +107,35 @@ func TestScan_prepareCustomParams(t *testing.T) {
 				t.Errorf("Scan.prepareCustomParams() = %v, want %v", got, tt.want)
 			}
 			fmt.Printf("%+v\n", got.Params)
+		})
+	}
+}
+
+func TestGetSanitizedFlagStr(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{name: "internal spaces preserved", value: "My Project", want: "My Project"},
+		{name: "leading and trailing trimmed", value: "  Padded  ", want: "Padded"},
+		{name: "no spaces unchanged", value: "NoSpaces", want: "NoSpaces"},
+		{name: "empty string unchanged", value: "", want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := &cobra.Command{}
+			cmd.Flags().String("project", "", "")
+			if err := cmd.Flags().Set("project", tt.value); err != nil {
+				t.Fatalf("failed to set flag: %v", err)
+			}
+			got, err := getSanitizedFlagStr(cmd, "project")
+			if err != nil {
+				t.Errorf("getSanitizedFlagStr() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("getSanitizedFlagStr() = %q, want %q", got, tt.want)
+			}
 		})
 	}
 }

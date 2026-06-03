@@ -12,7 +12,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -20,7 +19,6 @@ import (
 	"github.com/kondukto-io/kdt/klog"
 
 	"github.com/google/go-querystring/query"
-	"github.com/spf13/viper"
 )
 
 type (
@@ -316,8 +314,7 @@ func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) 
 	klog.Debugf("importing scan results from file: %s", file)
 
 	path := "/api/v2/scans/import"
-	rel := &url.URL{Path: path}
-	u := c.BaseURL.ResolveReference(rel)
+	u := c.resolveURL(path)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -359,7 +356,7 @@ func (c *Client) ImportScanResult(file string, form ImportForm) (string, error) 
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("X-Cookie", viper.GetString("token"))
+	c.setAuthHeader(req)
 
 	type importScanResultResponse struct {
 		EventID string `json:"event_id"`

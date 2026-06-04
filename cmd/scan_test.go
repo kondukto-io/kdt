@@ -109,3 +109,31 @@ func TestScan_prepareCustomParams(t *testing.T) {
 		})
 	}
 }
+
+// TestScan_almToolFlag guards against a regression where the scan command's
+// alm-tool flag was registered with String("alm-tool", "A", ...), making "A"
+// the default value instead of the -A shorthand. With that bug, an auto-created
+// project (--create-project) would be sent to the API with ALM tool "A" when
+// the user did not explicitly pass --alm-tool.
+func TestScan_almToolFlag(t *testing.T) {
+	flag := scanCmd.Flags().Lookup("alm-tool")
+	if flag == nil {
+		t.Fatal("alm-tool flag is not registered on the scan command")
+	}
+
+	if flag.DefValue != "" {
+		t.Errorf("alm-tool default value = %q, want empty string", flag.DefValue)
+	}
+
+	if flag.Shorthand != "A" {
+		t.Errorf("alm-tool shorthand = %q, want %q", flag.Shorthand, "A")
+	}
+
+	got, err := scanCmd.Flags().GetString("alm-tool")
+	if err != nil {
+		t.Fatalf("failed to read alm-tool flag: %v", err)
+	}
+	if got != "" {
+		t.Errorf("alm-tool value with no flag set = %q, want empty string", got)
+	}
+}

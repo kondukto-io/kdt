@@ -26,11 +26,14 @@ With KDT, you can list projects and their scans in **Invicti ASPM**, trigger sca
   - [Release Command](#release-command)
   - [List Commands](#list-commands)
   - [Create Commands](#create-commands)
+  - [Update Commands](#update-commands)
   - [SBOM Commands](#sbom-commands)
   - [Endpoint Commands](#endpoint-commands)
   - [Status Command](#status-command)
   - [Project Commands](#project-commands)
+  - [Scan Parameters Commands](#scan-parameters-commands)
 - [Advanced Usage Examples](#advanced-usage-examples)
+- [Exit Codes](#exit-codes)
 - [Contributing](#contributing)
 
 ## Installation
@@ -214,7 +217,7 @@ Automatically create projects during scan:
 | `--create-project` | - | Create project if not found |
 | `--project-name` | - | Name for new project |
 | `--repo-id` | `-r` | Repository URL or ID |
-| `--alm-tool` | - | ALM tool name (e.g., `github`, `gitlab`) |
+| `--alm-tool` | `-A` | ALM tool name (e.g., `github`, `gitlab`) |
 | `--team` | `-T` | Team name |
 | `--labels` | `-l` | Comma-separated labels |
 | `--product-name` | `-P` | Product name |
@@ -229,10 +232,10 @@ Automatically create projects during scan:
 
 #### Custom Parameters
 
-| Flag | Description |
-|------|-------------|
-| `--params` | Custom scanner parameters (format: `key:value`) |
-| `--incremental-scan` | `-i` | Enable incremental scanning (Semgrep only) |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--params` | - | Custom scanner parameters (format: `key:value`) |
+| `--incremental-scan` | `-i` | Enable incremental scanning (Semgrep imports only) |
 
 #### Scan Examples
 
@@ -366,6 +369,11 @@ kdt release -p MyProject -b main --timeout 10
 kdt list projects
 ```
 
+You can optionally pass a name as a positional argument to filter projects:
+```shell
+kdt list projects MyProject
+```
+
 #### List Scans
 
 **Flags:**
@@ -383,10 +391,26 @@ View all available scanners:
 kdt list scanners
 ```
 
+**Flags:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--type` | `-t` | Filter by scanner type (e.g. `sast`, `dast`, `sca`) |
+| `--labels` | `-l` | Filter by comma-separated scanner labels |
+
+**Example:**
+```shell
+# List only SAST scanners
+kdt list scanners --type sast
+
+# List scanners with specific labels
+kdt list scanners --labels docker,kdt
+```
+
 **Example output:**
 ```
-Name       ID                          Type    Trigger     Labels
-----       --                          ----    -------     ------
+Name       ID                          Type    Trigger     Labels                  Flags    Status
+----       --                          ----    -------     ------                  -----    ------
 gosec      60eec8a83e9e5e6e2ae52d06    sast    new scan    docker,kdt
 semgrep    60eec8a53e9e5e6e2ae52d05    sast    rescan      template,docker,kdt
 trivy      60eec8a73e9e5e6e2ae52d07    sca     new scan    docker,kdt,container
@@ -404,6 +428,14 @@ kdt list agents
 kdt list products
 ```
 
+**Flags:**
+- `-n, --name`: Search products by name
+
+**Example:**
+```shell
+kdt list products --name mobile
+```
+
 ### Create Commands
 
 #### Create Project
@@ -418,8 +450,8 @@ kdt list products
 | `--team` | `-t` | Team name |
 | `--labels` | `-l` | Comma-separated labels |
 | `--product-name` | `-P` | Product name |
-| `--force-create` | - | Create with suffix if name exists |
-| `--overwrite` | `-w` | Overwrite existing project |
+| `--force-create` | - | Ignore if the repository URL is already used by another project |
+| `--overwrite` | `-w` | Rename the project to this value when creating it (string) |
 | `--default-branch` | - | Default branch | `main` |
 | `--disable-clone` | - | Disable repository cloning |
 | `--fork-source` | - | Source branch for feature branches |
@@ -508,6 +540,34 @@ kdt create product --name "mobile-apps"
 
 # Create product with projects
 kdt create product --name "web-services" --projects "api-service,web-app,auth-service"
+```
+
+### Update Commands
+
+#### Update Project
+
+Update properties of an existing project.
+
+**Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--project-id` | Project ID or name to update |
+| `--criticality-level` | Business criticality: 4=Major, 3=High, 2=Medium, 1=Low, 0=None, -1=Auto |
+| `--label` | Comma-separated label names. **Overrides** the project's existing labels |
+
+> **Note:** Only the flags you explicitly set are updated. The `--label` flag replaces all existing labels on the project rather than appending to them.
+
+**Examples:**
+
+**1. Update business criticality:**
+```shell
+kdt update project --project-id MyProject --criticality-level 4
+```
+
+**2. Replace project labels:**
+```shell
+kdt update project --project-id MyProject --label "Internal,Sensitive Data,Payment"
 ```
 
 ### SBOM Commands
@@ -629,6 +689,29 @@ kdt project available \
 ```
 
 Returns exit code 0 if available, -1 (255) if not.
+
+### Scan Parameters Commands
+
+#### Delete Scan Parameters
+
+Delete scan parameters **and their associated vulnerabilities** from Invicti ASPM. This identifies the scan parameters by project, tool, and (optionally) branch and metadata.
+
+> ⚠️ **Warning:** This is a destructive operation that also deletes the vulnerabilities tied to the matched scan parameters. It cannot be undone, which is why `--force` is required.
+
+**Flags:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--project` | `-p` | Project name or ID (required) |
+| `--tool` | `-t` | Tool name of the scan parameters (required) |
+| `--branch` | `-b` | Branch of the scan parameters |
+| `--meta` | `-m` | Metadata of the scan parameters |
+| `--force` | `-f` | Confirm deletion (required) |
+
+**Example:**
+```shell
+kdt scanparams delete -p MyProject -t semgrep -b main --force
+```
 
 ## Advanced Usage Examples
 

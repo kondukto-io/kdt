@@ -5,6 +5,28 @@ _release/
 
 .DS_STORE
 kdt
-coverage.out
 
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
 
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.coverprofile
+
+# Directories
+bin/
+obj/
+
+# IDE specific folders
+.cursor/
+
+# Test and lint reports
+**/golangci-lint-report.xml
+**/test-report.json
+**/coverage.html
+**/integration-coverage.html

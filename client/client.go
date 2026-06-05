@@ -31,12 +31,16 @@ var (
 
 	sslValidationOnce sync.Once
 	sslValidationErr  error
+
+	coreCheck sync.Once
 )
 
 type Client struct {
 	httpClient *http.Client
 
 	BaseURL *url.URL
+
+	IsCore bool
 }
 
 type InvictiASPMError struct {
@@ -62,6 +66,17 @@ func New() (*Client, error) {
 
 	client.httpClient = httpClient
 
+	coreCheck.Do(func() {
+		client.IsCore = true
+
+		if err := client.Ping(); err != nil {
+			client.IsCore = false
+			if isSSLError(err) {
+				sslValidationErr = fmt.Errorf("SSL/TLS certificate error: %v\n\nThis appears to be a certificate verification issue. To resolve this securely, configure trusted SSL/TLS certificates for the server. Using the --insecure flag bypasses SSL verification and exposes you to potential security risks, such as man-in-the-middle attacks. Only use this flag in controlled environments where you fully trust the server.", err)
+			}
+		}
+	})
+
 	sslValidationOnce.Do(func() {
 		if err := client.Ping(); err != nil {
 			if isSSLError(err) {
@@ -78,7 +93,13 @@ func New() (*Client, error) {
 }
 
 func (c *Client) newRequest(method string, path string, body interface{}) (*http.Request, error) {
+
 	rel := &url.URL{Path: path}
+
+	if c.IsCore {
+		rel = &url.URL{Path: "api/aspm/v1" + path}
+	}
+
 	u := c.BaseURL.ResolveReference(rel)
 
 	var buf io.ReadWriter
@@ -101,7 +122,12 @@ func (c *Client) newRequest(method string, path string, body interface{}) (*http
 
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("X-Cookie", viper.GetString("token"))
+
+	if c.IsCore {
+		req.Header.Set("X-Auth", viper.GetString("token"))
+	} else {
+		req.Header.Set("X-Cookie", viper.GetString("token"))
+	}
 
 	return req, nil
 }

@@ -1,0 +1,54 @@
+version: "2"
+output:
+  formats:
+    text:
+      path: stdout
+    checkstyle:
+      path: golangci-lint-report.xml
+linters:
+  default: all
+  disable:
+    - wsl
+    - depguard
+    - varnamelen
+    - noinlineerr
+  settings:
+    copyloopvar:
+      check-alias: true
+    gomoddirectives:
+      replace-local: true
+    interfacebloat:
+      max: 20
+    lll:
+      line-length: 250
+    usetesting:
+      os-setenv: true
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+    rules:
+      - path: '(.+)_test\.go'
+        linters:
+          - funlen
+          - goconst
+          - gosec
+          - gosmopolitan
+          - err113
+          - exhaustruct
+          - staticcheck
+          - wrapcheck
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

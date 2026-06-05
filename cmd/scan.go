@@ -83,7 +83,7 @@ func init() {
 	scanCmd.Flags().StringP("labels", "l", "", "comma separated label names [create-project]")
 	scanCmd.Flags().StringP("team", "T", "", "project team name [create-project]")
 	scanCmd.Flags().StringP("repo-id", "r", "", "URL or ID of ALM repository [create-project]")
-	scanCmd.Flags().String("alm-tool", "A", "ALM tool name [create-project]")
+	scanCmd.Flags().StringP("alm-tool", "A", "", "ALM tool name [create-project]")
 	scanCmd.Flags().Bool("disable-clone", false, "disables the clone operation for the project")
 	scanCmd.Flags().Uint("feature-branch-retention", 0, "Adds a retention(days) to the project for feature branch delete operations [create-project]")
 	scanCmd.Flags().Bool("feature-branch-infinite-retention", false, "Sets an infinite retention for project feature branches. Overrides --feature-branch-retention flag when set to true [create-project]")
@@ -182,7 +182,7 @@ type Scan struct {
 
 func (s *Scan) startScan() (string, error) {
 	scanType := s.cmd.Context().Value("internal-scan-type").(string)
-	var scanMode = getScanMode(s.cmd)
+	scanMode := getScanMode(s.cmd)
 	klog.Debugf("scan mode is: [%d]", scanMode)
 
 	incremental, err := s.cmd.Flags().GetBool("incremental-scan")
@@ -313,7 +313,7 @@ func (s *Scan) scanByImage() (string, error) {
 		return "", errors.New("image name is required")
 	}
 
-	var pr = &client.ScanByImageInput{
+	pr := &client.ScanByImageInput{
 		Project:     project.ID,
 		Tool:        tool,
 		Branch:      branch,
@@ -424,7 +424,7 @@ func (s *Scan) scanByFileImport(scanType string) (string, error) {
 		return "", fmt.Errorf("failed to check api-file-scan flag: %w", err)
 	}
 
-	var form = client.ImportForm{
+	form := client.ImportForm{
 		"project":                     project.Name,
 		"branch":                      branch,
 		"tool":                        tool,
@@ -666,7 +666,7 @@ func (s *Scan) parseCustomParams(custom *client.Custom, scanner client.ScannerIn
 		return nil, fmt.Errorf("failed to parse param flag: %w", err)
 	}
 
-	var requiredParamsLen = scanner.Params.RequiredParamsLen()
+	requiredParamsLen := scanner.Params.RequiredParamsLen()
 
 	if requiredParamsLen > len(params) {
 		return nil, fmt.Errorf("missing parameters for the scanner tool [%s]", scanner.DisplayName)
@@ -674,16 +674,16 @@ func (s *Scan) parseCustomParams(custom *client.Custom, scanner client.ScannerIn
 
 	custom.Params = map[string]interface{}{}
 	for _, v := range params {
-		var keyValuePair = strings.SplitN(v, ":", 2)
+		keyValuePair := strings.SplitN(v, ":", 2)
 		if len(keyValuePair) != 2 {
 			return nil, fmt.Errorf("invalid params flag: it should be key:value pairs: [%s]", keyValuePair)
 		}
 
-		var key = keyValuePair[0]
-		var value = keyValuePair[1]
+		key := keyValuePair[0]
+		value := keyValuePair[1]
 
 		// validate the given key parameter
-		var fieldDetail = scanner.Params.Find(key)
+		fieldDetail := scanner.Params.Find(key)
 		if fieldDetail == nil {
 			return nil, fmt.Errorf("params [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
 		}
@@ -722,7 +722,7 @@ func (*Scan) updateCustomParamsWithDefaultValue(scanner client.ScannerInfo, cust
 			continue
 		}
 
-		var fieldDetail = scanner.Params.Find(key)
+		fieldDetail := scanner.Params.Find(key)
 		if fieldDetail == nil {
 			return nil, fmt.Errorf("params [%s] is not allowed by the scanner tool [%s], run `list scanners` command to display allowed params", key, scanner.DisplayName)
 		}
@@ -1127,7 +1127,7 @@ func (s *Scan) findScanIDByProjectToolAndForkScan() (string, error) {
 		custom = parsedCustom
 	}
 
-	var scanData = &client.Scan{
+	scanData := &client.Scan{
 		Branch:                   branch,
 		MetaData:                 meta,
 		ScanTag:                  scanTag,
@@ -1197,6 +1197,9 @@ func (s *Scan) getScanner() (*client.ScannerInfo, error) {
 	}
 
 	scanner := scanners.ActiveScanners.First()
+	if scanner == nil {
+		return nil, fmt.Errorf("no active scanner found for tool: %s", name)
+	}
 
 	return scanner, nil
 }
@@ -1258,18 +1261,18 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 		return nil, errors.New("both repo and project-name flags cannot be used together")
 	}
 
-	var p = Project{
+	p := Project{
 		cmd:    s.cmd,
 		client: s.client,
 	}
 
-	var project = p.createProject(repo, name, false, "")
+	project := p.createProject(repo, name, false, "")
 
 	if !p.cmd.Flags().Changed("product-name") {
 		return project, nil
 	}
 
-	var pr = Product{
+	pr := Product{
 		cmd:    s.cmd,
 		client: s.client,
 	}
@@ -1279,16 +1282,18 @@ func (s *Scan) findORCreateProject() (*client.Project, error) {
 		return nil, fmt.Errorf("failed to get product-name flag: %w", err)
 	}
 
-	var parsedProjects = []client.Project{*project}
+	parsedProjects := []client.Project{*project}
 	product, created := pr.createProduct(productName, parsedProjects)
 	if created {
 		klog.Println("product created successfully")
 		return project, nil
 	}
+	if product == nil {
+		return nil, fmt.Errorf("product [%s] could not be found or created", productName)
+	}
 
-	updatedProduct, err := pr.updateProduct(product, parsedProjects)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update product [%s]: %w", updatedProduct.Name, err)
+	if _, err := pr.updateProduct(product, parsedProjects); err != nil {
+		return nil, fmt.Errorf("failed to update product [%s]: %w", productName, err)
 	}
 
 	return project, nil
@@ -1348,10 +1353,10 @@ func (s *Scan) getDecorationScannerTypes() (string, error) {
 		return "", fmt.Errorf("failed to parse pr-decoration-scanner-types flag: %w", err)
 	}
 
-	var validScannerTypes = make([]string, 0)
+	validScannerTypes := make([]string, 0)
 
 	for _, t := range prDecorationScannerTypes {
-		var vt = strings.TrimSpace(strings.ToLower(t))
+		vt := strings.TrimSpace(strings.ToLower(t))
 		if vt == "all" {
 			validScannerTypes = []string{"all"}
 			break
@@ -1432,13 +1437,13 @@ func checkRelease(scan *client.ScanDetail, cmd *cobra.Command) error {
 		return fmt.Errorf("failed to parse release-timeout flag: %w", err)
 	}
 
-	var releaseOpts = client.ReleaseStatusOpts{
+	releaseOpts := client.ReleaseStatusOpts{
 		WaitTillComplete:           true,
 		TotalWaitDurationToTimeout: time.Minute * time.Duration(releaseTimeoutFlag),
 		WaitDuration:               time.Second * 5,
 	}
 
-	var project = scan.Project
+	project := scan.Project
 	if scan.InfraSourceProjectID != "" {
 		project = scan.InfraSourceProjectID
 	}
@@ -1463,7 +1468,7 @@ func isScanReleaseFailed(scan *client.ScanDetail, release *client.ReleaseStatus,
 		return nil
 	}
 
-	var failedScans = make(map[string]string)
+	failedScans := make(map[string]string)
 
 	if release.SAST.Status == statusFail {
 		failedScans["SAST"] = scan.ID
@@ -1623,7 +1628,6 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) (st
 
 	start := time.Now()
 	timeoutFlag, err := cmd.Flags().GetInt("timeout")
-
 	if err != nil {
 		return "", fmt.Errorf("failed to parse timeout flag: %w", err)
 	}
@@ -1690,7 +1694,7 @@ func waitTillScanEnded(cmd *cobra.Command, c *client.Client, eventID string) (st
 // generates a nested map object if the key is contains a dot
 // for example: if key:"image.tag" and value:"latest" will generate a map object {"image": {"tag": "value"}}
 func appendKeyToParamsMap(key string, custom *client.Custom, parsedValue interface{}) (*client.Custom, error) {
-	var splitted = strings.Split(key, ".")
+	splitted := strings.Split(key, ".")
 	switch len(splitted) {
 	case 1:
 		custom.Params[key] = parsedValue

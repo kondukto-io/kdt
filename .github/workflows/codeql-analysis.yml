@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         # We must fetch at least the immediate parents so that if this is
         # a pull request then we can check out the head.
@@ -29,7 +29,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@45775bd8235c68ba998cffa5171334d58593da47
+      uses: github/codeql-action/init@84498526a009a99c875e83ef4821a8ba52de7c22 # codeql-bundle-v2.25.5
       # Override language selection by uncommenting this and choosing your languages
       # with:
       #   languages: go, javascript, csharp, python, cpp, java
@@ -37,7 +37,7 @@ jobs:
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
     - name: Autobuild
-      uses: github/codeql-action/autobuild@45775bd8235c68ba998cffa5171334d58593da47
+      uses: github/codeql-action/autobuild@84498526a009a99c875e83ef4821a8ba52de7c22 # codeql-bundle-v2.25.5
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
@@ -51,4 +51,4 @@ jobs:
     #   make release
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@45775bd8235c68ba998cffa5171334d58593da47
+      uses: github/codeql-action/analyze@84498526a009a99c875e83ef4821a8ba52de7c22 # codeql-bundle-v2.25.5

@@ -7,12 +7,9 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
-
-	"github.com/spf13/viper"
 
 	"github.com/kondukto-io/kdt/klog"
 )
@@ -60,8 +57,7 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 	form["project"] = projects[0].Name
 
 	path := fmt.Sprintf("/api/v2/projects/%s/sbom/upload", projects[0].ID)
-	rel := &url.URL{Path: path}
-	u := c.BaseURL.ResolveReference(rel)
+	u := c.resolveURL(path)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -100,7 +96,7 @@ func (c *Client) ImportSBOM(file string, repo string, form ImportForm) error {
 
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("X-Cookie", viper.GetString("token"))
+	c.setAuthHeader(req)
 
 	type importSBOMResponse struct {
 		Message string `json:"message"`

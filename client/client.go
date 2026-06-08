@@ -94,13 +94,7 @@ func New() (*Client, error) {
 
 func (c *Client) newRequest(method string, path string, body interface{}) (*http.Request, error) {
 
-	rel := &url.URL{Path: path}
-
-	if c.IsCore {
-		rel = &url.URL{Path: "api/aspm/v1" + path}
-	}
-
-	u := c.BaseURL.ResolveReference(rel)
+	u := c.resolveURL(path)
 
 	var buf io.ReadWriter
 	if body != nil {
@@ -123,13 +117,24 @@ func (c *Client) newRequest(method string, path string, body interface{}) (*http
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", userAgent)
 
+	c.setAuthHeader(req)
+
+	return req, nil
+}
+
+func (c *Client) resolveURL(path string) *url.URL {
+	if c.IsCore {
+		return c.BaseURL.ResolveReference(&url.URL{Path: "api/aspm/v1" + path})
+	}
+	return c.BaseURL.ResolveReference(&url.URL{Path: path})
+}
+
+func (c *Client) setAuthHeader(req *http.Request) {
 	if c.IsCore {
 		req.Header.Set("X-Auth", viper.GetString("token"))
 	} else {
 		req.Header.Set("X-Cookie", viper.GetString("token"))
 	}
-
-	return req, nil
 }
 
 func (c *Client) do(req *http.Request, v interface{}) (*http.Response, error) {

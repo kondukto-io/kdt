@@ -1,4 +1,4 @@
-<p align="center"><a href="https://kondukto.io" target="_blank" rel="noopener noreferrer"><img width="200" src="https://kondukto.io/logo.png" alt="Invicti ASPM logo"></a></p>
+<p align="center"><a href="https://www.invicti.com/" target="_blank" rel="noopener noreferrer"><img width="200" src="https://cdn.kondukto.io/img/logo/a990cbe5-f31f-49a0-a135-2ea0b7abb0ec.png" alt="Invicti ASPM logo"></a></p>
 
 # KDT
 

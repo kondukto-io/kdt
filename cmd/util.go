@@ -64,12 +64,12 @@ func TableWriter(rows ...Row) {
 
 func strC(v int) string { return strconv.Itoa(v) }
 
-// getSanitizedFlagStr returns a flag value with all spaces removed
+// getSanitizedFlagStr returns a flag value with leading/trailing whitespace removed.
 func getSanitizedFlagStr(cmd *cobra.Command, flagName string) (string, error) {
 	value, err := cmd.Flags().GetString(flagName)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse %s flag: %w", flagName, err)
 	}
 
-	return strings.ReplaceAll(value, " ", ""), nil
+	return strings.TrimSpace(value), nil
 }

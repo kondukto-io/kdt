@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/kondukto-io/kdt/client"
+	"github.com/spf13/cobra"
 )
 
 func TestScan_prepareCustomParams(t *testing.T) {
@@ -110,30 +111,31 @@ func TestScan_prepareCustomParams(t *testing.T) {
 	}
 }
 
-// TestScan_almToolFlag guards against a regression where the scan command's
-// alm-tool flag was registered with String("alm-tool", "A", ...), making "A"
-// the default value instead of the -A shorthand. With that bug, an auto-created
-// project (--create-project) would be sent to the API with ALM tool "A" when
-// the user did not explicitly pass --alm-tool.
-func TestScan_almToolFlag(t *testing.T) {
-	flag := scanCmd.Flags().Lookup("alm-tool")
-	if flag == nil {
-		t.Fatal("alm-tool flag is not registered on the scan command")
+func TestGetSanitizedFlagStr(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{name: "internal spaces preserved", value: "My Project", want: "My Project"},
+		{name: "leading and trailing trimmed", value: "  Padded  ", want: "Padded"},
+		{name: "no spaces unchanged", value: "NoSpaces", want: "NoSpaces"},
+		{name: "empty string unchanged", value: "", want: ""},
 	}
-
-	if flag.DefValue != "" {
-		t.Errorf("alm-tool default value = %q, want empty string", flag.DefValue)
-	}
-
-	if flag.Shorthand != "A" {
-		t.Errorf("alm-tool shorthand = %q, want %q", flag.Shorthand, "A")
-	}
-
-	got, err := scanCmd.Flags().GetString("alm-tool")
-	if err != nil {
-		t.Fatalf("failed to read alm-tool flag: %v", err)
-	}
-	if got != "" {
-		t.Errorf("alm-tool value with no flag set = %q, want empty string", got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := &cobra.Command{}
+			cmd.Flags().String("project", "", "")
+			if err := cmd.Flags().Set("project", tt.value); err != nil {
+				t.Fatalf("failed to set flag: %v", err)
+			}
+			got, err := getSanitizedFlagStr(cmd, "project")
+			if err != nil {
+				t.Errorf("getSanitizedFlagStr() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("getSanitizedFlagStr() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

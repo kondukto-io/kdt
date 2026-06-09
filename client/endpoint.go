@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/spf13/viper"
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 
@@ -32,8 +30,7 @@ func (c *Client) ImportEndpoint(filePath string, projectName string) error {
 	}
 
 	path := fmt.Sprintf("/api/v2/projects/%s/apispecs", projectDoc.ID)
-	rel := &url.URL{Path: path}
-	u := c.BaseURL.ResolveReference(rel)
+	u := c.resolveURL(path)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -65,7 +62,7 @@ func (c *Client) ImportEndpoint(filePath string, projectName string) error {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("X-Cookie", viper.GetString("token"))
+	c.setAuthHeader(req)
 
 	resp, err := c.do(req, nil)
 	if err != nil {

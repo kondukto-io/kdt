@@ -52,10 +52,11 @@ func releaseRootCommand(cmd *cobra.Command, _ []string) {
 		qwe(ExitCodeError, err, "failed to parse project flag")
 	}
 
-	branch, err := getSanitizedFlagStr(cmd, "branch")
+	branch, err := cmd.Flags().GetString("branch")
 	if err != nil {
 		qwe(ExitCodeError, err, "failed to parse branch flag")
 	}
+	branch = strings.ReplaceAll(branch, " ", "")
 
 	timeoutFlag, err := cmd.Flags().GetInt("timeout")
 	if err != nil {

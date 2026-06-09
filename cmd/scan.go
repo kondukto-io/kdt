@@ -313,6 +313,20 @@ func (s *Scan) scanByImage() (string, error) {
 		return "", errors.New("image name is required")
 	}
 
+	var custom client.Custom
+	if s.cmd.Flags().Changed("params") {
+		scanner, err := s.getScanner()
+		if err != nil {
+			return "", fmt.Errorf("failed to get scanner: %w", err)
+		}
+		custom.Type = scanner.CustomType
+		parsedCustom, err := s.parseCustomParams(&custom, *scanner, nil)
+		if err != nil {
+			return "", customParamsParseError(err)
+		}
+		custom = *parsedCustom
+	}
+
 	pr := &client.ScanByImageInput{
 		Project:     project.ID,
 		Tool:        tool,
@@ -321,6 +335,7 @@ func (s *Scan) scanByImage() (string, error) {
 		MetaData:    meta,
 		ScanTag:     scanTag,
 		Environment: applicationEnvironment,
+		Custom:      custom,
 	}
 	eventID, err := s.client.ScanByImage(pr)
 	if err != nil {

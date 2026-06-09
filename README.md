@@ -487,7 +487,7 @@ kdt create project \
 kdt create project \
   --repo-id https://github.com/org/repo \
   --alm-tool github \
-  --product-name "Mobile_Apps" \
+  --product-name "Mobile Apps" \
   --criticality-level 4
 ```
 

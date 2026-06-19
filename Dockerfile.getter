@@ -1,6 +1,6 @@
 FROM nginx:alpine
 
-LABEL maintainer="Kondukto <dev@kondukto.io>"
+LABEL maintainer="Invicti ASPM <support@invicti.com>"
 
 WORKDIR /app 
 COPY get.sh /app/get.sh

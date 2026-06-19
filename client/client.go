@@ -31,8 +31,6 @@ var (
 
 	sslValidationOnce sync.Once
 	sslValidationErr  error
-
-	coreCheck sync.Once
 )
 
 type Client struct {
@@ -66,16 +64,13 @@ func New() (*Client, error) {
 
 	client.httpClient = httpClient
 
-	coreCheck.Do(func() {
-		client.IsCore = true
-
-		if err := client.Ping(); err != nil {
-			client.IsCore = false
-			if isSSLError(err) {
-				sslValidationErr = fmt.Errorf("SSL/TLS certificate error: %v\n\nThis appears to be a certificate verification issue. To resolve this securely, configure trusted SSL/TLS certificates for the server. Using the --insecure flag bypasses SSL verification and exposes you to potential security risks, such as man-in-the-middle attacks. Only use this flag in controlled environments where you fully trust the server.", err)
-			}
+	client.IsCore = true
+	if err := client.Ping(); err != nil {
+		client.IsCore = false
+		if isSSLError(err) {
+			sslValidationErr = fmt.Errorf("SSL/TLS certificate error: %v\n\nThis appears to be a certificate verification issue. To resolve this securely, configure trusted SSL/TLS certificates for the server. Using the --insecure flag bypasses SSL verification and exposes you to potential security risks, such as man-in-the-middle attacks. Only use this flag in controlled environments where you fully trust the server.", err)
 		}
-	})
+	}
 
 	sslValidationOnce.Do(func() {
 		if err := client.Ping(); err != nil {

@@ -1,6 +1,6 @@
 FROM alpine:latest 
 
-LABEL maintainer="Kondukto <dev@kondukto.io>"
+LABEL maintainer="Invicti ASPM <support@invicti.com>"
 
 # Create a group and user
 RUN apk --no-cache add ca-certificates && addgroup -S appgroup && adduser -S appuser -G appgroup

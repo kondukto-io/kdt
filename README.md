@@ -32,6 +32,7 @@ With KDT, you can list projects and their scans in **Invicti ASPM**, trigger sca
   - [Status Command](#status-command)
   - [Project Commands](#project-commands)
   - [Scan Parameters Commands](#scan-parameters-commands)
+  - [DAST Target Commands](#dast-target-commands)
 - [Advanced Usage Examples](#advanced-usage-examples)
 - [Exit Codes](#exit-codes)
 - [Contributing](#contributing)
@@ -711,6 +712,101 @@ Delete scan parameters **and their associated vulnerabilities** from Invicti ASP
 **Example:**
 ```shell
 kdt scanparams delete -p MyProject -t semgrep -b main --force
+```
+
+### DAST Target Commands
+
+> **Note:** DAST Target commands require the Invicti ASPM Core package.
+
+#### Create DAST Target
+
+Create a new DAST target in Invicti ASPM Core.
+
+**Flags:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--target-name` | - | Name of the DAST target |
+| `--url` | - | URL of the DAST target |
+| `--team` | `-t` | Target team name |
+| `--labels` | `-l` | Comma-separated label names |
+| `--criticality-level` | - | Business criticality: 4=Major, 3=High, 2=Medium, 1=Low, 0=None, -1=Auto |
+| `--auth-username` | - | Username for target authentication |
+| `--auth-password` | - | Password for target authentication |
+| `--auth-url` | - | Login URL for target authentication |
+
+> **Note:** At least one of `--target-name` or `--url` must be provided.
+
+**Examples:**
+
+**1. Create a basic DAST target:**
+```shell
+kdt create dast-target \
+  --target-name "My Web App" \
+  --url https://app.example.com \
+  --team security
+```
+
+**2. Create with authentication:**
+```shell
+kdt create dast-target \
+  --target-name "My Web App" \
+  --url https://app.example.com \
+  --auth-username admin \
+  --auth-password secret \
+  --auth-url https://app.example.com/login
+```
+
+**3. Create with labels and criticality:**
+```shell
+kdt create dast-target \
+  --target-name "Payment Portal" \
+  --url https://pay.example.com \
+  --labels PCI,Production \
+  --criticality-level 4
+```
+
+#### List DAST Targets
+
+List all DAST targets. Optionally filter by name using a positional argument.
+
+**Examples:**
+
+```shell
+# List all DAST targets
+kdt list dast-targets
+
+# Filter by name
+kdt list dast-targets "My Web App"
+```
+
+#### DAST Target Scan
+
+Trigger a scan for a DAST target via the `scan` command.
+
+**Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--dast-target` | DAST target ID or name (required) |
+| `--async` | Run scan asynchronously without waiting for results |
+| `--timeout` | Minutes to wait for scan event (0 = no timeout) |
+
+**Examples:**
+
+**1. Start a DAST target scan:**
+```shell
+kdt scan --dast-target "My Web App"
+```
+
+**2. Async DAST target scan:**
+```shell
+kdt scan --dast-target "My Web App" --async
+```
+
+**3. With timeout:**
+```shell
+kdt scan --dast-target "My Web App" --timeout 30
 ```
 
 ## Advanced Usage Examples

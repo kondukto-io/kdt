@@ -101,6 +101,8 @@ func init() {
 
 	scanCmd.Flags().Int("timeout", 0, "minutes to wait for scan to finish. scan will continue async if duration exceeds limit")
 	scanCmd.Flags().Int("release-timeout", 5, "minutes to wait for release criteria check to finish")
+
+	scanCmd.Flags().String("dast-target", "", "triggers a DAST target scan for the given target ID or name")
 }
 
 // scanCmd represents the scan command
@@ -109,6 +111,10 @@ var scanCmd = &cobra.Command{
 	Short: "base command for starting scans",
 	Run:   scanRootCommand,
 	PreRun: func(cmd *cobra.Command, args []string) {
+		if cmd.Flags().Changed("dast-target") {
+			return
+		}
+
 		// Initialize Invicti ASPM client
 		c, err := client.New()
 		if err != nil {
@@ -135,6 +141,11 @@ func scanRootCommand(cmd *cobra.Command, _ []string) {
 	c, err := client.New()
 	if err != nil {
 		qwe(ExitCodeError, err, "could not initialize Invicti ASPM client")
+	}
+
+	if cmd.Flags().Changed("dast-target") {
+		runDastTargetScan(cmd, c)
+		return
 	}
 
 	scan := Scan{

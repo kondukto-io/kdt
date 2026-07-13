@@ -90,12 +90,13 @@ func (c *Client) FindProjectByName(name string) (*Project, error) {
 }
 
 type ProjectDetail struct {
-	Name      string         `json:"name"`
-	Source    *ProjectSource `json:"source"`
-	Team      *ProjectTeam   `json:"team"`
-	Labels    []ProjectLabel `json:"labels"`
-	Override  bool           `json:"override"`  // That means, if the project already exists, create a new one with suffix "-"
-	Overwrite bool           `json:"overwrite"` // That means, if the project already exists, overwrite it
+	Name       string         `json:"name"`
+	Source     *ProjectSource `json:"source"`
+	TargetInfo *Target        `json:"target_info"`
+	Team       *ProjectTeam   `json:"team"`
+	Labels     []ProjectLabel `json:"labels"`
+	Override   bool           `json:"override"`  // That means, if the project already exists, create a new one with suffix "-"
+	Overwrite  bool           `json:"overwrite"` // That means, if the project already exists, overwrite it
 	// ForkSourceBranch holds the name of the branch to be used as the source for the fork scan.
 	// It is only used for [feature] environment
 	ForkSourceBranch string `json:"fork_source_branch"`
@@ -113,6 +114,17 @@ type ProjectSource struct {
 	URL           string    `json:"url"`
 	CloneDisabled bool      `json:"clone_disabled"`
 	PathScope     PathScope `json:"path_scope"`
+}
+
+type Target struct {
+	URL                  string                `json:"url"`
+	TargetAuthentication *TargetAuthentication `json:"target_authentication"`
+}
+
+type TargetAuthentication struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Url      string `json:"url"`
 }
 
 type PathScope struct {

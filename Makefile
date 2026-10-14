@@ -12,7 +12,6 @@ BUILD_DIR     = _release
 OUT           = $(BUILD_DIR)/kdt
 IMAGE_NAME    = kondukto/kondukto-cli
 FIPS_MODULE   = v1.0.0
-FIPS_OUT      = $(OUT)-linux-amd64-fips
 PLATFORMS     := linux/amd64 linux/arm64 windows/amd64 darwin/amd64 darwin/arm64
 TEMP          = $(subst /, ,$@)
 OS            = $(word 1, $(TEMP))
@@ -23,7 +22,7 @@ VERSION       := $(VERSION_TAG)
 export GO111MODULE=on
 
 # Phony targets to prevent conflicts with files of the same name
-.PHONY: all help docker fips clean test test-fips test_coverage \
+.PHONY: all help docker clean test test-fips test_coverage \
         tidy test-local integration-test integration-test-local \
         lint nilaway gofumpt vulncheck operations operations-local
 
@@ -42,27 +41,19 @@ tidy: ## Tidy and verify Go module dependencies
 
 # --- Build ---
 
-all: $(PLATFORMS) fips ## Cross-compile release binaries for all platforms (plus the FIPS container binary)
+all: $(PLATFORMS) ## Cross-compile FIPS 140-3 release binaries for all platforms
 
 $(PLATFORMS):
-	CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build \
+	CGO_ENABLED=0 GOFIPS140=$(FIPS_MODULE) GOOS=$(OS) GOARCH=$(ARCH) go build \
 			-tags prod \
 			-buildmode exe \
 			-ldflags '-s -w -X github.com/kondukto-io/kdt/cmd.Version=$(VERSION) -extldflags=-static' \
 			-o $(OUT)-$(OS)-$(ARCH)
+	@go version -m $(OUT)-$(OS)-$(ARCH) | grep -q 'GOFIPS140=$(FIPS_MODULE)' || { echo "$(OUT)-$(OS)-$(ARCH) was not built against FIPS module $(FIPS_MODULE)"; exit 1; }
+	@go version -m $(OUT)-$(OS)-$(ARCH) | grep -q 'DefaultGODEBUG=.*fips140=on' || { echo "$(OUT)-$(OS)-$(ARCH) does not enable fips140 by default"; exit 1; }
 	$(call hash,kdt-$(OS)-$(ARCH))
 
-fips: ## Build the linux/amd64 binary with the FIPS 140-3 Go Cryptographic Module (used by the Docker image)
-	CGO_ENABLED=0 GOFIPS140=$(FIPS_MODULE) GOOS=linux GOARCH=amd64 go build \
-			-tags prod \
-			-buildmode exe \
-			-ldflags '-s -w -X github.com/kondukto-io/kdt/cmd.Version=$(VERSION)' \
-			-o $(FIPS_OUT)
-	@go version -m $(FIPS_OUT) | grep -q 'GOFIPS140=$(FIPS_MODULE)' || { echo "$(FIPS_OUT) was not built against FIPS module $(FIPS_MODULE)"; exit 1; }
-	@go version -m $(FIPS_OUT) | grep -q 'DefaultGODEBUG=.*fips140=on' || { echo "$(FIPS_OUT) does not enable fips140 by default"; exit 1; }
-	$(call hash,$(notdir $(FIPS_OUT)))
-
-docker: fips ## Build the Docker image from the FIPS linux/amd64 binary
+docker: linux/amd64 ## Build the Docker image from the linux/amd64 release binary
 	@docker build -t $(IMAGE_NAME):latest -f Dockerfile .
 
 # --- Tests ---

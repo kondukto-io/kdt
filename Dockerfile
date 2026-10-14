@@ -8,8 +8,8 @@ USER 65532
 
 WORKDIR /app
 
-# Copy the FIPS 140-3 build (make fips) to WORKDIR
-COPY --chown=65532:65532 --chmod=755 _release/kdt-linux-amd64-fips /app/kdt
+# Copy the FIPS 140-3 build of the linux/amd64 binary to WORKDIR
+COPY --chown=65532:65532 --chmod=755 _release/kdt-linux-amd64 /app/kdt
 
 # Command to run the executable
 ENTRYPOINT ["./kdt"]

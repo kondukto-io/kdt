@@ -54,7 +54,7 @@ $(PLATFORMS):
 	$(call hash,kdt-$(OS)-$(ARCH))
 
 docker: linux/amd64 ## Build the Docker image from the linux/amd64 release binary
-	@docker build -t $(IMAGE_NAME):latest -f Dockerfile .
+	@docker build --platform linux/amd64 -t $(IMAGE_NAME):latest -f Dockerfile .
 
 # --- Tests ---
 

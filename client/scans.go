@@ -30,6 +30,7 @@ type (
 		MetaData    string `json:"meta_data"`
 		ScanTag     string `json:"scan_tag"`
 		Environment string `json:"environment"`
+		Custom      Custom `json:"custom,omitempty"`
 	}
 
 	ScanDetail struct {
@@ -259,6 +260,7 @@ type ScanByImageInput struct {
 	MetaData    string
 	ScanTag     string
 	Environment string
+	Custom      Custom
 }
 
 func (i *ScanByImageInput) prepareRequestQueryParameters() ImageScanParams {
@@ -270,6 +272,7 @@ func (i *ScanByImageInput) prepareRequestQueryParameters() ImageScanParams {
 		MetaData:    i.MetaData,
 		ScanTag:     i.ScanTag,
 		Environment: i.Environment,
+		Custom:      i.Custom,
 	}
 }
 

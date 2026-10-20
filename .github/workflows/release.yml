@@ -54,6 +54,10 @@ jobs:
         run: |
           make -f ${{ github.workspace }}/Makefile test
 
+      - name: Run FIPS Tests
+        run: |
+          make -f ${{ github.workspace }}/Makefile test-fips
+
       - name: Run Integration Tests
         run: |
           make -f ${{ github.workspace }}/Makefile integration-test
@@ -99,9 +103,6 @@ jobs:
           release_id: ${{ steps.create_release.outputs.id }}
           assets_path: ./_release/
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
@@ -111,12 +112,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Login to Artifactory (Chainguard base images)
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: artifact.invicti.com
+          username: ${{ secrets.ARTIFACTORY_USERNAME }}
+          password: ${{ secrets.ARTIFACTORY_TOKEN }}
+
       - name: Build/Push Tags
         id: docker_build
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           file: Dockerfile
+          platforms: linux/amd64
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest

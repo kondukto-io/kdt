@@ -11,6 +11,7 @@ DATE          = $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
 BUILD_DIR     = _release
 OUT           = $(BUILD_DIR)/kdt
 IMAGE_NAME    = kondukto/kondukto-cli
+FIPS_MODULE   = v1.0.0
 PLATFORMS     := linux/amd64 linux/arm64 windows/amd64 darwin/amd64 darwin/arm64
 TEMP          = $(subst /, ,$@)
 OS            = $(word 1, $(TEMP))
@@ -21,7 +22,7 @@ VERSION       := $(VERSION_TAG)
 export GO111MODULE=on
 
 # Phony targets to prevent conflicts with files of the same name
-.PHONY: all help docker clean test test_coverage \
+.PHONY: all help docker clean test test-fips test_coverage \
         tidy test-local integration-test integration-test-local \
         lint nilaway gofumpt vulncheck operations operations-local
 
@@ -40,18 +41,20 @@ tidy: ## Tidy and verify Go module dependencies
 
 # --- Build ---
 
-all: $(PLATFORMS) ## Cross-compile release binaries for all platforms
+all: $(PLATFORMS) ## Cross-compile FIPS 140-3 release binaries for all platforms
 
 $(PLATFORMS):
-	CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build \
+	CGO_ENABLED=0 GOFIPS140=$(FIPS_MODULE) GOOS=$(OS) GOARCH=$(ARCH) go build \
 			-tags prod \
 			-buildmode exe \
 			-ldflags '-s -w -X github.com/kondukto-io/kdt/cmd.Version=$(VERSION) -extldflags=-static' \
 			-o $(OUT)-$(OS)-$(ARCH)
+	@go version -m $(OUT)-$(OS)-$(ARCH) | grep -q 'GOFIPS140=$(FIPS_MODULE)' || { echo "$(OUT)-$(OS)-$(ARCH) was not built against FIPS module $(FIPS_MODULE)"; exit 1; }
+	@go version -m $(OUT)-$(OS)-$(ARCH) | grep -q 'DefaultGODEBUG=.*fips140=on' || { echo "$(OUT)-$(OS)-$(ARCH) does not enable fips140 by default"; exit 1; }
 	$(call hash,kdt-$(OS)-$(ARCH))
 
 docker: linux/amd64 ## Build the Docker image from the linux/amd64 release binary
-	@docker build -t $(IMAGE_NAME):latest -f Dockerfile .
+	@docker build --platform linux/amd64 -t $(IMAGE_NAME):latest -f Dockerfile .
 
 # --- Tests ---
 
@@ -66,6 +69,10 @@ test-local: ## Run unit tests with race detector and coverage (human-readable)
 	@go test ./... -coverprofile=coverage.out -race -count 1
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated at coverage.html"
+
+test-fips: ## Run the FIPS crypto-path tests against the FIPS 140-3 module
+	@echo "Running FIPS tests..."
+	@CGO_ENABLED=0 GOFIPS140=$(FIPS_MODULE) go test ./client/ -run TestFIPS -count 1 -v
 
 integration-test: ## Run integration tests (build tag: integration) with JSON report (CI)
 	@echo "Running integration tests..."

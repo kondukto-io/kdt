@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=artifact.invicti.com/cgr-hardened/invicti.com/chainguard-base-fips:latest@sha256:abcaa35572c0bf501acfb85d09caf92bb2e4a7f705ba816de2404c87824ea8c0
+ARG BASE_IMAGE=artifact.invicti.com/cgr-hardened/invicti.com/chainguard-base-fips:latest@sha256:a3d9b93074cee23617c80b573a0aeef4c12f57cd3cbec1d66f5c20da13d03ce0
 FROM ${BASE_IMAGE}
 
 LABEL maintainer="Invicti ASPM <support@invicti.com>"
